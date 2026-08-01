@@ -1,5 +1,5 @@
 import LoginModal from '@/components/auth/auth.component.modal';
-import { LightRays } from '@/components/layout/light-rays';
+import LightRays from '@/components/layout/light-rays';
 import { brand } from '@/config/brand.config';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -7,7 +7,18 @@ import Link from 'next/link';
 export default function LoginPage() {
   return (
     <main dir="rtl" className="relative min-h-screen overflow-hidden bg-slate-950">
-      <LightRays />
+      <LightRays
+        className="absolute inset-0 z-0"
+        raysOrigin="top-center"
+        raysColor="#9bb8ff"
+        raysSpeed={1.2}
+        lightSpread={0.8}
+        rayLength={1.3}
+        followMouse
+        mouseInfluence={0.12}
+        noiseAmount={0.08}
+        distortion={0.05}
+      />
 
       <Link
         href="/"

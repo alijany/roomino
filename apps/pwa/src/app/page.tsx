@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth.context.provider';
-import { LightRays } from '@/components/layout/light-rays';
+import LightRays from '@/components/layout/light-rays';
 import { brand } from '@/config/brand.config';
 import { Button } from '@/ui/atoms';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -33,7 +33,18 @@ export default function Landing() {
       dir="rtl"
       className="relative min-h-screen overflow-hidden bg-slate-950 text-white flex flex-col"
     >
-      <LightRays />
+      <LightRays
+        className="absolute inset-0 z-0"
+        raysOrigin="top-center"
+        raysColor="#9bb8ff"
+        raysSpeed={1.2}
+        lightSpread={0.8}
+        rayLength={1.3}
+        followMouse
+        mouseInfluence={0.12}
+        noiseAmount={0.08}
+        distortion={0.05}
+      />
 
       {/* Header (merged navbar) */}
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between px-6 py-5">
