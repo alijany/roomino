@@ -9,7 +9,7 @@ interface RootLayoutProps {
 
 export function DashbaordLayout({ children, showSidebar = true }: RootLayoutProps) {
     return (
-        <div className="bg-slate-50 p-4 gap-6 h-screen flex flex-col mx-auto overflow-hidden relative">
+        <div className="bg-slate-100 p-4 gap-6 h-screen flex flex-col mx-auto overflow-hidden relative">
             <Navbar />
             <div className="grow gap-6 flex flex-col lg:flex-row overflow-hidden pb-20 lg:pb-0">
                 {showSidebar && <Sidebar className="hidden lg:flex col-span-1" />}
