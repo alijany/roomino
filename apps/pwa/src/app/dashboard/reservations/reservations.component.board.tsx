@@ -181,12 +181,3 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
     </div>
   );
 }
-
-function LegendDot({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={`inline-block size-3 rounded border ${className}`} />
-      {label}
-    </span>
-  );
-}

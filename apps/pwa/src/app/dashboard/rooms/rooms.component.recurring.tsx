@@ -6,6 +6,7 @@ import {
   WEEKDAYS,
   minutesToHHmm,
 } from '@/libs/meeting/meeting.time';
+import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Input } from '@/ui/atoms';
 import { Dropdown } from '@/ui/atoms/ui.dropdown';
 import { DataView } from '@/ui/molecules';
@@ -31,7 +32,7 @@ export function RecurringManager() {
   const deleteRecurring = useDeleteRecurring();
 
   const [roomId, setRoomId] = useState<number | null>(null);
-  const [weekday, setWeekday] = useState<number | null>(0);
+  const [weekdays, setWeekdays] = useState<number[]>([]);
   const [startMinutes, setStartMinutes] = useState<number | null>(SLOT_STARTS[0]);
   const [endMinutes, setEndMinutes] = useState<number | null>(SLOT_STARTS[0] + SLOT);
   const [title, setTitle] = useState('');
@@ -42,13 +43,18 @@ export function RecurringManager() {
     label: r.name,
     value: r.id,
   }));
-  const weekdayItems = WEEKDAYS.map((label, value) => ({ label, value }));
   const startItems = SLOT_STARTS.map((m) => ({ label: minutesToHHmm(m), value: m }));
   const endItems = END_OPTIONS.map((m) => ({ label: minutesToHHmm(m), value: m }));
 
+  const toggleWeekday = (day: number) => {
+    setWeekdays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  };
+
   const canSubmit =
     roomId != null &&
-    weekday != null &&
+    weekdays.length > 0 &&
     startMinutes != null &&
     endMinutes != null &&
     endMinutes > startMinutes &&
@@ -60,12 +66,13 @@ export function RecurringManager() {
     try {
       await addRecurring.submit({
         roomId: roomId!,
-        weekday: weekday!,
+        weekdays,
         startMinutes: startMinutes!,
         endMinutes: endMinutes!,
         title: title.trim(),
       });
       setTitle('');
+      setWeekdays([]);
       setIsResultOpen(true);
       refresh();
     } catch {
@@ -99,15 +106,28 @@ export function RecurringManager() {
             variant="outline"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">روز هفته</label>
-          <Dropdown
-            items={weekdayItems}
-            value={weekday}
-            onChange={(v) => setWeekday(v as number | null)}
-            placeholder="انتخاب روز"
-            variant="outline"
-          />
+        <div className="lg:col-span-2">
+          <label className="block text-sm font-medium text-slate-600 mb-1">روزهای هفته</label>
+          <div className="flex flex-wrap gap-2">
+            {WEEKDAYS.map((label, day) => {
+              const active = weekdays.includes(day);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleWeekday(day)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors',
+                    active
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-600 mb-1">ساعت شروع</label>

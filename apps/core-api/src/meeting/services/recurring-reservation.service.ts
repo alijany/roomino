@@ -80,19 +80,31 @@ export class RecurringReservationService extends BaseRepositoryService<Recurring
 
   async createChecked(
     dto: CreateRecurringDto,
-  ): Promise<RecurringReservationEntity> {
-    await this.assertNoConflict(
-      dto.roomId,
-      dto.weekday,
-      dto.startMinutes,
-      dto.endMinutes,
-    );
-    return this.create({
-      room: this.em.getReference(MeetingRoomEntity, dto.roomId),
-      weekday: dto.weekday,
-      startMinutes: dto.startMinutes,
-      endMinutes: dto.endMinutes,
-      title: dto.title,
-    });
+  ): Promise<RecurringReservationEntity[]> {
+    const weekdays = [...new Set(dto.weekdays)];
+
+    // Validate every requested weekday before creating any row.
+    for (const weekday of weekdays) {
+      await this.assertNoConflict(
+        dto.roomId,
+        weekday,
+        dto.startMinutes,
+        dto.endMinutes,
+      );
+    }
+
+    const created: RecurringReservationEntity[] = [];
+    for (const weekday of weekdays) {
+      created.push(
+        await this.create({
+          room: this.em.getReference(MeetingRoomEntity, dto.roomId),
+          weekday,
+          startMinutes: dto.startMinutes,
+          endMinutes: dto.endMinutes,
+          title: dto.title,
+        }),
+      );
+    }
+    return created;
   }
 }

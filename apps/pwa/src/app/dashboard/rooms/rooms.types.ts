@@ -54,7 +54,7 @@ export interface GetRecurringResponse {
 
 export interface CreateRecurringDto {
   roomId: number;
-  weekday: number;
+  weekdays: number[];
   startMinutes: number;
   endMinutes: number;
   title: string;
