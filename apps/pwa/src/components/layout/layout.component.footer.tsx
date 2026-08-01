@@ -29,12 +29,11 @@ export const Footer: React.FC = () => {
                 <div className="flex flex-col">
                     <h4 className="text-sm font-semibold text-slate-700 mb-4">نقشه سایت</h4>
                     <ul className="space-y-3 text-sm">
-                        <li><Link href="/#activities" className="text-slate-600 hover:text-slate-800">فرآیند کار</Link></li>
-                        <li><Link href="/#" className="text-slate-600 hover:text-slate-800">ویژگی‌ها</Link></li>
-                        <li><Link href="/#" className="text-slate-600 hover:text-slate-800">نمونه خروجی</Link></li>
+                        <li><Link href="/#how-it-works" className="text-slate-600 hover:text-slate-800">چطور کار می‌کند</Link></li>
+                        <li><Link href="/#features" className="text-slate-600 hover:text-slate-800">ویژگی‌ها</Link></li>
                         <li><Link href="/#faq" className="text-slate-600 hover:text-slate-800">سوالات متداول</Link></li>
+                        <li><Link href="/dashboard/reservations" className="text-slate-600 hover:text-slate-800">رزرو اتاق</Link></li>
                         <li><button onClick={() => setTermsModalOpen(true)} className="text-slate-600 hover:text-slate-800">قوانین استفاده</button></li>
-                        <li><Link href="/about" className="text-slate-600 hover:text-slate-800">درباره ما</Link></li>
                     </ul>
                 </div>
 

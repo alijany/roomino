@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { postgresModuleFactory } from './libs/orm/orm.provider.base';
+import { MeetingModule } from './meeting/meeting.module';
 import { NotificationModule } from './notification/notification.module';
 import { RolesModule } from './roles/roles.module';
 import { S3StorageModule } from './storage/s3-storage.module';
@@ -38,6 +39,7 @@ import { S3StorageModule } from './storage/s3-storage.module';
     EventEmitterModule.forRoot(),
 
     NotificationModule,
+    MeetingModule,
     AuthModule,
     RolesModule,
     S3StorageModule,
