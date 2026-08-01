@@ -5,7 +5,6 @@ import React from 'react';
 import { brand } from '@/config/brand.config';
 import Image from 'next/image';
 import Link from 'next/link';
-import { TermsModal } from '../modals/modals.component.terms';
 
 export const Footer: React.FC = () => {
     const [termsModalOpen, setTermsModalOpen] = React.useState(false);
@@ -44,8 +43,6 @@ export const Footer: React.FC = () => {
             <div className="mt-12 border-t border-slate-100 p-8 text-center text-xs text-slate-500">
                 {brand.copyright}
             </div>
-
-            <TermsModal isOpen={termsModalOpen} onClose={() => setTermsModalOpen(false)} />
         </footer>
     );
 };

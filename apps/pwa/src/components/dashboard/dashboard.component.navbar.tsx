@@ -6,7 +6,6 @@ import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/re
 import { IconMenu4, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import React, { Fragment } from "react";
-import { SupportModal } from "../modals/modals.component.support";
 import { MenuItems } from "./dashboard.component.menu-items";
 import { NotificationDropdown } from "./dashboard.component.notification-dropdown";
 
@@ -15,17 +14,6 @@ import { NotificationDropdown } from "./dashboard.component.notification-dropdow
 export const Navbar = () => {
 
     const [isOpen, setIsOpen] = React.useState(false);
-
-    const [supportModalOpen, setSupportModalOpen] = React.useState(false);
-
-    const openSupportModal = () => {
-        setSupportModalOpen(true);
-    };
-
-    const closeSupportModal = () => {
-        setSupportModalOpen(false);
-    };
-
 
     return (
         <div className="flex items-center justify-between gap-4">

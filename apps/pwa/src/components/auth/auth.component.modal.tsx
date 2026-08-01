@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth.context.provider';
-import { TermsModal } from '@/components/modals/modals.component.terms';
 import { Button, Input, Modal } from '@/ui/atoms';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconX } from '@tabler/icons-react';
@@ -34,7 +33,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const [phoneNumber, setPhoneNumber] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [termsModalOpen, setTermsModalOpen] = useState(false);
     const router = useRouter();
     const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -109,14 +107,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
         setStep('phone');
         setSuccess(null);
         setError(null);
-    };
-
-    const openTermsModal = () => {
-        setTermsModalOpen(true);
-    };
-
-    const closeTermsModal = () => {
-        setTermsModalOpen(false);
     };
 
     const handleResendOtp = async () => {
@@ -197,16 +187,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 </Button>
                             </div>
                             <br />
-                            <div className='text-xs text-blue-600 flex justify-between'>
-                                <div className='opacity-20'>نیاز به راهنمایی دارید؟</div>
-
-                                <div
-                                    className="cursor-pointer"
-                                    onClick={openTermsModal}
-                                >
-                                    شرایط و قوانین استفاده
-                                </div>
-                            </div>
                         </div>
                     ) : (
                         <div className='lg:p-6 rounded-2xl lg:bg-white space-y-4'>
@@ -268,11 +248,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                     </div>
                 </div>
             </Modal>
-
-            <TermsModal
-                isOpen={termsModalOpen}
-                onClose={closeTermsModal}
-            />
         </>
     );
 }

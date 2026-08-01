@@ -4,7 +4,7 @@ export default function LoginPage() {
 
     return (    
         <>
-            <img alt='grid' src="/images/Grid.svg" className='absolute left-0 top-0 h-full object-cover' />
+            <img alt='grid' src="/images/grid.svg" className='absolute left-0 top-0 h-full object-cover' />
             <LoginModal />
         </>
     );
