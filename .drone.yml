@@ -128,7 +128,7 @@ volumes:
       # NOTE: Drone does NOT interpolate secrets (project_name) in volume host
       # paths — only step `environment`/`commands` see the secret. Hardcode the
       # actual project name here to match PROJECT_NAME / the project_name secret.
-      path: /root/app-env
+      path: /root/roomino-env
   - name: docker-cache
     host:
       path: /var/lib/docker/cache
