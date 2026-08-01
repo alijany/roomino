@@ -116,6 +116,7 @@ export function RoomForm({ room, isOpen, onClose, onSuccess }: RoomFormProps) {
               label="فعال (قابل رزرو)"
               labelPosition="right"
               checked={active}
+              className='w-full justify-between pt-3'
               onChange={setActive}
             />
 
@@ -129,7 +130,7 @@ export function RoomForm({ room, isOpen, onClose, onSuccess }: RoomFormProps) {
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 className="flex-1"
                 onClick={onClose}
               >

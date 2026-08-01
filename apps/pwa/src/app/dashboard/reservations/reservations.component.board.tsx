@@ -126,7 +126,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
 
       {/* Selection action bar */}
       {selection && selectedRoom && (
-        <div className="max-w-3xl flex flex-col lg:flex-row lg:justify-between items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-lg px-4 py-3">
+        <div className="sticky bottom-0 max-w-3xl flex flex-col lg:flex-row lg:justify-between items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-lg px-4 py-3">
           <div className="text-sm">
             <span className="font-semibold">{selectedRoom.roomName}</span>
             <span className="mx-2 text-white/50">·</span>

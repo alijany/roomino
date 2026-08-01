@@ -16,12 +16,6 @@ export interface RouteGroup {
 }
 
 export const RouteItems = {
-  reservations: {
-    href: "/dashboard/reservations",
-    label: "رزرو اتاق",
-    roles: false as const,
-    icon: <IconCalendarEvent className="size-5" />
-  },
   rooms: {
     href: "/dashboard/rooms",
     label: "مدیریت اتاق‌ها",
@@ -60,7 +54,6 @@ export const routeGroups: RouteGroup[] = [
     label: "پیشخوان",
     routes: [
       RouteItems.dashboard,
-      RouteItems.reservations,
       RouteItems.rooms,
       RouteItems.users,
       RouteItems.profile,

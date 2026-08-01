@@ -21,7 +21,7 @@ export default function ReservationsPage() {
   const { data, error, isLoading, refresh } = useAvailability(dateStr);
 
   return (
-    <RoleProtectedRoute allowedRoles={RouteItems.reservations.roles}>
+    <RoleProtectedRoute allowedRoles={RouteItems.dashboard.roles}>
       <DashbaordLayout>
         <div className="space-y-3 grow flex flex-col overflow-auto">
           <div className="p-4 rounded-2xl bg-white flex items-center gap-4 justify-between">
@@ -36,7 +36,7 @@ export default function ReservationsPage() {
             <div className="p-4 rounded-2xl bg-white h-fit lg:hidden">
               <WeekPicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
-            <div className="p-4 rounded-2xl bg-white h-fit hidden lg:block">
+            <div className="p-4 rounded-2xl bg-white h-fit hidden lg:block lg:sticky top-0">
               <ReservationDatePicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
 

@@ -17,15 +17,10 @@ export const BottomNavBar: React.FC = () => {
   const { hasAnyRole, selectedRole } = useAuth();
 
   // Priority navigation items for mobile - based on UX analysis
-  // 1. Projects (Dashboard) - Primary workspace
-  // 2. Wallet - Financial management
-  // 3. Notifications - Timely updates
-  // 4. Profile - Account access
   // Build bottom nav items with a conditional replacement: if the user is the
   // organization owner, show the `organization` route instead of `profile`.
   const bottomNavItems: RouteItem[] = [
     RouteItems.dashboard,
-    RouteItems.reservations,
     RouteItems.users,
     RouteItems.profile,
     RouteItems.notifications,
