@@ -59,7 +59,7 @@ export class RoomController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.roomService.remove({ id });
+    await this.roomService.deleteWithDependents(id);
     return { success: true };
   }
 }

@@ -6,6 +6,7 @@ import { DataView } from '@/ui/molecules';
 import { IconUsers, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { BookModal } from './reservations.component.book-modal';
+import { ReservationInfoModal } from './reservations.component.info-modal';
 import { ReservationModal } from './reservations.component.reservation-modal';
 import { SlotCell } from './reservations.component.slot-cell';
 import {
@@ -36,6 +37,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [ownSelection, setOwnSelection] = useState<OwnSelection | null>(null);
+  const [infoSelection, setInfoSelection] = useState<OwnSelection | null>(null);
 
   // Clear any pending selection when the day changes.
   useEffect(() => {
@@ -115,6 +117,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
                     }
                     onSelect={(s) => toggleSlot(room.roomId, s.startMinutes)}
                     onOpenOwn={(s) => openOwn(room, s)}
+                    onOpenInfo={(s) => setInfoSelection({ room, slot: s })}
                   />
                 ))}
               </div>
@@ -176,6 +179,14 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
             setOwnSelection(null);
             refresh();
           }}
+        />
+      )}
+
+      {infoSelection && infoSelection.slot.reservation && (
+        <ReservationInfoModal
+          room={infoSelection.room}
+          slot={infoSelection.slot}
+          onClose={() => setInfoSelection(null)}
         />
       )}
     </div>

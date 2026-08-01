@@ -7,7 +7,9 @@ export interface AvailabilitySlot {
   reservation?: {
     id: number;
     title?: string;
+    purpose?: string;
     ownerName: string;
+    ownerPhone?: string;
     isOwn: boolean;
   };
   lockTitle?: string;

@@ -240,7 +240,9 @@ export class ReservationService extends BaseRepositoryService<ReservationEntity>
             slot.reservation = {
               id: reservation.id,
               title: reservation.title,
+              purpose: reservation.purpose,
               ownerName: reservation.user.name ?? 'کاربر',
+              ownerPhone: reservation.user.phone,
               isOwn: reservation.user.id === currentUserId,
             };
           }
