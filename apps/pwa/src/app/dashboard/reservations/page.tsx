@@ -23,7 +23,7 @@ export default function ReservationsPage() {
   return (
     <RoleProtectedRoute allowedRoles={RouteItems.reservations.roles}>
       <DashbaordLayout>
-        <div className="space-y-3 grow flex flex-col overflow-hidden">
+        <div className="space-y-3 grow flex flex-col overflow-auto">
           <div className="p-4 rounded-2xl bg-white flex items-center gap-4 justify-between">
             <div className="font-bold grow">رزرو اتاق جلسات</div>
             <div className="text-sm text-slate-500">
@@ -31,7 +31,7 @@ export default function ReservationsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-3 grow overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-3">
             {/* Mobile: week strip. Desktop: full month calendar. */}
             <div className="p-4 rounded-2xl bg-white h-fit lg:hidden">
               <WeekPicker selected={selectedDate} onSelect={setSelectedDate} />
@@ -40,15 +40,13 @@ export default function ReservationsPage() {
               <ReservationDatePicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
 
-            <div className="p-4 rounded-2xl bg-white grow flex flex-col overflow-hidden">
-              <ReservationBoard
-                date={dateStr}
-                data={data}
-                error={error}
-                isLoading={isLoading}
-                refresh={refresh}
-              />
-            </div>
+            <ReservationBoard
+              date={dateStr}
+              data={data}
+              error={error}
+              isLoading={isLoading}
+              refresh={refresh}
+            />
           </div>
         </div>
       </DashbaordLayout>

@@ -83,19 +83,18 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
   const selEnd = selection ? selection.slots[selection.slots.length - 1] + SLOT : 0;
 
   return (
-    <div className="relative grow flex flex-col overflow-hidden">
+    <div className="relative grow flex flex-col">
       <DataView
         data={data}
         error={error}
         isLoading={isLoading}
-        className="overflow-auto grow"
         emptyMessage="اتاقی برای نمایش وجود ندارد"
         isEmpty={(d) => !d?.rooms.length}
         onRetry={refresh}
       >
-        <div className="space-y-3 pb-24">
+        <div className="space-y-3 pb-4">
           {data?.rooms.map((room) => (
-            <div key={room.roomId} className="p-4 rounded-2xl border border-slate-100">
+            <div key={room.roomId} className="p-4 rounded-2xl border border-slate-100 bg-white">
               <div className="flex items-center justify-between mb-3">
                 <div className="font-semibold text-slate-700">{room.roomName}</div>
                 {room.capacity != null && (
@@ -105,7 +104,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                 {room.slots.map((slot) => (
                   <SlotCell
                     key={slot.startMinutes}
@@ -124,27 +123,19 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
         </div>
       </DataView>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 pt-3 text-xs text-slate-500">
-        <LegendDot className="border-emerald-200 bg-emerald-50/70" label="آزاد" />
-        <LegendDot className="border-primary bg-primary" label="انتخاب‌شده" />
-        <LegendDot className="border-primary/30 bg-primary/10" label="رزرو شما" />
-        <LegendDot className="border-slate-200 bg-slate-100" label="رزرو دیگران" />
-        <LegendDot className="border-amber-200 bg-amber-100" label="قفل تکرارشونده" />
-      </div>
 
       {/* Selection action bar */}
       {selection && selectedRoom && (
-        <div className="absolute bottom-0 inset-x-0 z-20">
-          <div className="mx-auto max-w-3xl m-3 flex items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-lg px-4 py-3">
-            <div className="grow text-sm">
-              <span className="font-semibold">{selectedRoom.roomName}</span>
-              <span className="mx-2 text-white/50">·</span>
-              <span className="tabular-nums">
-                {minutesToHHmm(selStart)} تا {minutesToHHmm(selEnd)}
-              </span>
-            </div>
-            <Button size="sm" variant="white" onClick={() => setCreateOpen(true)}>
+        <div className="max-w-3xl flex flex-col lg:flex-row lg:justify-between items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-lg px-4 py-3">
+          <div className="text-sm">
+            <span className="font-semibold">{selectedRoom.roomName}</span>
+            <span className="mx-2 text-white/50">·</span>
+            <span className="tabular-nums">
+              {minutesToHHmm(selStart)} تا {minutesToHHmm(selEnd)}
+            </span>
+          </div>
+          <div className='flex gap-3 items-center w-full lg:w-auto'>
+            <Button size="sm" className='grow' variant="white" onClick={() => setCreateOpen(true)}>
               ثبت رزرو
             </Button>
             <button

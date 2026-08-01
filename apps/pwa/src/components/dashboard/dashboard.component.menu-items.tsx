@@ -100,15 +100,6 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
           <div>خروج</div>
         </button>
       </div>
-
-      <div className="grow flex items-end">
-        <a href="tel:+989104007068" className="block w-full">
-          <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white w-full">
-            <span dir="ltr">0910 400 7068</span>
-            <IconPhone size={20} />
-          </Button>
-        </a>
-      </div>
     </nav>
   );
 }

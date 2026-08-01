@@ -59,6 +59,7 @@ export const routeGroups: RouteGroup[] = [
   {
     label: "پیشخوان",
     routes: [
+      RouteItems.dashboard,
       RouteItems.reservations,
       RouteItems.rooms,
       RouteItems.users,

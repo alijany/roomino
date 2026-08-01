@@ -39,12 +39,7 @@ export const Navbar = () => {
             </Link>
 
             <div className="flex items-center gap-3">
-                <Button onClick={openSupportModal} variant="white">پشتیبانی</Button>
                 <NotificationDropdown />
-                <SupportModal
-                    isOpen={supportModalOpen}
-                    onClose={closeSupportModal}
-                />
             </div>
 
 
@@ -75,7 +70,7 @@ export const Navbar = () => {
                             <div className="flex justify-between items-center mb-8">
                                 <div className="flex items-center space-x-reverse space-x-2">
                                     <img src="/images/logo.svg" alt="Logo" className="h-5" />
-                                    <h1 className="text-xl font-bold text-rose-500">{brand.name}</h1>
+                                    <h1 className="text-xl font-bold">{brand.name}</h1>
                                 </div>
                                 <Button
                                     variant="outline"

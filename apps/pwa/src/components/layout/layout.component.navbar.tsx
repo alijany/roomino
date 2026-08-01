@@ -106,17 +106,6 @@ export function Navbar({ transparent }: { transparent?: boolean }) {
                 itemClassName="text-slate-600 hover:text-slate-800 text-lg"
                 onClose={() => setIsOpen(false)}
               />
-
-              <div className="absolute bottom-6 left-6 right-6">
-                <div className="flex space-x-2 space-x-reverse">
-                  <a href={`tel:${brand.contact.phone.primary}`} className='flex-1' rel="noreferrer">
-                    <Button variant="outline" size="lg" className="w-full border-orange-500 p-2 flex justify-center items-center space-x-2 space-x-reverse">
-                      <div dir='ltr' className="font-semibold text-sm text-orange-600">{brand.contact.phone.display}</div>
-                      <IconPhone color="#FC4258" className="size-4" />
-                    </Button>
-                  </a>
-                </div>
-              </div>
             </DialogPanel>
           </TransitionChild>
         </Dialog>

@@ -25,6 +25,7 @@ export const BottomNavBar: React.FC = () => {
   // organization owner, show the `organization` route instead of `profile`.
   const bottomNavItems: RouteItem[] = [
     RouteItems.dashboard,
+    RouteItems.reservations,
     RouteItems.users,
     RouteItems.profile,
     RouteItems.notifications,
@@ -44,7 +45,7 @@ export const BottomNavBar: React.FC = () => {
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
-      <div className="max-w-6xl mx-auto px-2 py-2">
+      <div className="mx-auto px-2 py-2">
         <div className="flex justify-around items-center">
           {visibleItems.map((item) => {
             // Match exact path or check if current path is a sub-path (except for dashboard root)

@@ -6,7 +6,6 @@ import { brand } from '@/config/brand.config';
 import Image from 'next/image';
 import Link from 'next/link';
 import { TermsModal } from '../modals/modals.component.terms';
-import { IconAddressBook, IconPhone, IconPhoneCall } from '@tabler/icons-react';
 
 export const Footer: React.FC = () => {
     const [termsModalOpen, setTermsModalOpen] = React.useState(false);
@@ -35,26 +34,7 @@ export const Footer: React.FC = () => {
                         <li><Link href="/dashboard/reservations" className="text-slate-600 hover:text-slate-800">رزرو اتاق</Link></li>
                         <li><button onClick={() => setTermsModalOpen(true)} className="text-slate-600 hover:text-slate-800">قوانین استفاده</button></li>
                     </ul>
-                </div>
-
-                {/* Contact */}
-                <div className="flex flex-col">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-4">ارتباط با ما</h4>
-                    <ul className="space-y-3 text-sm text-slate-600">
-                        <li className="flex items-center gap-2">
-                            <IconPhone name="phone" size={20} className="text-blue-600" />
-                            <a href={`tel:${brand.contact.phone.primary}`} dir='ltr' className='hover:text-slate-800'>{brand.contact.phone.display}</a>
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <IconPhoneCall name="phone" size={20} className="text-blue-600" />
-                            <a href={`tel:${brand.contact.phone2.primary}`} dir='ltr' className='hover:text-slate-800'>{brand.contact.phone2.display}</a>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <IconAddressBook size={20} className="text-blue-600 mt-1 min-w-5" />
-                            <span className='text-slate-600'>{brand.contact.address}</span>
-                        </li>
-                    </ul>
-                </div>
+                </div>  
 
                 {/* Trust seal placeholder */}
                 <div className="flex flex-col items-start">
