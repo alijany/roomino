@@ -1,60 +1,44 @@
 'use client';
 
-import { SLOT, minutesToHHmm } from '@/libs/meeting/meeting.time';
+import { minutesToHHmm } from '@/libs/meeting/meeting.time';
 import { Button, Input } from '@/ui/atoms';
-import { Dropdown } from '@/ui/atoms/ui.dropdown';
 import { Modal } from '@/ui/atoms/ui.modal';
 import { ResultModal } from '@/ui/molecules/result-modal';
 import { IconX } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useBookSlot } from './reservations.api';
-import { AvailabilityRoom, AvailabilitySlot } from './reservations.types';
 
 interface BookModalProps {
   date: string;
-  room: AvailabilityRoom;
-  slot: AvailabilitySlot;
+  roomId: number;
+  roomName: string;
+  startMinutes: number;
+  endMinutes: number;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const DURATIONS = [30, 60, 90];
-
-export function BookModal({ date, room, slot, onClose, onSuccess }: BookModalProps) {
+export function BookModal({
+  date,
+  roomId,
+  roomName,
+  startMinutes,
+  endMinutes,
+  onClose,
+  onSuccess,
+}: BookModalProps) {
   const book = useBookSlot();
-  const [duration, setDuration] = useState<number | null>(SLOT);
   const [title, setTitle] = useState('');
   const [purpose, setPurpose] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
-
-  // Max consecutive free minutes starting at the clicked slot in this room.
-  const maxMinutes = useMemo(() => {
-    const startIdx = room.slots.findIndex(
-      (s) => s.startMinutes === slot.startMinutes,
-    );
-    if (startIdx < 0) return SLOT;
-    let count = 0;
-    for (let i = startIdx; i < room.slots.length; i++) {
-      if (room.slots[i].status === 'available') count++;
-      else break;
-    }
-    return count * SLOT;
-  }, [room.slots, slot.startMinutes]);
-
-  const durationItems = DURATIONS.filter((d) => d <= maxMinutes).map((d) => ({
-    label: `${d} دقیقه`,
-    value: d,
-  }));
-
-  const endMinutes = slot.startMinutes + (duration ?? SLOT);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await book.submit({
-        roomId: room.roomId,
+        roomId,
         date,
-        startMinutes: slot.startMinutes,
+        startMinutes,
         endMinutes,
         title: title || undefined,
         purpose: purpose || undefined,
@@ -79,26 +63,17 @@ export function BookModal({ date, room, slot, onClose, onSuccess }: BookModalPro
 
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600 space-y-1">
             <div>
-              اتاق: <span className="font-semibold text-slate-700">{room.roomName}</span>
+              اتاق: <span className="font-semibold text-slate-700">{roomName}</span>
             </div>
             <div>
-              شروع: <span className="font-semibold text-slate-700">{minutesToHHmm(slot.startMinutes)}</span>
+              زمان: <span className="font-semibold text-slate-700 tabular-nums">{minutesToHHmm(startMinutes)}</span>
               {' '}تا{' '}
-              <span className="font-semibold text-slate-700">{minutesToHHmm(endMinutes)}</span>
+              <span className="font-semibold text-slate-700 tabular-nums">{minutesToHHmm(endMinutes)}</span>
+              <span className="mr-2 text-slate-400">({(endMinutes - startMinutes)} دقیقه)</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">مدت زمان</label>
-              <Dropdown
-                items={durationItems}
-                value={duration}
-                onChange={(v) => setDuration(v as number | null)}
-                placeholder="انتخاب مدت"
-                variant="outline"
-              />
-            </div>
             <Input
               label="عنوان جلسه — اختیاری"
               value={title}
@@ -112,11 +87,7 @@ export function BookModal({ date, room, slot, onClose, onSuccess }: BookModalPro
               placeholder="جزئیات بیشتر..."
             />
             <div className="flex gap-4 pt-2">
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={book.isLoading || duration == null}
-              >
+              <Button type="submit" className="flex-1" disabled={book.isLoading}>
                 {book.isLoading ? 'در حال ثبت...' : 'ثبت رزرو'}
               </Button>
               <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>

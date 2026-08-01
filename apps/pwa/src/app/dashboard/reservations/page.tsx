@@ -10,6 +10,7 @@ import { useMemo, useState } from 'react';
 import { useAvailability } from './reservations.api';
 import { ReservationBoard } from './reservations.component.board';
 import { ReservationDatePicker } from './reservations.component.date-picker';
+import { WeekPicker } from './reservations.component.week-picker';
 
 export default function ReservationsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
@@ -31,7 +32,11 @@ export default function ReservationsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-3 grow overflow-hidden">
-            <div className="p-4 rounded-2xl bg-white h-fit">
+            {/* Mobile: week strip. Desktop: full month calendar. */}
+            <div className="p-4 rounded-2xl bg-white h-fit lg:hidden">
+              <WeekPicker selected={selectedDate} onSelect={setSelectedDate} />
+            </div>
+            <div className="p-4 rounded-2xl bg-white h-fit hidden lg:block">
               <ReservationDatePicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
 

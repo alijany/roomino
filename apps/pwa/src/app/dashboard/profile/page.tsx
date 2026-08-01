@@ -3,17 +3,15 @@
 import {
   uploadProfilePicture,
   useRequestOtpMutation,
-  UserType,
   useUpdatePhoneMutation,
   useUpdateProfileMutation,
 } from '@/components/auth/auth.api.client';
 import ProtectedRoute from '@/components/auth/auth.component.protected-route';
 import { useAuth } from '@/components/auth/auth.context.provider';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Input } from '@/ui/atoms';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconBuilding, IconCamera, IconCheck, IconPhone, IconUser, IconUserFilled, IconX } from '@tabler/icons-react';
+import { IconCamera, IconCheck, IconPhone, IconUserFilled, IconX } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -36,33 +34,15 @@ export default function ProfilePage() {
   const profileSchema = z.object({
     firstName: z.string().min(1, 'نام را وارد کنید'),
     lastName: z.string().optional().or(z.literal('')),
-    userType: z.nativeEnum(UserType),
-    organizationName: z.string().optional().or(z.literal('')),
-    organizationRegistrationNumber: z.string().optional().or(z.literal('')),
-    organizationNationalId: z.string().optional().or(z.literal('')),
-    organizationRepresentative: z.string().optional().or(z.literal('')),
-  }).refine((data) => {
-    if (data.userType === UserType.LEGAL) {
-      return !!(data.organizationName && data.organizationRegistrationNumber);
-    }
-    return true;
-  }, {
-    message: 'لطفا اطلاعات حقوقی را کامل کنید',
-    path: ['organizationName'],
   });
 
   type ProfileFormData = z.infer<typeof profileSchema>;
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty } } = useForm<ProfileFormData>({
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      userType: user?.userType || UserType.INDIVIDUAL,
-      organizationName: user?.organizationName || '',
-      organizationRegistrationNumber: user?.organizationRegistrationNumber || '',
-      organizationNationalId: user?.organizationNationalId || '',
-      organizationRepresentative: user?.organizationRepresentative || '',
     }
   });
 
@@ -70,11 +50,6 @@ export default function ProfilePage() {
     reset({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      userType: user?.userType || UserType.INDIVIDUAL,
-      organizationName: user?.organizationName || '',
-      organizationRegistrationNumber: user?.organizationRegistrationNumber || '',
-      organizationNationalId: user?.organizationNationalId || '',
-      organizationRepresentative: user?.organizationRepresentative || '',
     });
   }, [user, reset]);
 
@@ -83,13 +58,6 @@ export default function ProfilePage() {
       await updateProfile({
         firstName: data.firstName,
         lastName: data.lastName,
-        userType: data.userType,
-        ...(data.userType === UserType.LEGAL ? {
-          organizationName: data.organizationName,
-          organizationRegistrationNumber: data.organizationRegistrationNumber,
-          organizationNationalId: data.organizationNationalId,
-          organizationRepresentative: data.organizationRepresentative,
-        } : {}),
       });
       await refreshProfile();
       reset(data);
@@ -104,7 +72,6 @@ export default function ProfilePage() {
     reset({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      userType: user?.userType || UserType.INDIVIDUAL,
     });
   };
 
@@ -152,8 +119,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <input type="hidden" {...register('userType')} />
-
             {/* Profile Picture Section */}
             <div className="flex flex-col items-center mb-8">
               <div className="relative group">
@@ -189,121 +154,6 @@ export default function ProfilePage() {
                 <p className="text-sm text-slate-600 mt-3">در حال آپلود...</p>
               )}
             </div>
-
-            {/* User Type Toggle */}
-            <div className="mb-8">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                نوع کاربری
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => {
-                    setValue('userType', UserType.INDIVIDUAL);
-                    setValue('organizationName', '');
-                    setValue('organizationRegistrationNumber', '');
-                    setValue('organizationNationalId', '');
-                    setValue('organizationRepresentative', '');
-                  }}
-                  className={cn(
-                    'p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2',
-                    watch('userType') === UserType.INDIVIDUAL
-                      ? 'border-primary bg-primary/5'
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}
-                >
-                  <IconUser
-                    className={cn(
-                      'size-6',
-                      watch('userType') === UserType.INDIVIDUAL ? 'text-primary' : 'text-slate-400'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'font-medium',
-                      watch('userType') === UserType.INDIVIDUAL ? 'text-primary' : 'text-slate-600'
-                    )}
-                  >
-                    حقیقی
-                  </span>
-                </button>
-                <button
-                  onClick={() => setValue('userType', UserType.LEGAL)}
-                  className={cn(
-                    'p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2',
-                    watch('userType') === UserType.LEGAL
-                      ? 'border-primary bg-primary/5'
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}
-                >
-                  <IconBuilding
-                    className={cn(
-                      'size-6',
-                      watch('userType') === UserType.LEGAL ? 'text-primary' : 'text-slate-400'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'font-medium',
-                      watch('userType') === UserType.LEGAL ? 'text-primary' : 'text-slate-600'
-                    )}
-                  >
-                    حقوقی
-                  </span>
-                </button>
-              </div>
-            </div>
-
-
-            {/* Organization Details for LEGAL users */}
-            {watch('userType') === UserType.LEGAL && (
-              <div className="space-y-6 mb-8">
-                <h2 className="text-lg font-bold text-slate-900">اطلاعات حقوقی</h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      نام سازمان
-                    </label>
-                    <Input
-                      placeholder="نام سازمان را وارد کنید"
-                      {...register('organizationName')}
-                      error={errors.organizationName?.message}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      شماره ثبت
-                    </label>
-                    <Input
-                      placeholder="شماره ثبت سازمان"
-                      {...register('organizationRegistrationNumber')}
-                      error={errors.organizationRegistrationNumber?.message}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      شناسه ملی سازمان
-                    </label>
-                    <Input
-                      placeholder="شناسه ملی سازمان"
-                      {...register('organizationNationalId')}
-                      error={errors.organizationNationalId?.message}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      نماینده حقوقی
-                    </label>
-                    <Input
-                      placeholder="نام نماینده قانونی"
-                      {...register('organizationRepresentative')}
-                      error={errors.organizationRepresentative?.message}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Personal Information */}
             <div className="space-y-6">
@@ -372,4 +222,3 @@ export default function ProfilePage() {
     </ProtectedRoute>
   );
 }
-

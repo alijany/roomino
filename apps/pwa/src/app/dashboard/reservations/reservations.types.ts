@@ -43,3 +43,22 @@ export interface UpdateReservationDto {
   title?: string;
   purpose?: string;
 }
+
+export interface MyReservation {
+  id: number;
+  startAt: string;
+  endAt: string;
+  title?: string;
+  purpose?: string;
+  room: { id: number; name: string };
+}
+
+export interface GetMyReservationsResponse {
+  items: MyReservation[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    pageCount: number;
+  };
+}

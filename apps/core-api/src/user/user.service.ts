@@ -14,7 +14,7 @@ import { InvitationStatus, RolesEntity } from 'src/roles/roles.entity';
 import { RolesService } from 'src/roles/roles.service';
 import { InviteUserDto } from './dtos/invitation.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { UserEntity, UserType } from './user.entity';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UserService extends BaseRepositoryService<UserEntity> {
@@ -170,32 +170,6 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     }
     if (updateData.lastName !== undefined) {
       user.lastName = updateData.lastName;
-    }
-    if (updateData.userType !== undefined) {
-      user.userType = updateData.userType;
-    }
-
-    // Update organization-related fields if present
-    if (updateData.organizationName !== undefined) {
-      user.organizationName = updateData.organizationName;
-    }
-    if (updateData.organizationRegistrationNumber !== undefined) {
-      user.organizationRegistrationNumber =
-        updateData.organizationRegistrationNumber;
-    }
-    if (updateData.organizationNationalId !== undefined) {
-      user.organizationNationalId = updateData.organizationNationalId;
-    }
-    if (updateData.organizationRepresentative !== undefined) {
-      user.organizationRepresentative = updateData.organizationRepresentative;
-    }
-
-    // If user switches back to INDIVIDUAL, clear organization-related fields
-    if (updateData.userType === UserType.INDIVIDUAL) {
-      user.organizationName = undefined;
-      user.organizationRegistrationNumber = undefined;
-      user.organizationNationalId = undefined;
-      user.organizationRepresentative = undefined;
     }
 
     await this.persistAndFlush(user);

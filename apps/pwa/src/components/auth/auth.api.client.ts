@@ -6,11 +6,6 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { RoleType } from './auth.constants.roles';
 
-export enum UserType {
-  INDIVIDUAL = 'individual', // حقیقی
-  LEGAL = 'legal', // حقوقی
-}
-
 export interface OtpRequest {
   phoneNumber: string;
 }
@@ -36,13 +31,8 @@ export interface AuthResponse {
     firstName?: string;
     lastName?: string;
     nationalId: string;
-    organizationName?: string;
-    organizationRegistrationNumber?: string;
-    organizationNationalId?: string;
-    organizationRepresentative?: string;
     phone: string;
     profilePicture?: string;
-    userType: UserType;
     roles: RoleType[];
     createdAt: string;
   };
@@ -51,11 +41,6 @@ export interface AuthResponse {
 export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
-  userType?: UserType;
-  organizationName?: string;
-  organizationRegistrationNumber?: string;
-  organizationNationalId?: string;
-  organizationRepresentative?: string;
 }
 
 export interface UpdatePhoneRequest {

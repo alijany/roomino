@@ -1,23 +1,25 @@
 'use client';
 
+import { minutesToHHmm } from '@/libs/meeting/meeting.time';
 import { cn } from '@/libs/style/style.util.helpers';
 import { IconLock } from '@tabler/icons-react';
 import { AvailabilitySlot } from './reservations.types';
 
 interface SlotCellProps {
   slot: AvailabilitySlot;
-  onBook: (slot: AvailabilitySlot) => void;
+  selected: boolean;
+  onSelect: (slot: AvailabilitySlot) => void;
   onOpenOwn: (slot: AvailabilitySlot) => void;
 }
 
-export function SlotCell({ slot, onBook, onOpenOwn }: SlotCellProps) {
+export function SlotCell({ slot, selected, onSelect, onOpenOwn }: SlotCellProps) {
   const { status, reservation, lockTitle } = slot;
   const isOwn = reservation?.isOwn ?? false;
 
   const clickable = status === 'available' || (status === 'reserved' && isOwn);
 
   const handleClick = () => {
-    if (status === 'available') onBook(slot);
+    if (status === 'available') onSelect(slot);
     else if (status === 'reserved' && isOwn) onOpenOwn(slot);
   };
 
@@ -38,10 +40,13 @@ export function SlotCell({ slot, onBook, onOpenOwn }: SlotCellProps) {
       disabled={!clickable}
       onClick={handleClick}
       className={cn(
-        'h-10 w-full rounded-lg border text-[11px] font-medium transition-colors flex items-center justify-center px-1 truncate',
+        'h-11 w-full rounded-xl border text-[11px] font-medium transition-colors flex flex-col items-center justify-center gap-0.5 px-1',
         {
-          'border-emerald-200 bg-emerald-50/60 text-emerald-600 hover:bg-emerald-100 cursor-pointer':
-            status === 'available',
+          // selected takes visual priority
+          'border-primary bg-primary text-white shadow-sm cursor-pointer':
+            status === 'available' && selected,
+          'border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100 cursor-pointer':
+            status === 'available' && !selected,
           'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer':
             status === 'reserved' && isOwn,
           'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
@@ -51,10 +56,13 @@ export function SlotCell({ slot, onBook, onOpenOwn }: SlotCellProps) {
         },
       )}
     >
+      <span className="font-semibold tabular-nums">{minutesToHHmm(slot.startMinutes)}</span>
       {status === 'locked' ? (
-        <IconLock className="size-3.5" />
+        <IconLock className="size-3" />
       ) : status === 'reserved' ? (
-        <span className="truncate">{isOwn ? reservation?.title || 'شما' : '—'}</span>
+        <span className="max-w-full truncate text-[9px]">
+          {isOwn ? reservation?.title || 'شما' : 'رزرو'}
+        </span>
       ) : null}
     </button>
   );

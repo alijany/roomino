@@ -10,6 +10,7 @@ import useSWRMutation from 'swr/mutation';
 import {
   AvailabilityResponse,
   CreateReservationDto,
+  GetMyReservationsResponse,
   UpdateReservationDto,
 } from './reservations.types';
 
@@ -20,6 +21,11 @@ export function useAvailability(date: string, roomIds?: number[]) {
     date ? `/reservations/availability?${params.toString()}` : null,
     fetcher,
   );
+  return useSwrHelper(swr);
+}
+
+export function useMyReservations() {
+  const swr = useSWR<GetMyReservationsResponse>('/reservations/mine', fetcher);
   return useSwrHelper(swr);
 }
 

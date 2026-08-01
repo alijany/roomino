@@ -1,8 +1,10 @@
 'use client';
 
-import { minutesToHHmm } from '@/libs/meeting/meeting.time';
+import { SLOT, minutesToHHmm } from '@/libs/meeting/meeting.time';
+import { Button } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
-import { useState } from 'react';
+import { IconUsers, IconX } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
 import { BookModal } from './reservations.component.book-modal';
 import { ReservationModal } from './reservations.component.reservation-modal';
 import { SlotCell } from './reservations.component.slot-cell';
@@ -21,89 +23,153 @@ interface BoardProps {
 }
 
 interface Selection {
+  roomId: number;
+  slots: number[]; // sorted start-minutes, contiguous
+}
+
+interface OwnSelection {
   room: AvailabilityRoom;
   slot: AvailabilitySlot;
 }
 
 export function ReservationBoard({ date, data, error, isLoading, refresh }: BoardProps) {
-  const [booking, setBooking] = useState<Selection | null>(null);
-  const [ownSelection, setOwnSelection] = useState<Selection | null>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [ownSelection, setOwnSelection] = useState<OwnSelection | null>(null);
 
-  const slotStarts = data?.slotStarts ?? [];
-  const gridCols = `minmax(130px, 1.2fr) repeat(${slotStarts.length}, minmax(52px, 1fr))`;
+  // Clear any pending selection when the day changes.
+  useEffect(() => {
+    setSelection(null);
+  }, [date]);
+
+  const toggleSlot = (roomId: number, startMinutes: number) => {
+    setSelection((prev) => {
+      // New room or empty selection → start fresh.
+      if (!prev || prev.roomId !== roomId) {
+        return { roomId, slots: [startMinutes] };
+      }
+      const slots = prev.slots;
+      const min = slots[0];
+      const max = slots[slots.length - 1];
+
+      if (slots.includes(startMinutes)) {
+        // Shrink from an endpoint; interior click restarts at that slot.
+        if (startMinutes === min) {
+          const next = slots.slice(1);
+          return next.length ? { roomId, slots: next } : null;
+        }
+        if (startMinutes === max) {
+          const next = slots.slice(0, -1);
+          return next.length ? { roomId, slots: next } : null;
+        }
+        return { roomId, slots: [startMinutes] };
+      }
+
+      // Extend only to an immediately-adjacent slot; otherwise restart.
+      if (startMinutes === min - SLOT) return { roomId, slots: [startMinutes, ...slots] };
+      if (startMinutes === max + SLOT) return { roomId, slots: [...slots, startMinutes] };
+      return { roomId, slots: [startMinutes] };
+    });
+  };
+
+  const openOwn = (room: AvailabilityRoom, slot: AvailabilitySlot) => {
+    setSelection(null);
+    setOwnSelection({ room, slot });
+  };
+
+  const selectedRoom =
+    selection && data?.rooms.find((r) => r.roomId === selection.roomId);
+  const selStart = selection ? selection.slots[0] : 0;
+  const selEnd = selection ? selection.slots[selection.slots.length - 1] + SLOT : 0;
 
   return (
-    <>
+    <div className="relative grow flex flex-col overflow-hidden">
       <DataView
         data={data}
         error={error}
         isLoading={isLoading}
+        className="overflow-auto grow"
         emptyMessage="اتاقی برای نمایش وجود ندارد"
         isEmpty={(d) => !d?.rooms.length}
         onRetry={refresh}
       >
-        <div className="overflow-x-auto">
-          <div className="min-w-max space-y-1" dir="rtl">
-            {/* Header: time labels */}
-            <div className="grid gap-1" style={{ gridTemplateColumns: gridCols }}>
-              <div className="sticky right-0 z-10 bg-white px-2 py-2 text-sm font-semibold text-slate-500">
-                اتاق
-              </div>
-              {slotStarts.map((m) => (
-                <div
-                  key={m}
-                  className="py-2 text-center text-[11px] font-medium text-slate-400"
-                >
-                  {minutesToHHmm(m)}
-                </div>
-              ))}
-            </div>
-
-            {/* Rows: one per room */}
-            {data?.rooms.map((room) => (
-              <div
-                key={room.roomId}
-                className="grid gap-1 items-center"
-                style={{ gridTemplateColumns: gridCols }}
-              >
-                <div className="sticky right-0 z-10 bg-white px-2 py-1">
-                  <div className="font-semibold text-slate-700 text-sm truncate">
-                    {room.roomName}
+        <div className="space-y-3 pb-24">
+          {data?.rooms.map((room) => (
+            <div key={room.roomId} className="p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-semibold text-slate-700">{room.roomName}</div>
+                {room.capacity != null && (
+                  <div className="flex items-center gap-1 text-xs text-slate-400">
+                    <IconUsers className="size-4" />
+                    {room.capacity} نفر
                   </div>
-                  {room.capacity != null && (
-                    <div className="text-[11px] text-slate-400">{room.capacity} نفر</div>
-                  )}
-                </div>
+                )}
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-1.5">
                 {room.slots.map((slot) => (
                   <SlotCell
                     key={slot.startMinutes}
                     slot={slot}
-                    onBook={(s) => setBooking({ room, slot: s })}
-                    onOpenOwn={(s) => setOwnSelection({ room, slot: s })}
+                    selected={
+                      selection?.roomId === room.roomId &&
+                      selection.slots.includes(slot.startMinutes)
+                    }
+                    onSelect={(s) => toggleSlot(room.roomId, s.startMinutes)}
+                    onOpenOwn={(s) => openOwn(room, s)}
                   />
                 ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </DataView>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 pt-4 text-xs text-slate-500">
-        <LegendDot className="border-emerald-200 bg-emerald-50/60" label="آزاد" />
+      <div className="flex flex-wrap items-center gap-4 pt-3 text-xs text-slate-500">
+        <LegendDot className="border-emerald-200 bg-emerald-50/70" label="آزاد" />
+        <LegendDot className="border-primary bg-primary" label="انتخاب‌شده" />
         <LegendDot className="border-primary/30 bg-primary/10" label="رزرو شما" />
         <LegendDot className="border-slate-200 bg-slate-100" label="رزرو دیگران" />
         <LegendDot className="border-amber-200 bg-amber-100" label="قفل تکرارشونده" />
       </div>
 
-      {booking && (
+      {/* Selection action bar */}
+      {selection && selectedRoom && (
+        <div className="absolute bottom-0 inset-x-0 z-20">
+          <div className="mx-auto max-w-3xl m-3 flex items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-lg px-4 py-3">
+            <div className="grow text-sm">
+              <span className="font-semibold">{selectedRoom.roomName}</span>
+              <span className="mx-2 text-white/50">·</span>
+              <span className="tabular-nums">
+                {minutesToHHmm(selStart)} تا {minutesToHHmm(selEnd)}
+              </span>
+            </div>
+            <Button size="sm" variant="white" onClick={() => setCreateOpen(true)}>
+              ثبت رزرو
+            </Button>
+            <button
+              type="button"
+              onClick={() => setSelection(null)}
+              className="p-1.5 rounded-lg hover:bg-white/10"
+              aria-label="پاک کردن انتخاب"
+            >
+              <IconX className="size-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {createOpen && selection && selectedRoom && (
         <BookModal
           date={date}
-          room={booking.room}
-          slot={booking.slot}
-          onClose={() => setBooking(null)}
+          roomId={selectedRoom.roomId}
+          roomName={selectedRoom.roomName}
+          startMinutes={selStart}
+          endMinutes={selEnd}
+          onClose={() => setCreateOpen(false)}
           onSuccess={() => {
-            setBooking(null);
+            setCreateOpen(false);
+            setSelection(null);
             refresh();
           }}
         />
@@ -121,7 +187,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
           }}
         />
       )}
-    </>
+    </div>
   );
 }
 
