@@ -85,7 +85,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
   const selEnd = selection ? selection.slots[selection.slots.length - 1] + SLOT : 0;
 
   return (
-    <div className="relative grow flex flex-col">
+    <div className="relative grow flex flex-col overflow-x-clip">
       <DataView
         data={data}
         error={error}
