@@ -52,6 +52,7 @@ The wizard installs: Docker, Traefik (reverse proxy + SSL), Redis, RustFS (S3-co
 2. Place your production `.env` in `/root/${PROJECT_NAME}-env/` on the server (Drone mounts this volume)
 3. Push to the `prd` branch — Drone CI will build and deploy automatically
 
+
 ```bash
 git push origin prd
 ```
