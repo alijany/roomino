@@ -273,6 +273,9 @@ export class NotificationDispatcherService {
   private async emitForDelivery(
     notification: NotificationEntity,
   ): Promise<void> {
-    await this.eventEmitter.emitAsync(EventTypes.NOTIFICATION_CREATED, notification);
+    await this.eventEmitter.emitAsync(
+      EventTypes.NOTIFICATION_CREATED,
+      notification,
+    );
   }
 }

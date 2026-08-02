@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { EventTypes } from '../../events/types';
 import { NotificationGetDto } from '../dtos/notification.get.dto';
-import { NotificationStatus, NotificationType } from '../notification.constants';
+import {
+  NotificationStatus,
+  NotificationType,
+} from '../notification.constants';
 import { NotificationEntity } from '../notification.entity';
 import { NotificationRepository } from '../repositories/notification.repository';
 import {

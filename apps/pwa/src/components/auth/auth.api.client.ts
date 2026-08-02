@@ -39,7 +39,7 @@ export interface AuthResponse {
 }
 
 export interface UpdateProfileRequest {
-  firstName?: string;
+  firstName: string;
   lastName?: string;
 }
 
