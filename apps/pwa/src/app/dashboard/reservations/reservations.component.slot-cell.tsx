@@ -75,7 +75,7 @@ export function SlotCell({
         type="button"
         dir="rtl"
         aria-label={timeRange}
-        disabled={status === 'locked'}
+        aria-disabled={status === 'locked'}
         onClick={handleClick}
         onMouseEnter={openPopover}
         onMouseLeave={closePopover}
@@ -92,7 +92,7 @@ export function SlotCell({
               status === 'reserved' && isOwn,
             'border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-200 cursor-pointer':
               status === 'reserved' && !isOwn,
-            'border-amber-200 bg-amber-100 text-amber-600 cursor-not-allowed bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(217,119,6,0.12)_5px,rgba(217,119,6,0.12)_10px)]':
+            'border-amber-200 bg-amber-100 text-amber-600 cursor-default bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(217,119,6,0.12)_5px,rgba(217,119,6,0.12)_10px)]':
               status === 'locked',
           },
         )}
