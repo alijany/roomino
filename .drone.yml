@@ -43,6 +43,9 @@ steps:
       - echo "Building base image for project=$PROJECT_NAME"
       - docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg PROJECT_NAME=$PROJECT_NAME --target dependencies -t $PROJECT_NAME-base:dependencies -f docker/base.Dockerfile .
       - docker tag $PROJECT_NAME-base:dependencies $PROJECT_NAME-base
+    when:
+      branch:
+        - prd
 
 
   - name: build and deploy
@@ -116,6 +119,7 @@ trigger:
     - prd
   event:
     - push
+    - custom
 
 volumes:
   - name: dockersock
