@@ -46,6 +46,7 @@ steps:
     when:
       branch:
         - prd
+        - custom
 
 
   - name: build and deploy
