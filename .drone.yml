@@ -63,9 +63,9 @@ steps:
     commands:
       - cp -r /environments/. ./
       # docker compose auto-loads PROJECT_NAME from the copied .env
-      - docker compose build pwa api
+      # - docker compose build pwa api
       - docker compose up -d
-      # - docker image prune -f
+      - docker image prune -f
     depends_on:
       - build base
 
