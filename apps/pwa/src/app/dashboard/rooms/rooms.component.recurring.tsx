@@ -10,22 +10,12 @@ import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Input } from '@/ui/atoms';
 import { Dropdown } from '@/ui/atoms/ui.dropdown';
 import { DataView } from '@/ui/molecules';
-import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { ResultModal } from '@/ui/molecules/result-modal';
-import {
-  IconCalendarRepeat,
-  IconClock,
-  IconDoor,
-  IconPlus,
-  IconTrash,
-} from '@tabler/icons-react';
+import { IconCalendarRepeat, IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
-import {
-  useAddRecurring,
-  useDeleteRecurring,
-  useRecurring,
-  useRooms,
-} from './rooms.api';
+import { useAddRecurring, useRecurring, useRooms } from './rooms.api';
+import { RecurringCard } from './rooms.component.recurring-card';
+import { RecurringDetailModal } from './rooms.component.recurring-detail-modal';
 import { Recurring } from './rooms.types';
 
 // End-of-slot options include the board end (18:00 / 1080).
@@ -35,7 +25,6 @@ export function RecurringManager() {
   const rooms = useRooms({ limit: 100 });
   const { data, error, isLoading, refresh } = useRecurring();
   const addRecurring = useAddRecurring();
-  const deleteRecurring = useDeleteRecurring();
 
   const [roomId, setRoomId] = useState<number | null>(null);
   const [weekdays, setWeekdays] = useState<number[]>([]);
@@ -43,7 +32,7 @@ export function RecurringManager() {
   const [endMinutes, setEndMinutes] = useState<number | null>(SLOT_STARTS[0] + SLOT);
   const [title, setTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<Recurring | undefined>();
+  const [viewing, setViewing] = useState<Recurring | undefined>();
 
   const roomItems = (rooms.data?.items ?? []).map((r) => ({
     label: r.name,
@@ -83,16 +72,6 @@ export function RecurringManager() {
       refresh();
     } catch {
       setIsResultOpen(true);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!toDelete) return;
-    try {
-      await deleteRecurring.submit(toDelete.id);
-    } finally {
-      setToDelete(undefined);
-      refresh();
     }
   };
 
@@ -210,39 +189,7 @@ export function RecurringManager() {
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {data?.items?.map((item) => (
-            <div
-              key={item.id}
-              className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 transition hover:border-amber-200"
-            >
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                <IconCalendarRepeat className="size-6" />
-              </div>
-              <div className="grow min-w-0 space-y-1">
-                <h3 className="font-semibold text-slate-800 truncate">{item.title}</h3>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                  <span className="inline-flex items-center gap-1">
-                    <IconDoor className="size-3.5" />
-                    {item.room?.name}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <IconCalendarRepeat className="size-3.5" />
-                    هر {WEEKDAYS[item.weekday]}
-                  </span>
-                  <span className="inline-flex items-center gap-1 tabular-nums">
-                    <IconClock className="size-3.5" />
-                    {minutesToHHmm(item.startMinutes)} تا {minutesToHHmm(item.endMinutes)}
-                  </span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="!px-2 text-rose-500 hover:bg-rose-50 shrink-0"
-                onClick={() => setToDelete(item)}
-                aria-label="حذف قفل"
-              >
-                <IconTrash className="size-5" />
-              </Button>
-            </div>
+            <RecurringCard key={item.id} item={item} onOpen={setViewing} />
           ))}
           </div>
         </DataView>
@@ -260,14 +207,16 @@ export function RecurringManager() {
         errorMessage={addRecurring.error?.message || 'خطا در افزودن قفل'}
       />
 
-      <ConfirmModal
-        isOpen={Boolean(toDelete)}
-        onClose={() => setToDelete(undefined)}
-        onConfirm={confirmDelete}
-        title="حذف قفل تکرارشونده"
-        message={`آیا از حذف «${toDelete?.title}» مطمئن هستید؟`}
-        confirmButtonText="حذف"
-      />
+      {viewing && (
+        <RecurringDetailModal
+          item={viewing}
+          onClose={() => setViewing(undefined)}
+          onDeleted={() => {
+            setViewing(undefined);
+            refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
