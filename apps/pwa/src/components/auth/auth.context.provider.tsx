@@ -11,6 +11,7 @@ interface AuthContextType {
     user: AuthResponse['user'] | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    needsOnboarding: boolean;
     sendOtp: (phoneNumber: string) => Promise<{ message: string }>;
     verifyOtpAndLogin: (phoneNumber: string, otp: string) => Promise<void>;
     logout: () => void;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isLoading = isOtpLoading || isVerifyLoading || isProfileLoading || !profileChecked;
     const isAuthenticated = profileChecked && !!profileData && !!selectedRole;
+    const needsOnboarding = isAuthenticated && !profileData?.firstName;
 
     // Set the default selected role when user data is loaded, checking local storage first.
     useEffect(() => {
@@ -150,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: profileData || null,
         isLoading,
         isAuthenticated,
+        needsOnboarding,
         sendOtp,
         verifyOtpAndLogin,
         logout,
@@ -165,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         mutate,
         isAuthenticated,
+        needsOnboarding,
         error,
         hasRole,
         hasAnyRole,

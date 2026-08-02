@@ -1,9 +1,9 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateProfileDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  firstName?: string;
+  firstName: string;
 
   @IsOptional()
   @IsString()

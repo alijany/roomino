@@ -1,3 +1,7 @@
+'use client';
+
+import { useAuth } from "@/components/auth/auth.context.provider";
+import OnboardingModal from "@/components/auth/auth.component.onboarding-modal";
 import { Navbar } from "./dashboard.component.navbar";
 import { Sidebar } from "./dashboard.component.sidebar";
 import { BottomNavBar } from "./dashboard.component.bottom-navbar";
@@ -8,6 +12,8 @@ interface RootLayoutProps {
 }
 
 export function DashbaordLayout({ children, showSidebar = true }: RootLayoutProps) {
+    const { needsOnboarding } = useAuth();
+
     return (
         <div className="bg-slate-100 p-4 gap-6 h-screen flex flex-col mx-auto overflow-hidden relative">
             <Navbar />
@@ -18,6 +24,7 @@ export function DashbaordLayout({ children, showSidebar = true }: RootLayoutProp
                 </main>
             </div>
             <BottomNavBar />
+            <OnboardingModal isOpen={needsOnboarding} />
         </div>
     );
 }

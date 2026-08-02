@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth.context.provider';
+import BorderGlow from '@/components/layout/border-glow';
 import LightRays from '@/components/layout/light-rays';
 import { brand } from '@/config/brand.config';
 import { Button } from '@/ui/atoms';
@@ -61,11 +62,6 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative z-10 grow flex flex-col items-center justify-center text-center px-4 gap-6 pb-24">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs text-white/70 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          {hero.label}
-        </span>
-
         <h1 className="font-black text-4xl md:text-6xl !leading-[1.25] max-w-3xl">
           <span>{hero.heading1}</span>
           <br />
@@ -74,19 +70,28 @@ export default function Landing() {
           </span>
         </h1>
 
-        <p className="text-white/70 md:text-lg max-w-xl !leading-relaxed">{hero.body}</p>
-
-        <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link href="/login">
-            <Button
-              size="lg"
-              variant="white"
-              className="bg-white text-slate-950 hover:bg-slate-100 gap-2 shadow-[0_18px_45px_-18px_rgba(255,255,255,0.5)]"
-            >
-              <span>شروع کنید</span>
-              <IconArrowLeft size={18} />
-            </Button>
-          </Link>
+        <div className="flex flex-wrap justify-center gap-3 pt-6">
+          <BorderGlow
+            borderRadius={12}
+            glowRadius={24}
+            glowIntensity={1.2}
+            edgeSensitivity={40}
+            backgroundColor="#020617"
+            glowColor="221 83% 65%"
+            colors={['#7dd3fc', '#a5b4fc', '#c4b5fd']}
+            animated
+          >
+            <Link href="/login">
+              <Button
+                size="lg"
+                variant="white"
+                className="bg-slate-950 text-white hover:bg-slate-900 gap-2"
+              >
+                <span>شروع کنید</span>
+                <IconArrowLeft size={18} />
+              </Button>
+            </Link>
+          </BorderGlow>
         </div>
       </section>
 

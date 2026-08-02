@@ -77,7 +77,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
                     key={route.href}
                     href={route.href}
                     onClick={onClose}
-                    className={`${itemClassName} flex gap-2 items-center p-2 rounded-lg mb-1 ${pathname === route.href ? "bg-orange-50 text-orange-500 font-semibold" : "text-slate-700 hover:bg-slate-50"}`}
+                    className={`${itemClassName} flex gap-2 items-center p-2 rounded-lg mb-1 ${pathname === route.href ? "bg-sky-50 text-orange-500 font-semibold" : "text-slate-700 hover:bg-slate-50"}`}
                   >
                     {route.icon && route.icon}
                     <div>{route.label}</div>
