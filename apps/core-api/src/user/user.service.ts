@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import parsePhoneNumberFromString from 'libphonenumber-js';
+import { ReservationEntity } from 'src/meeting/entities/reservation.entity';
 import { BaseRepositoryService } from 'src/libs/orm/orm.repository.service.base';
+import { NotificationPreferenceEntity } from 'src/notification/notification-preference.entity';
 import { Role } from 'src/roles/roles.constants';
 import { InvitationStatus, RolesEntity } from 'src/roles/roles.entity';
 import { RolesService } from 'src/roles/roles.service';
@@ -52,23 +54,61 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     return user;
   }
 
-  async updateUserRole(
+  async addUserRole(userId: number, role: Role): Promise<RolesEntity> {
+    const user = await this.findOne(
+      { id: userId },
+      { populate: ['roles'] as never },
+    );
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    if (user.roles.getItems().some((r) => r.role === role)) {
+      throw new ConflictException('این نقش قبلا به کاربر اختصاص یافته است');
+    }
+
+    return this.rolesService.create({
+      user,
+      role,
+      invitationStatus: InvitationStatus.ACCEPTED,
+    });
+  }
+
+  async removeUserRole(
     userId: number,
     roleId: number,
-    role: Role,
-  ): Promise<RolesEntity> {
-    const roleEntity = await this.rolesService.findOne({
-      id: roleId,
-      user: userId,
-    });
+  ): Promise<{ success: boolean }> {
+    const user = await this.findOne(
+      { id: userId },
+      { populate: ['roles'] as never },
+    );
 
-    if (!roleEntity) {
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    if (user.roles.length <= 1) {
+      throw new ConflictException('کاربر باید حداقل یک نقش داشته باشد');
+    }
+
+    const role = user.roles.getItems().find((r) => r.id === roleId);
+
+    if (!role) {
       throw new NotFoundException('نقش یافت نشد');
     }
 
-    roleEntity.role = role;
-    await this.rolesService.persistAndFlush(roleEntity);
-    return roleEntity;
+    await this.rolesService.remove(role);
+    return { success: true };
+  }
+
+  async removeUser(id: number): Promise<void> {
+    await this.withTransaction(async (em) => {
+      await em.nativeDelete(RolesEntity, { user: id });
+      await em.nativeDelete(ReservationEntity, { user: id });
+      await em.nativeDelete(NotificationPreferenceEntity, { user: id });
+      await em.nativeDelete(UserEntity, { id });
+    });
   }
 
   async updateUserInvitationStatus(roleId: number, status: InvitationStatus) {

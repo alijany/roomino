@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth.context.provider';
+import { ApiError } from '@/libs/api/api.types.error';
 import { Button, Input, Modal } from '@/ui/atoms';
+import { ResultModal } from '@/ui/molecules/result-modal';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconX } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
@@ -32,6 +34,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [success, setSuccess] = useState<string | null>(null);
+    const [pendingApproval, setPendingApproval] = useState(false);
     const router = useRouter();
     const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated, error } = useAuth();
 
@@ -93,8 +96,11 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                 data.otp,
             );
             // Result handling is done in the useEffect above
-        } catch {
-            // Error is surfaced via useAuth().error, rendered below
+        } catch (err) {
+            if ((err as ApiError)?.info?.errorCode === 'PENDING_APPROVAL') {
+                setPendingApproval(true);
+            }
+            // Other errors are surfaced via useAuth().error, rendered below
         }
     };
 
@@ -188,7 +194,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 کد پیامک‌شده به شمارۀ «{phoneNumber}» را وارد کنید.
                             </div>
                             <br />
-                            {error && (
+                            {error && !pendingApproval && (
                                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                                     {error}
                                 </div>
@@ -241,6 +247,19 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                     </div>
                 </div>
             </Modal>
+
+            <ResultModal
+                isOpen={pendingApproval}
+                onClose={() => {
+                    setPendingApproval(false);
+                    handleBackToPhone();
+                }}
+                status="info"
+                title="درخواست ورود"
+                infoTitle="در انتظار تایید مدیر"
+                infoMessage="درخواست ورود شما برای مدیر ارسال شد. پس از تایید می‌توانید وارد حساب کاربری خود شوید."
+                closeButtonText="متوجه شدم"
+            />
         </>
     );
 }

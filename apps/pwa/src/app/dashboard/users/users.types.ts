@@ -45,7 +45,6 @@ export interface UserFilterDto {
   isApproved?: boolean;
 }
 
-export interface UpdateUserRoleDto {
-  roleId: number;
+export interface AddUserRoleDto {
   role: Role;
 }

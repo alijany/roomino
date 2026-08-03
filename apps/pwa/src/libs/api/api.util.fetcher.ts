@@ -35,14 +35,10 @@ export async function fetcher<T>(url: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    const errorMessage = (await response.json().catch(() => null))?.message || 'خطای ناشناخته';
-    const error = new ApiError(errorMessage);
+    const info = await response.json().catch(() => null);
+    const error = new ApiError(info?.message || 'خطای ناشناخته');
     error.status = response.status;
-    try {
-      error.info = await response.json();
-    } catch {
-      error.info = { message: response.statusText };
-    }
+    error.info = info || { message: response.statusText };
     throw error;
   }
 

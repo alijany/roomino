@@ -3,18 +3,20 @@
 import React from 'react';
 import { Button } from '@/ui/atoms/ui.button';
 import { Modal } from '@/ui/atoms/ui.modal';
-import { IconCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconClock, IconX } from '@tabler/icons-react';
 import { cn } from '@/libs/style/style.util.helpers';
 
 export interface ResultModalProps {
     isOpen: boolean;
     onClose: () => void;
     title?: string;
-    status: 'success' | 'error';
+    status: 'success' | 'error' | 'info';
     successTitle?: string;
     successMessage?: string;
     errorTitle?: string;
     errorMessage?: string;
+    infoTitle?: string;
+    infoMessage?: string;
     closeButtonText?: string;
     className?: string;
 }
@@ -28,6 +30,8 @@ export function ResultModal({
     successMessage = 'درخواست شما با موفقیت ارسال شد',
     errorTitle = 'خطا',
     errorMessage = 'متاسفانه در ارسال درخواست شما خطایی رخ داده است',
+    infoTitle = 'توجه',
+    infoMessage,
     closeButtonText = 'بازگشت',
     className,
 }: ResultModalProps): React.ReactElement {
@@ -69,6 +73,19 @@ export function ResultModal({
                     <div className="space-y-3 text-center">
                         <div className="text-2xl font-bold">{errorTitle}</div>
                         <div>{errorMessage}</div>
+                    </div>
+                </div>
+            )}
+
+            {status === 'info' && (
+                <div className="space-y-8 flex flex-col items-center">
+                    <div className="bg-sky-400/10 text-sky-500 rounded-full p-5">
+                        <IconClock size={48} />
+                    </div>
+
+                    <div className="space-y-3 text-center">
+                        <div className="text-2xl font-bold">{infoTitle}</div>
+                        <div>{infoMessage}</div>
                     </div>
                 </div>
             )}

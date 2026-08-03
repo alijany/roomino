@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -20,9 +21,9 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Role } from 'src/roles/roles.constants';
 import { S3StorageService } from 'src/storage/s3-storage.service';
 import { v4 as uuidv4 } from 'uuid';
+import { AddUserRoleDto } from './dtos/add-user-role.dto';
 import { InviteUserDto } from './dtos/invitation.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { UpdateUserRoleDto } from './dtos/update-user-role.dto';
 import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
@@ -88,13 +89,35 @@ export class UserController {
     return this.userService.approveUser(id);
   }
 
-  @Patch(':id/role')
+  @Post(':id/roles')
   @Roles(Role.ADMIN)
-  async updateUserRole(
+  async addUserRole(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateUserRoleDto,
+    @Body() dto: AddUserRoleDto,
   ) {
-    return this.userService.updateUserRole(id, dto.roleId, dto.role);
+    return this.userService.addUserRole(id, dto.role);
+  }
+
+  @Delete(':id/roles/:roleId')
+  @Roles(Role.ADMIN)
+  async removeUserRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('roleId', ParseIntPipe) roleId: number,
+  ) {
+    return this.userService.removeUserRole(id, roleId);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  async removeUser(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: UserEntity,
+  ) {
+    if (currentUser.id === id) {
+      throw new BadRequestException('نمی‌توانید حساب کاربری خود را حذف کنید');
+    }
+    await this.userService.removeUser(id);
+    return { success: true };
   }
 
   @Patch('profile')

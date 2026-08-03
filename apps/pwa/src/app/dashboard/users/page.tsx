@@ -3,13 +3,18 @@
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Button } from '@/ui/atoms';
 import { DataView, Pagination } from '@/ui/molecules';
+import { Tabs } from '@/ui/molecules/tabs';
 import { useState } from 'react';
 import { useUsers } from './users.api';
 import { AddUserForm } from './users.component.add-user';
 import { UserRow } from './users.component.user-row';
 import { UserFilterDto } from './users.types';
+
+const USER_TABS = [
+    { id: 'all', label: 'همه' },
+    { id: 'pending', label: 'در انتظار تایید' },
+];
 
 export default function UsersPage() {
     const [filters, setFilters] = useState<UserFilterDto>({});
@@ -26,22 +31,12 @@ export default function UsersPage() {
                 <div className='space-y-3 grow flex flex-col overflow-hidden'>
                     <div className='p-4 rounded-2xl bg-white flex items-center gap-4 justify-between'>
                         <div className='font-bold grow'>مدیریت کاربران</div>
-                        <div className='flex items-center gap-2'>
-                            <Button
-                                variant={filters.isApproved === undefined ? 'primary' : 'outline'}
-                                className='!px-3 !py-1.5 text-xs'
-                                onClick={() => setFilters(prev => ({ ...prev, isApproved: undefined, page: 0 }))}
-                            >
-                                همه
-                            </Button>
-                            <Button
-                                variant={filters.isApproved === false ? 'primary' : 'outline'}
-                                className='!px-3 !py-1.5 text-xs'
-                                onClick={() => setFilters(prev => ({ ...prev, isApproved: false, page: 0 }))}
-                            >
-                                در انتظار تایید
-                            </Button>
-                        </div>
+                        <Tabs
+                            tabs={USER_TABS}
+                            defaultTab={filters.isApproved === false ? 'pending' : 'all'}
+                            onTabChange={(id) => setFilters(prev => ({ ...prev, isApproved: id === 'pending' ? false : undefined, page: 0 }))}
+                            className='w-auto'
+                        />
                         <div>
                             <AddUserForm onSuccess={refresh} />
                         </div>
