@@ -5,7 +5,7 @@ import {
   patchFetcher,
   postFetcher,
 } from '@/libs/api/api.util.fetcher';
-import useSWR from 'swr';
+import useSWR, { SWRConfiguration } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import {
   AvailabilityResponse,
@@ -14,12 +14,17 @@ import {
   UpdateReservationDto,
 } from './reservations.types';
 
-export function useAvailability(date: string, roomIds?: number[]) {
+export function useAvailability(
+  date: string,
+  roomIds?: number[],
+  options?: SWRConfiguration<AvailabilityResponse>,
+) {
   const params = new URLSearchParams({ date });
   if (roomIds?.length) params.set('roomIds', roomIds.join(','));
   const swr = useSWR<AvailabilityResponse>(
     date ? `/reservations/availability?${params.toString()}` : null,
     fetcher,
+    options,
   );
   return useSwrHelper(swr);
 }

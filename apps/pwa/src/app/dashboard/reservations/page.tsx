@@ -10,6 +10,7 @@ import { useMemo, useState } from 'react';
 import { useAvailability } from './reservations.api';
 import { ReservationBoard } from './reservations.component.board';
 import { ReservationDatePicker } from './reservations.component.date-picker';
+import { RoomStatusGrid } from './reservations.component.room-status';
 import { WeekPicker } from './reservations.component.week-picker';
 
 export default function ReservationsPage() {
@@ -30,6 +31,8 @@ export default function ReservationsPage() {
               {format(selectedDate, 'EEEE d MMMM yyyy')}
             </div>
           </div>
+
+          <RoomStatusGrid />
 
           <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-3">
             {/* Mobile: week strip. Desktop: full month calendar. */}
