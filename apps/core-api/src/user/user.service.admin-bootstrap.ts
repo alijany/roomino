@@ -49,6 +49,11 @@ export class AdminUserBootstrapService implements OnApplicationBootstrap {
         await fork.persistAndFlush(user);
       }
 
+      if (!user.isApproved) {
+        user.isApproved = true;
+        await fork.persistAndFlush(user);
+      }
+
       const existingRoles = user.roles?.getItems?.() ?? [];
       const hasAdminRole = existingRoles.some((r) => r.role === Role.ADMIN);
 
