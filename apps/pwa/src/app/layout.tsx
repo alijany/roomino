@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/components/auth/auth.context.provider";
 import { ClarityAnalytics } from "@/components/clarity/clarity.component.analytics";
 import { brand } from "@/config/brand.config";
+import { noIndexRobots } from "@/libs/seo/seo.constants.robots";
 import type { Metadata } from "next";
 import localFont from 'next/font/local';
 import { ToastContainer } from "react-toastify";
@@ -50,6 +51,7 @@ const yekan = localFont({
 export const metadata: Metadata = {
   title: brand.meta.title,
   description: brand.meta.description,
+  robots: noIndexRobots,
 };
 
 export default function RootLayout({

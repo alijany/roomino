@@ -1,8 +1,14 @@
 import LoginModal from '@/components/auth/auth.component.modal';
 import LightRays from '@/components/layout/light-rays';
 import { brand } from '@/config/brand.config';
+import { noIndexRobots } from '@/libs/seo/seo.constants.robots';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  robots: noIndexRobots,
+};
 
 export default function LoginPage() {
   return (
