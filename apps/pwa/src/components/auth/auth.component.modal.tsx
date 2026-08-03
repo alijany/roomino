@@ -36,7 +36,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const [success, setSuccess] = useState<string | null>(null);
     const [pendingApproval, setPendingApproval] = useState(false);
     const router = useRouter();
-    const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated, error } = useAuth();
+    const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated, error, clearError } = useAuth();
 
     const {
         register: registerPhone,
@@ -107,6 +107,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const handleBackToPhone = () => {
         setStep('phone');
         setSuccess(null);
+        clearError();
     };
 
     const handleResendOtp = async () => {

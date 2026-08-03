@@ -16,6 +16,7 @@ interface AuthContextType {
     verifyOtpAndLogin: (phoneNumber: string, otp: string) => Promise<void>;
     logout: () => void;
     error: string | null;
+    clearError: () => void;
     refreshProfile: () => void;
     hasRole: (role: Role, organizationId?: number) => boolean;
     hasAnyRole: (roles: Role[], organizationId?: number) => boolean;
@@ -129,6 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const clearError = () => setError(null);
+
     const logout = () => {
         setSelectedRole(null);
         localStorage.removeItem('selected-role');
@@ -161,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasAnyRole,
         getRoleByInvitationStatus,
         error,
+        clearError,
         selectedRole,
         setSelectedRole,
     }), [
