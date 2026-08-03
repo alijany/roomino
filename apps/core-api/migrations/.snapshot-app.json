@@ -1125,11 +1125,7 @@
           "comment": null,
           "enumItems": [
             "admin",
-            "owner",
-            "manager",
-            "member",
-            "user",
-            "guest"
+            "user"
           ],
           "mappedType": "enum"
         },

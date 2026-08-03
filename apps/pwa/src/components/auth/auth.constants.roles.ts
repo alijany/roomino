@@ -2,11 +2,7 @@ import { User } from "@/app/dashboard/users/users.types";
 
 export enum Role {
   ADMIN = 'admin',
-  OWNER = 'owner',
-  MANAGER = 'manager',
-  MEMBER = 'member',
   USER = 'user',
-  GUEST = 'guest',
 }
 
 export enum InvitationStatus {
@@ -47,22 +43,14 @@ export type RoleType = {
 export function getRoleName(role: Role): string {
   const roleNames: Record<Role, string> = {
     [Role.ADMIN]: 'ادمین',
-    [Role.OWNER]: 'مالک',
-    [Role.MANAGER]: 'مدیر',
-    [Role.MEMBER]: 'عضو',
     [Role.USER]: 'کاربر',
-    [Role.GUEST]: 'مهمان',
   };
   return roleNames[role] || role;
 }
 
 export const RoleHierarchy: Record<Role, number> = {
-  [Role.ADMIN]: 5,
-  [Role.OWNER]: 4,
-  [Role.MANAGER]: 3,
-  [Role.MEMBER]: 2,
-  [Role.USER]: 1,
-  [Role.GUEST]: 0,
+  [Role.ADMIN]: 1,
+  [Role.USER]: 0,
 };
 
 export function hasPermission(userRole: Role, requiredRole: Role): boolean {
