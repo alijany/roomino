@@ -65,6 +65,7 @@ steps:
       # docker compose auto-loads PROJECT_NAME from the copied .env
       # - docker compose build pwa api
       - docker compose up -d
+      - docker compose build api pwa
       - docker image prune -f
     depends_on:
       - build base
