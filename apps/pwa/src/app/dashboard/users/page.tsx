@@ -3,10 +3,12 @@
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
+import { Button } from '@/ui/atoms';
 import { DataView, Pagination } from '@/ui/molecules';
 import { useState } from 'react';
 import { useUsers } from './users.api';
 import { AddUserForm } from './users.component.add-user';
+import { UserRow } from './users.component.user-row';
 import { UserFilterDto } from './users.types';
 
 export default function UsersPage() {
@@ -24,6 +26,22 @@ export default function UsersPage() {
                 <div className='space-y-3 grow flex flex-col overflow-hidden'>
                     <div className='p-4 rounded-2xl bg-white flex items-center gap-4 justify-between'>
                         <div className='font-bold grow'>مدیریت کاربران</div>
+                        <div className='flex items-center gap-2'>
+                            <Button
+                                variant={filters.isApproved === undefined ? 'primary' : 'outline'}
+                                className='!px-3 !py-1.5 text-xs'
+                                onClick={() => setFilters(prev => ({ ...prev, isApproved: undefined, page: 0 }))}
+                            >
+                                همه
+                            </Button>
+                            <Button
+                                variant={filters.isApproved === false ? 'primary' : 'outline'}
+                                className='!px-3 !py-1.5 text-xs'
+                                onClick={() => setFilters(prev => ({ ...prev, isApproved: false, page: 0 }))}
+                            >
+                                در انتظار تایید
+                            </Button>
+                        </div>
                         <div>
                             <AddUserForm onSuccess={refresh} />
                         </div>
@@ -39,26 +57,7 @@ export default function UsersPage() {
                             onRetry={refresh}
                         >
                             {data?.items?.map((user) => (
-                                <div
-                                    key={user.id}
-                                    className="px-3 py-2.5 rounded-2xl border border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-4 items-center"
-                                >
-                                    <div className="space-y-1">
-                                        <h3 className="text-slate-400">{user.name ?? 'بدون نام'}</h3>
-                                        <div className="font-semibold text-slate-500">{user.phone ?? 'بدون شماره'}</div>
-                                    </div>
-
-                                    <div className='flex items-center flex-wrap justify-end gap-2'>
-                                        {user.roles.map((role) => (
-                                            <div
-                                                key={role}
-                                                className="px-2 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold"
-                                            >
-                                                {role}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                <UserRow key={user.id} user={user} onChanged={refresh} />
                             ))}
 
                             {data?.meta && (

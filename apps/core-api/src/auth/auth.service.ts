@@ -1,6 +1,7 @@
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'; // Import Cache
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -304,6 +305,7 @@ export class AuthService {
       try {
         user = await this.userService.create({
           phone: validatedPhone.number,
+          isApproved: false,
           roles: [
             {
               role: Role.USER,
@@ -319,6 +321,14 @@ export class AuthService {
           'پردازش حساب کاربری ناموفق بود.',
         );
       }
+    }
+
+    if (!user.isApproved) {
+      throw new ForbiddenException({
+        message:
+          'حساب کاربری شما هنوز توسط مدیر تایید نشده است. لطفاً منتظر تایید مدیر بمانید.',
+        errorCode: 'PENDING_APPROVAL',
+      });
     }
 
     // Generate JWT tokens

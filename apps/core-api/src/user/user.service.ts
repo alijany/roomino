@@ -40,6 +40,37 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     return user;
   }
 
+  async approveUser(userId: number): Promise<UserEntity> {
+    const user = await this.findOne({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    user.isApproved = true;
+    await this.persistAndFlush(user);
+    return user;
+  }
+
+  async updateUserRole(
+    userId: number,
+    roleId: number,
+    role: Role,
+  ): Promise<RolesEntity> {
+    const roleEntity = await this.rolesService.findOne({
+      id: roleId,
+      user: userId,
+    });
+
+    if (!roleEntity) {
+      throw new NotFoundException('نقش یافت نشد');
+    }
+
+    roleEntity.role = role;
+    await this.rolesService.persistAndFlush(roleEntity);
+    return roleEntity;
+  }
+
   async updateUserInvitationStatus(roleId: number, status: InvitationStatus) {
     const role = await this.rolesService.findOne({
       id: roleId,

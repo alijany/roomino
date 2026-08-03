@@ -31,10 +31,9 @@ type OtpFormData = z.infer<typeof otpFormSchema>;
 export default function LoginModal(props: { onClose?: () => void, onLoginSuccess?: () => void, isOpen?: boolean, hasBackdrop?: boolean }) {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const router = useRouter();
-    const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated } = useAuth();
+    const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated, error } = useAuth();
 
     const {
         register: registerPhone,
@@ -75,23 +74,19 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
 
     // Handle phone form submission
     const onPhoneSubmit = async (data: PhoneFormData) => {
-        setError(null);
         setPhoneNumber(data.phoneNumber);
 
         try {
             const result = await sendOtp(data.phoneNumber);
             setSuccess(result?.message || 'کد تایید با موفقیت ارسال شد');
             setStep('otp');
-        } catch (error) {
-            console.error(error);
-            // Error is handled by the useEffect above
+        } catch {
+            // Error is surfaced via useAuth().error, rendered below
         }
     };
 
     // Handle OTP form submission
     const onOtpSubmit = async (data: OtpFormData) => {
-        setError(null);
-
         try {
             await verifyOtpAndLogin(
                 phoneNumber,
@@ -99,18 +94,16 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
             );
             // Result handling is done in the useEffect above
         } catch {
-            // Error is handled by the useEffect above
+            // Error is surfaced via useAuth().error, rendered below
         }
     };
 
     const handleBackToPhone = () => {
         setStep('phone');
         setSuccess(null);
-        setError(null);
     };
 
     const handleResendOtp = async () => {
-        setError(null);
         try {
             const result = await sendOtp(phoneNumber);
             setSuccess(result?.message || 'کد تایید مجدداً ارسال شد');

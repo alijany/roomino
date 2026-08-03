@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class UsersGetDto {
   @IsOptional()
@@ -13,4 +13,9 @@ export class UsersGetDto {
   @IsNumber()
   @Min(1)
   limit?: number = 10;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isApproved?: boolean;
 }

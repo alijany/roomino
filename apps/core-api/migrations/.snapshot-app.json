@@ -1519,6 +1519,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "is_approved": {
+          "name": "is_approved",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
         }
       },
       "name": "user_entity",

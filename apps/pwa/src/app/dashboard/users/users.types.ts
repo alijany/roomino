@@ -6,11 +6,18 @@ export enum InvitationStatus {
   ACCEPTED = 'accepted',
 }
 
+export interface UserRole {
+  id: number;
+  role: Role;
+  invitationStatus: InvitationStatus;
+}
+
 export interface User {
   id: number;
   name: string;
   phone: string;
-  roles: Role[];
+  isApproved: boolean;
+  roles: UserRole[];
 }
 
 export type GetUsersResponse = {
@@ -35,4 +42,10 @@ export interface AddUserDto {
 export interface UserFilterDto {
   page?: number;
   limit?: number;
+  isApproved?: boolean;
+}
+
+export interface UpdateUserRoleDto {
+  roleId: number;
+  role: Role;
 }

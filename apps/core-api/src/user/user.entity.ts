@@ -36,6 +36,9 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   profilePicture?: string;
 
+  @Property({ default: true })
+  isApproved: boolean = true;
+
   @OneToMany(() => RolesEntity, (role) => role.user)
   roles = new Collection<RolesEntity>(this);
 }

@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -11,7 +13,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as _ from 'lodash';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ import { S3StorageService } from 'src/storage/s3-storage.service';
 import { v4 as uuidv4 } from 'uuid';
 import { InviteUserDto } from './dtos/invitation.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
+import { UpdateUserRoleDto } from './dtos/update-user-role.dto';
 import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
@@ -54,17 +56,20 @@ export class UserController {
       populate: ['roles'] as never,
     });
 
-    // Transform users to include unique roles as an array
-    const items = users.map((user) => {
-      const rolesArray = user.roles
-        ? _.uniqBy(user.roles.getItems(), 'role').map((role) => role.role)
-        : [];
-
-      return {
-        ...user,
-        roles: rolesArray,
-      };
-    });
+    // Transform users to include role details (id + invitationStatus) for admin actions
+    const items = users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      isApproved: user.isApproved,
+      roles: user.roles
+        ? user.roles.getItems().map((role) => ({
+            id: role.id,
+            role: role.role,
+            invitationStatus: role.invitationStatus,
+          }))
+        : [],
+    }));
 
     return {
       items,
@@ -75,6 +80,21 @@ export class UserController {
         pageCount: Math.ceil(total / limit),
       },
     };
+  }
+
+  @Patch(':id/approve')
+  @Roles(Role.ADMIN)
+  async approveUser(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.approveUser(id);
+  }
+
+  @Patch(':id/role')
+  @Roles(Role.ADMIN)
+  async updateUserRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserRoleDto,
+  ) {
+    return this.userService.updateUserRole(id, dto.roleId, dto.role);
   }
 
   @Patch('profile')
