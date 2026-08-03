@@ -10,7 +10,6 @@ import { useMemo, useState } from 'react';
 import { useAvailability } from './reservations.api';
 import { ReservationBoard } from './reservations.component.board';
 import { ReservationDatePicker } from './reservations.component.date-picker';
-import { RoomStatusGrid } from './reservations.component.room-status';
 import { WeekPicker } from './reservations.component.week-picker';
 
 export default function ReservationsPage() {
@@ -19,7 +18,12 @@ export default function ReservationsPage() {
   );
 
   const dateStr = useMemo(() => tehranDateString(selectedDate), [selectedDate]);
-  const { data, error, isLoading, refresh } = useAvailability(dateStr);
+  const isToday = useMemo(() => dateStr === tehranDateString(new Date()), [dateStr]);
+  const { data, error, isLoading, refresh } = useAvailability(
+    dateStr,
+    undefined,
+    isToday ? { refreshInterval: 60000 } : undefined,
+  );
 
   return (
     <RoleProtectedRoute allowedRoles={RouteItems.dashboard.roles}>
@@ -31,8 +35,6 @@ export default function ReservationsPage() {
               {format(selectedDate, 'EEEE d MMMM yyyy')}
             </div>
           </div>
-
-          <RoomStatusGrid />
 
           <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-3">
             {/* Mobile: week strip. Desktop: full month calendar. */}

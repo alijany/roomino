@@ -1,8 +1,10 @@
 'use client';
 
-import { SLOT, minutesToHHmm } from '@/libs/meeting/meeting.time';
+import { BOARD_END, BOARD_START, SLOT, minutesToHHmm, tehranDateString } from '@/libs/meeting/meeting.time';
+import { cn } from '@/libs/style/style.util.helpers';
 import { Button } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
+import { TZDate } from '@date-fns/tz';
 import { IconUsers, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { BookModal } from './reservations.component.book-modal';
@@ -13,6 +15,7 @@ import {
   AvailabilityResponse,
   AvailabilityRoom,
   AvailabilitySlot,
+  SlotStatus,
 } from './reservations.types';
 
 interface BoardProps {
@@ -33,16 +36,101 @@ interface OwnSelection {
   slot: AvailabilitySlot;
 }
 
+function nowMinutesTehran(): number {
+  const z = TZDate.tz('Asia/Tehran', new Date());
+  return z.getHours() * 60 + z.getMinutes();
+}
+
+interface RoomNowStatus {
+  status: SlotStatus | 'closed';
+  until: number | null;
+  ownerLabel?: string;
+  isOwn?: boolean;
+  lockTitle?: string;
+}
+
+function computeNowStatus(room: AvailabilityRoom, nowMinutes: number, outsideHours: boolean): RoomNowStatus {
+  if (outsideHours) return { status: 'closed', until: null };
+
+  const idx = room.slots.findIndex((s) => nowMinutes >= s.startMinutes && nowMinutes < s.endMinutes);
+  if (idx === -1) return { status: 'closed', until: null };
+
+  const current = room.slots[idx];
+  let until = current.endMinutes;
+  for (let i = idx + 1; i < room.slots.length; i++) {
+    const s = room.slots[i];
+    if (s.startMinutes !== until || s.status !== current.status) break;
+    if (current.status === 'reserved' && s.reservation?.id !== current.reservation?.id) break;
+    until = s.endMinutes;
+  }
+
+  return {
+    status: current.status,
+    until,
+    ownerLabel: current.reservation?.isOwn ? 'شما' : current.reservation?.ownerName,
+    isOwn: current.reservation?.isOwn,
+    lockTitle: current.lockTitle,
+  };
+}
+
+const STATUS_STYLES: Record<RoomNowStatus['status'], { dot: string; badge: string; label: string }> = {
+  available: { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-600', label: 'آزاد' },
+  reserved: { dot: 'bg-rose-500', badge: 'bg-rose-50 text-rose-600', label: 'رزرو شده' },
+  locked: { dot: 'bg-amber-500', badge: 'bg-amber-50 text-amber-600', label: 'قفل شده' },
+  closed: { dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-500', label: 'خارج از ساعت کاری' },
+};
+
+function RoomNowBadge({ room, nowMinutes, outsideHours }: { room: AvailabilityRoom; nowMinutes: number; outsideHours: boolean }) {
+  const now = computeNowStatus(room, nowMinutes, outsideHours);
+  const style = STATUS_STYLES[now.status];
+  const badgeLabel = now.status === 'reserved' && now.isOwn ? 'رزرو شما' : style.label;
+
+  const detail =
+    now.status === 'reserved'
+      ? now.ownerLabel || 'رزرو'
+      : now.status === 'locked'
+        ? now.lockTitle || 'قفل هفتگی'
+        : now.status === 'available' && now.until != null
+          ? now.until >= BOARD_END
+            ? 'تا پایان ساعات کاری'
+            : `تا ${minutesToHHmm(now.until)}`
+          : null;
+
+  return (
+    <>
+      <span className={cn('inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium', style.badge)}>
+        <span className={cn('size-1.5 rounded-full', style.dot)} />
+        {badgeLabel}
+      </span>
+      {detail && <span className="text-[11px] text-slate-400 truncate tabular-nums">{detail}</span>}
+    </>
+  );
+}
+
 export function ReservationBoard({ date, data, error, isLoading, refresh }: BoardProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [ownSelection, setOwnSelection] = useState<OwnSelection | null>(null);
   const [infoSelection, setInfoSelection] = useState<OwnSelection | null>(null);
+  const [nowMinutes, setNowMinutes] = useState(() => nowMinutesTehran());
+  const [today, setToday] = useState(() => tehranDateString(new Date()));
 
   // Clear any pending selection when the day changes.
   useEffect(() => {
     setSelection(null);
   }, [date]);
+
+  // Keep the "right now" status fresh while the board stays open.
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNowMinutes(nowMinutesTehran());
+      setToday(tehranDateString(new Date()));
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const isToday = date === today;
+  const outsideHours = nowMinutes < BOARD_START || nowMinutes >= BOARD_END;
 
   const toggleSlot = (roomId: number, startMinutes: number) => {
     setSelection((prev) => {
@@ -97,10 +185,15 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
         <div className="space-y-3 pb-4">
           {data?.rooms.map((room) => (
             <div key={room.roomId} className="p-4 rounded-2xl border border-slate-100 bg-white">
-              <div className="flex items-center justify-between mb-3">
-                <div className="font-semibold text-slate-700">{room.roomName}</div>
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <div className="font-semibold text-slate-700 truncate">{room.roomName}</div>
+                  {isToday && (
+                    <RoomNowBadge room={room} nowMinutes={nowMinutes} outsideHours={outsideHours} />
+                  )}
+                </div>
                 {room.capacity != null && (
-                  <div className="flex items-center gap-1 text-xs text-slate-400">
+                  <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0">
                     <IconUsers className="size-4" />
                     {room.capacity} نفر
                   </div>
