@@ -14,6 +14,8 @@ export interface OtpVerify {
   phoneNumber: string;
   otp: string;
   deviceId?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface RefreshTokenRequest {
@@ -50,6 +52,7 @@ export interface UpdatePhoneRequest {
 
 export interface OtpSendResponse {
   message: string;
+  isNewUser?: boolean;
 }
 
 export class AuthError extends Error {
@@ -77,9 +80,9 @@ export function useRequestOtpMutation() {
 
 export function useVerifyOtpMutation() {
   const { submit, data, error, isLoading, reset } = useSwrMutationHelper<
-    AuthResponse, 
-    Error, 
-    { phoneNumber: string, otp: string, deviceId?: string }
+    AuthResponse,
+    Error,
+    OtpVerify
   >(useSWRMutation('/auth/otp/verify', postFetcher<OtpVerify, AuthResponse>));
   
   return {

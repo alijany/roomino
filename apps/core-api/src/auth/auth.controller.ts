@@ -42,6 +42,8 @@ export class AuthController {
       verifyOtpDto.phoneNumber,
       verifyOtpDto.otp,
       verifyOtpDto.deviceId,
+      verifyOtpDto.firstName,
+      verifyOtpDto.lastName,
     );
 
     // Return access token, refresh token and user info
