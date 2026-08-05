@@ -25,6 +25,8 @@ const otpFormSchema = z.object({
         .string()
         .min(4, { message: 'کد تایید باید حداقل ۴ رقم باشد' })
         .regex(/^[۰-۹\d]+$/, { message: 'کد تایید باید عدد باشد' }),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
 });
 
 type PhoneFormData = z.infer<typeof phoneFormSchema>;
@@ -35,6 +37,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const [phoneNumber, setPhoneNumber] = useState('');
     const [success, setSuccess] = useState<string | null>(null);
     const [pendingApproval, setPendingApproval] = useState(false);
+    const [isNewUser, setIsNewUser] = useState(false);
     const router = useRouter();
     const { sendOtp, verifyOtpAndLogin, isLoading: authLoading, isAuthenticated, error, clearError } = useAuth();
 
@@ -50,6 +53,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const {
         register: registerOtp,
         handleSubmit: handleOtpSubmit,
+        setError: setOtpFormError,
         formState: { errors: otpErrors },
     } = useForm<OtpFormData>({
         resolver: zodResolver(otpFormSchema),
@@ -82,6 +86,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
         try {
             const result = await sendOtp(data.phoneNumber);
             setSuccess(result?.message || 'کد تایید با موفقیت ارسال شد');
+            setIsNewUser(Boolean(result?.isNewUser));
             setStep('otp');
         } catch {
             // Error is surfaced via useAuth().error, rendered below
@@ -90,10 +95,17 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
 
     // Handle OTP form submission
     const onOtpSubmit = async (data: OtpFormData) => {
+        if (isNewUser && !data.firstName?.trim()) {
+            setOtpFormError('firstName', { message: 'نام را وارد کنید' });
+            return;
+        }
+
         try {
             await verifyOtpAndLogin(
                 phoneNumber,
                 data.otp,
+                isNewUser ? data.firstName?.trim() : undefined,
+                isNewUser ? data.lastName?.trim() || undefined : undefined,
             );
             // Result handling is done in the useEffect above
         } catch (err) {
@@ -107,6 +119,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
     const handleBackToPhone = () => {
         setStep('phone');
         setSuccess(null);
+        setIsNewUser(false);
         clearError();
     };
 
@@ -213,6 +226,24 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 error={otpErrors.otp?.message}
                                 disabled={authLoading}
                             />
+                            {isNewUser && (
+                                <div className='space-y-3 pt-1'>
+                                    <div className='text-sm text-slate-500'>
+                                        چون برای اولین بار وارد می‌شوید، لطفاً نام خود را وارد کنید.
+                                    </div>
+                                    <Input
+                                        placeholder='نام'
+                                        {...registerOtp('firstName')}
+                                        error={otpErrors.firstName?.message}
+                                        disabled={authLoading}
+                                    />
+                                    <Input
+                                        placeholder='نام خانوادگی (اختیاری)'
+                                        {...registerOtp('lastName')}
+                                        disabled={authLoading}
+                                    />
+                                </div>
+                            )}
                             <div className='flex items-center gap-2.5'>
                                 <Button
                                     variant='ghost'

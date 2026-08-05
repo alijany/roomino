@@ -145,12 +145,18 @@ export class AuthService {
    * Send OTP for login/registration
    * Charges the user themselves (if they exist)
    */
-  async sendOtp(phoneNumber: string) {
+  async sendOtp(phoneNumber: string): Promise<{ isNewUser: boolean }> {
     const validatedPhone = parsePhoneNumberFromString(phoneNumber, 'IR');
 
     if (!validatedPhone?.isValid()) {
       throw new BadRequestException('فرمت شماره تلفن نامعتبر است.');
     }
+
+    const existingUser = await this.userService.findOne({
+      phone: validatedPhone.number,
+    });
+    const isNewUser = !existingUser;
+
     const cacheKey = `otp:${validatedPhone.number}`;
     const otp = this.generateOtp(+this.configService.get('OTP_LENGTH', 4));
     const ttl = +this.configService.get('OTP_EXPIRATION', 300); // 5 minutes
@@ -160,7 +166,7 @@ export class AuthService {
 
       if (process.env.NODE_ENV === 'development') {
         console.log(`OTP for ${validatedPhone.number}: ${otp}`);
-        return;
+        return { isNewUser };
       }
 
       const result = await this.smsService.sendSms(
@@ -177,6 +183,8 @@ export class AuthService {
         'ارسال رمز یکبار مصرف ناموفق بود.',
       );
     }
+
+    return { isNewUser };
   }
 
   /**
@@ -265,6 +273,8 @@ export class AuthService {
     phoneNumber: string,
     otp: string,
     deviceId?: string,
+    firstName?: string,
+    lastName?: string,
   ): Promise<{
     access_token: string;
     refresh_token: string;
@@ -305,6 +315,8 @@ export class AuthService {
       try {
         user = await this.userService.create({
           phone: validatedPhone.number,
+          firstName,
+          lastName,
           isApproved: false,
           roles: [
             {

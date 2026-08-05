@@ -12,8 +12,8 @@ interface AuthContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     needsOnboarding: boolean;
-    sendOtp: (phoneNumber: string) => Promise<{ message: string }>;
-    verifyOtpAndLogin: (phoneNumber: string, otp: string) => Promise<void>;
+    sendOtp: (phoneNumber: string) => Promise<{ message: string; isNewUser?: boolean }>;
+    verifyOtpAndLogin: (phoneNumber: string, otp: string, firstName?: string, lastName?: string) => Promise<void>;
     logout: () => void;
     error: string | null;
     clearError: () => void;
@@ -116,10 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const verifyOtpAndLogin = async (phoneNumber: string, otp: string) => {
+    const verifyOtpAndLogin = async (phoneNumber: string, otp: string, firstName?: string, lastName?: string) => {
         try {
             setError(null);
-            const response = await verifyOtpMutation({ phoneNumber, otp });
+            const response = await verifyOtpMutation({ phoneNumber, otp, firstName, lastName });
             if (response) {
                 storeAuthTokens(response);
                 mutate();
