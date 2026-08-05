@@ -85,7 +85,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
 
         try {
             const result = await sendOtp(data.phoneNumber);
-            setSuccess(result?.message || 'کد تایید با موفقیت ارسال شد');
             setIsNewUser(Boolean(result?.isNewUser));
             setStep('otp');
         } catch {
@@ -228,9 +227,6 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                             />
                             {isNewUser && (
                                 <div className='space-y-3 pt-1'>
-                                    <div className='text-sm text-slate-500'>
-                                        چون برای اولین بار وارد می‌شوید، لطفاً نام خود را وارد کنید.
-                                    </div>
                                     <Input
                                         placeholder='نام'
                                         {...registerOtp('firstName')}
