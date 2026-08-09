@@ -1,34 +1,3 @@
-export type SlotStatus = 'available' | 'reserved' | 'locked';
-
-export interface AvailabilitySlot {
-  startMinutes: number;
-  endMinutes: number;
-  status: SlotStatus;
-  reservation?: {
-    id: number;
-    title?: string;
-    purpose?: string;
-    ownerName: string;
-    ownerPhone?: string;
-    isOwn: boolean;
-  };
-  lockTitle?: string;
-}
-
-export interface AvailabilityRoom {
-  roomId: number;
-  roomName: string;
-  capacity?: number;
-  slots: AvailabilitySlot[];
-}
-
-export interface AvailabilityResponse {
-  date: string;
-  weekday: number;
-  slotStarts: number[];
-  rooms: AvailabilityRoom[];
-}
-
 /** Only hour-of-day grouping is implemented today; day-of-week is reserved for later. */
 export type ReportGroupBy = 'hour';
 
@@ -44,7 +13,7 @@ export interface HeatmapCell {
   minutes: number;
   /** Number of reservations overlapping this bucket. */
   count: number;
-  /** minutes / (60 * days in range), clamped to [0, 1]. */
+  /** minutes / (60 * days in range), in [0, 1]. */
   occupancyRate: number;
 }
 
@@ -61,4 +30,10 @@ export interface RoomUsageHeatmapResponse {
   buckets: HeatmapBucket[];
   rooms: RoomUsageRow[];
   totalReservations: number;
+}
+
+export interface RoomUsageHeatmapFilterDto {
+  from: string;
+  to: string;
+  roomIds?: number[];
 }

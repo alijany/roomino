@@ -1,6 +1,6 @@
 'use client';
 
-import { IconCalendarEvent, IconDashboard, IconDoor, IconNotification, IconUser, IconUsers } from "@tabler/icons-react";
+import { IconCalendarEvent, IconDashboard, IconDoor, IconNotification, IconReportAnalytics, IconUser, IconUsers } from "@tabler/icons-react";
 import { Role } from "../auth/auth.constants.roles";
 
 export interface RouteItem {
@@ -27,6 +27,12 @@ export const RouteItems = {
     label: "کاربران",
     roles: [Role.ADMIN],
     icon: <IconUsers className="size-5" />
+  },
+  reports: {
+    href: "/dashboard/reports",
+    label: "گزارش‌ها",
+    roles: [Role.ADMIN],
+    icon: <IconReportAnalytics className="size-5" />
   },
   notifications: {
     href: "/dashboard/notifications",
@@ -56,6 +62,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.dashboard,
       RouteItems.rooms,
       RouteItems.users,
+      RouteItems.reports,
       RouteItems.profile,
       RouteItems.notifications,
     ]
