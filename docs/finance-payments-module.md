@@ -1,8 +1,17 @@
 # Finance & External Payments — Product & Development Plan
 
-**Status:** proposal, pending approval
+**Status:** Phase 0 and Phase 1 **shipped**. Phases 2–4 not started.
 **Owner:** Product / Engineering
 **Target repo:** `alijany/roomino` — branch `claude/finance-external-payments-module-o6xdrs`
+
+> **Implementation state.** The request → approve → pay spine is built, running
+> and verified end to end (30/30 checks, §16). Module references for agents:
+> [`apps/core-api/src/finance/README.md`](../apps/core-api/src/finance/README.md)
+> and [`apps/pwa/src/app/dashboard/finance/README.md`](../apps/pwa/src/app/dashboard/finance/README.md).
+>
+> This document stays the *plan* — sections 1–14 describe the intended design,
+> and §15 records what was actually delivered against it, including the places
+> the build diverged.
 
 ---
 
@@ -432,7 +441,7 @@ One `DataView` limitation to work around: it renders a static `errorMessage` and
 
 Estimates are engineering days for one full-stack developer. `[HYPOTHESIS]` — no velocity baseline exists for this repo.
 
-### Phase 0 — Foundations (~3 days)
+### Phase 0 — Foundations ✅ shipped
 
 Unblocks everything; nothing user-visible.
 
@@ -443,7 +452,7 @@ Unblocks everything; nothing user-visible.
 
 **Done when:** an admin can grant `finance` and `approver` from the Users page, the recipient sees the correct nav, and `pnpm --filter core-api lint && pnpm --filter pwa lint` are clean.
 
-### Phase 1 — The spine (~10 days)
+### Phase 1 — The spine ✅ shipped
 
 Core request → approve → pay, statuses, notifications. Shippable on its own.
 
@@ -468,6 +477,32 @@ Backend: aggregation service (single-pass SQL, not N+1 over requests) · `/finan
 Frontend: `finance` dashboard (8 tiles + 4 charts, chart↔table toggle) · `reports` with a Jalali month selector, variance table, and export.
 
 **Done when:** Finance closes a month from this screen without opening a spreadsheet, and the export opens in Excel with Persian text intact.
+
+### What actually shipped, and where it diverged from this plan
+
+Phases 0 and 1 are complete. Three deliberate deviations:
+
+| Planned | Built | Why |
+|---|---|---|
+| `VendorEntity` + `PayeeAccountEntity` referenced from the request | Payee is **free-text** on `PaymentRequestEntity` (`payeeName`, `payeeSheba`, …) | The vendor directory is Phase 2. The fields an employee supplies are the same either way, so Phase 2 adds a nullable vendor FK beside them rather than reshaping anything. |
+| `requestInfo` clears the approval chain | Steps are retired to `SKIPPED`, never deleted; a resubmit appends a new round with continuing sequence numbers | Deleting them erased the audit history *and* cut the approver's only link to a request they had just returned — which produced a 403 after the transition had already committed. See "the re-read trap" in the module README. |
+| Not planned | `PaymentRequestEntity.pendingRole` / `pendingSequence` | Denormalised pointer to the outstanding step. "What is waiting on me?" is asked on every approver's page load and drives the nav badge; without it that is a per-row scan for the lowest pending sequence. |
+
+Also delivered but not called out in the original plan: an
+`/approval-preview` endpoint (so the form can show the approver chain before
+submit), a `meta/badges` endpoint for nav counts, and a `permissions` object on
+the request detail so the UI never re-derives the action rules.
+
+**Verified against a real Postgres**, not just lint: migrations generate and
+apply cleanly from an empty database, `FinanceBootstrapService` seeds 9
+categories and 3 approval bands, and the §16 script passes 30/30 — including
+both segregation-of-duties rules, the needs-info round trip, the two-step chain,
+foreign-currency payment with FX rate and fee, and the full access-control
+matrix.
+
+Deferred from Phase 1 as planned: nothing. `S3StorageService.getSignedReadUrl()`
+was added and finance attachments upload with `acl: 'private'`, so the
+public-read risk in §17 is closed.
 
 ### Phase 4 — Deferred
 
@@ -509,11 +544,11 @@ Tests in this repo are documented as unstable, so `lint` (which type-checks) is 
 |---|---|---|
 | **Rial/Toman unit confusion** | Every reported number wrong by 10× | Phase 0 blocker. One `formatMoney()`, storage always in rial, a unit assertion in the aggregation service. |
 | **Finance keeps using their spreadsheet** | Module is dead on arrival | Phase 1 must deliver a queue that is genuinely faster than the spreadsheet. Validate with the real Finance user before Phase 2 starts. |
-| Attachments are public-read S3 URLs today | Invoices leak to anyone with the link | Presigned URLs in Phase 1, before real invoices are uploaded. |
+| ~~Attachments are public-read S3 URLs~~ **closed** | Invoices leak to anyone with the link | Done in Phase 1: uploads use `acl: 'private'` and `S3StorageService.getSignedReadUrl()` serves them for 15 minutes. |
 | Approval matrix mis-set at launch | Everything routes to one person, or nothing gets approved | Seed conservative defaults; make `/finance/settings` editable by admin from day one. |
 | Recurring cron double-fires and duplicates a request | Vendor paid twice | Unique constraint on `(recurringSource, dueDate)`; the materialiser is idempotent. |
 | Notification fatigue → approvals ignored | Deadlines missed | Approval notifications are not silenceable; everything else respects preferences. Digest rather than per-event where possible. |
-| `removeUser()` hardcoded delete list | User deletion breaks in production | PR checklist item; covered by verification step 7. |
+| ~~`removeUser()` hardcoded delete list~~ **closed** | User deletion breaks in production | Done in Phase 1: deletion is refused for a user with finance history (audit evidence) and nullable back-references are cleared. Verified. |
 
 **Open decisions for the product owner**
 

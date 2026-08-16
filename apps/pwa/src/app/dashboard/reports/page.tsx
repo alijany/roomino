@@ -13,7 +13,7 @@ import { subDays } from 'date-fns-jalali';
 import { useMemo, useState } from 'react';
 import { useRooms } from '../rooms/rooms.api';
 import { useRoomUsageHeatmap } from './reports.api';
-import { ReportDateRangePicker } from './reports.component.date-range-picker';
+import { DateRangePicker } from '@/ui/molecules';
 import { RoomUsageHeatmap } from './reports.component.heatmap';
 
 const TEHRAN_TZ = 'Asia/Tehran';
@@ -87,7 +87,7 @@ export default function ReportsPage() {
                 ))}
               </div>
 
-              <ReportDateRangePicker
+              <DateRangePicker
                 from={range.from}
                 to={range.to}
                 onChange={(next) => setRange(next)}

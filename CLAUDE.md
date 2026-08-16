@@ -4,6 +4,17 @@ A reusable monorepo boilerplate: NestJS backend + Next.js 15 frontend, with auth
 
 ## Monorepo Layout
 
+The product is **Roomino / لایفی‌نو** — a Persian, RTL, Jalali-calendar internal
+tool. Two business domains today:
+
+| Domain | Backend | Frontend |
+|---|---|---|
+| Meeting rooms | `src/meeting/` | `src/app/dashboard/{reservations,rooms,reports}/` |
+| Finance & external payments | `src/finance/` ([README](apps/core-api/src/finance/README.md)) | `src/app/dashboard/finance/` ([README](apps/pwa/src/app/dashboard/finance/README.md)) |
+
+Everything else (`auth`, `user`, `roles`, `notification`, `sms`, `storage`) is
+platform infrastructure. All UI copy and backend error messages are Persian.
+
 ```
 apps/
   core-api/       NestJS backend (port 4000)
@@ -98,25 +109,37 @@ File naming convention: `domain.type.purpose.ext`
 
 Move code to `src/libs/` or `src/components/` **only** when used across 2+ domains. Auth is global by design.
 
+> Note: domains actually live under `src/app/dashboard/<domain>/`, not `src/app/<domain>/`.
+
+**Money.** The canonical unit everywhere — API, database, component props — is
+the **rial**. Toman (rial ÷ 10) is produced only by `formatMoney()` in
+`src/libs/format/format.util.ts`. `<CurrencyInput unit="toman">` displays Toman
+but its value stays rial. Never convert by hand; getting this backwards is a
+10× error in every figure on screen.
+
 **Shared layouts** (`src/components/`):
 
 - `layout/` — public-facing pages: `RootLayout` wraps content with a sticky glassmorphism `Navbar` (transparent variant available) and a `Footer`. The navbar shows a "start free" CTA for guests and a "dashboard" link for authenticated users.
 - `dashboard/` — authenticated area: `DashboardLayout` provides a top `Navbar`, a collapsible `Sidebar` (desktop only), and a `BottomNavBar` (mobile only). Navigation items in `dashboard.constants.route-groups.tsx` are filtered at render time by the user's active role. Add new dashboard routes there.
 
-**User roles** (`src/components/auth/auth.constants.roles.ts`):
+**User roles** (`src/components/auth/auth.constants.roles.ts` and `apps/core-api/src/roles/roles.constants.ts` — keep the two in step):
 
-Roles follow a strict hierarchy (higher = more access):
+| Role | Notes |
+|---|---|
+| `admin` | Full access; rooms, users, reports, finance settings |
+| `finance` | Processes and records payments; sole access to payment sources |
+| `approver` | Budget holder who approves payment requests |
+| `user` | Default; books rooms, raises payment requests |
 
-| Role | Level | Notes |
-|---|---|---|
-| `admin` | 5 | Full access; sees the Users management route |
-| `owner` | 4 | Organization owner |
-| `manager` | 3 | |
-| `member` | 2 | |
-| `user` | 1 | |
-| `guest` | 0 | Lowest privilege |
+**Access is by exact role match, not by level.** `finance` and `approver` are
+peers with different jobs, not nested tiers — `RolesGuard` (backend) and
+`hasAnyRole` (frontend) both match exactly. `RoleHierarchy`/`hasPermission`
+exist only for ordering and display; don't gate on them.
 
-A user may hold multiple roles (one per organization). The active role is selected via a dropdown in the sidebar; route visibility and guards are evaluated against `selectedRole`. Use useAuth and `hasPermission(userRole, requiredRole)` for imperative checks and pass a `roles` array to `RouteItem` to restrict sidebar links.
+A user may hold several roles. The active one is chosen from a sidebar dropdown;
+sidebar visibility is filtered against `selectedRole`, while route guards check
+*all* of the user's roles — so the two can disagree by design. Pass a `roles`
+array to a `RouteItem` to restrict a sidebar link.
 
 **API layer** (`src/libs/api/`):
 - `api.util.fetcher.ts` — `fetcher`, `postFetcher`, `patchFetcher`, `putFetcher`, `deleteFetcher`, `formDataFetcher`

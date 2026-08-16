@@ -8,6 +8,11 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import parsePhoneNumberFromString from 'libphonenumber-js';
+import { ApprovalStepEntity } from 'src/finance/entities/approval-step.entity';
+import { FinanceActivityEntity } from 'src/finance/entities/finance-activity.entity';
+import { PaymentRequestEntity } from 'src/finance/entities/payment-request.entity';
+import { PaymentEntity } from 'src/finance/entities/payment.entity';
+import { RequestAttachmentEntity } from 'src/finance/entities/request-attachment.entity';
 import { ReservationEntity } from 'src/meeting/entities/reservation.entity';
 import { BaseRepositoryService } from 'src/libs/orm/orm.repository.service.base';
 import { NotificationPreferenceEntity } from 'src/notification/notification-preference.entity';
@@ -102,8 +107,44 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     return { success: true };
   }
 
+  /**
+   * Hard-deletes a user and everything that can safely go with them.
+   *
+   * Finance history is deliberately *not* deletable: a payment request or a
+   * recorded payment is audit evidence, and removing the person who raised or
+   * made it would leave an unexplained gap. Such a user is refused here — the
+   * right action is to strip their roles, not erase them.
+   *
+   * NOTE: this list is hardcoded, so any new entity holding a `user` FK must be
+   * added here or deletion starts failing on a foreign-key violation.
+   */
   async removeUser(id: number): Promise<void> {
+    const financeFootprint = await this.em.count(PaymentRequestEntity, {
+      requester: id,
+    });
+
+    const paymentsMade = await this.em.count(PaymentEntity, { paidBy: id });
+
+    if (financeFootprint > 0 || paymentsMade > 0) {
+      throw new ConflictException(
+        'این کاربر سابقه مالی دارد و قابل حذف نیست. به جای حذف، نقش‌های او را بردارید.',
+      );
+    }
+
     await this.withTransaction(async (em) => {
+      // Nullable back-references from finance records the user only touched.
+      await em.nativeUpdate(
+        FinanceActivityEntity,
+        { actor: id },
+        { actor: null },
+      );
+      await em.nativeUpdate(ApprovalStepEntity, { actor: id }, { actor: null });
+      await em.nativeUpdate(
+        RequestAttachmentEntity,
+        { uploadedBy: id },
+        { uploadedBy: null },
+      );
+
       await em.nativeDelete(RolesEntity, { user: id });
       await em.nativeDelete(ReservationEntity, { user: id });
       await em.nativeDelete(NotificationPreferenceEntity, { user: id });

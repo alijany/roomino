@@ -6,9 +6,12 @@ import {
   CreateBucketCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   BucketLocationConstraint,
+  ObjectCannedACL,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class S3StorageService implements OnModuleInit {
@@ -115,11 +118,19 @@ export class S3StorageService implements OnModuleInit {
     }
   }
 
+  /**
+   * Uploads a buffer and returns its public URL.
+   *
+   * `acl` defaults to public-read, which suits avatars and other non-sensitive
+   * assets. Pass `'private'` for anything that should only be reachable through
+   * a presigned URL — invoices and payment receipts, for example.
+   */
   async uploadBuffer(
     buffer: Buffer,
     filename: string,
     contentType: string,
     folder = '',
+    acl: ObjectCannedACL = 'public-read',
   ): Promise<string> {
     const key = folder ? `${folder}/${filename}` : filename;
 
@@ -129,7 +140,7 @@ export class S3StorageService implements OnModuleInit {
         Key: key,
         Body: buffer,
         ContentType: contentType,
-        ACL: 'public-read',
+        ACL: acl,
       });
 
       await this.s3Client.send(putObjectCommand);
@@ -144,6 +155,25 @@ export class S3StorageService implements OnModuleInit {
       this.logger.error(`Failed to upload file: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Time-limited read URL for a private object.
+   *
+   * Objects uploaded with `acl: 'private'` are not reachable through the
+   * bucket's public-read policy, so this is the only way to hand one to a
+   * browser. Default lifetime is 15 minutes — long enough to open a PDF, short
+   * enough that a copied link stops working quickly.
+   */
+  async getSignedReadUrl(key: string, expiresInSeconds = 900): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    return getSignedUrl(this.s3Client, command, {
+      expiresIn: expiresInSeconds,
+    });
   }
 
   async deleteObject(key: string): Promise<void> {

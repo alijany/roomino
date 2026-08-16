@@ -1,7 +1,76 @@
 /**
- * Format a cost value in Toman with Persian numerals
- * @param cost - The cost value in Toman (IRT)
- * @returns Formatted string like "۱۲۳ ت" or "—" if no cost
+ * Money formatting.
+ *
+ * The canonical unit everywhere — API, database, component props — is the
+ * **rial**. Toman is a display convention only (1 Toman = 10 Rial) and is
+ * produced here, never stored.
+ *
+ * Getting this backwards is a 10× error in every figure on screen, so no other
+ * module should divide or multiply by ten.
+ */
+
+export const RIAL_PER_TOMAN = 10;
+
+export interface FormatMoneyOptions {
+  /** Append the unit word. Default true. */
+  withUnit?: boolean;
+  /** Text to show for null/zero. Default '—'. */
+  emptyText?: string;
+  /** Latin digits instead of Persian — for inputs and LTR islands. */
+  latinDigits?: boolean;
+}
+
+/**
+ * Formats an amount held in **rial** as Toman with Persian digits.
+ *
+ * @example formatMoney(12_000_000) // "۱٬۲۰۰٬۰۰۰ تومان"
+ */
+export function formatMoney(
+  rial: number | undefined | null,
+  options: FormatMoneyOptions = {}
+): string {
+  const { withUnit = true, emptyText = '—', latinDigits = false } = options;
+
+  if (rial === undefined || rial === null || Number.isNaN(rial)) {
+    return emptyText;
+  }
+
+  const toman = Math.round(rial / RIAL_PER_TOMAN);
+  const digits = toman.toLocaleString(latinDigits ? 'en-US' : 'fa-IR');
+
+  return withUnit ? `${digits} تومان` : digits;
+}
+
+/**
+ * Formats a foreign amount held in **minor units** (cents) with its currency
+ * code. Used alongside formatMoney when a request was raised in USD/EUR.
+ *
+ * @example formatForeign(1250, 'USD') // "۱۲٫۵ USD"
+ */
+export function formatForeign(
+  amountMinor: number | undefined | null,
+  currency: string,
+  options: { latinDigits?: boolean } = {}
+): string {
+  if (amountMinor === undefined || amountMinor === null) {
+    return '—';
+  }
+
+  const major = amountMinor / 100;
+  const digits = major.toLocaleString(options.latinDigits ? 'en-US' : 'fa-IR', {
+    maximumFractionDigits: 2,
+  });
+
+  return `${digits} ${currency}`;
+}
+
+export const toRialFromToman = (toman: number): number => toman * RIAL_PER_TOMAN;
+export const toTomanFromRial = (rial: number): number =>
+  Math.round(rial / RIAL_PER_TOMAN);
+
+/**
+ * Legacy helper kept for existing call sites.
+ * @deprecated Use formatMoney — it takes rial, this takes Toman.
  */
 export function formatCost(cost: number | undefined | null): string {
   if (!cost || cost === 0) {
@@ -11,11 +80,7 @@ export function formatCost(cost: number | undefined | null): string {
 }
 
 /**
- * Format a cost value with descriptive text
- * @param cost - The cost value in Toman (IRT)
- * @param hasDataText - Text to show when there is data
- * @param noDataText - Text to show when there is no data
- * @returns Formatted description
+ * @deprecated Paired with formatCost; use formatMoney instead.
  */
 export function formatCostSubtext(
   cost: number | undefined | null,

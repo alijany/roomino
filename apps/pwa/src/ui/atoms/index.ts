@@ -11,3 +11,4 @@ export * from './ui.avatar';
 export * from './ui.dropdown';
 export * from './ui.radio';
 export * from "./ui.file-picker";
+export * from "./ui.badge";

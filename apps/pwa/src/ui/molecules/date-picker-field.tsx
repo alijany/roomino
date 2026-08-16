@@ -1,32 +1,42 @@
 'use client';
 
-import { Button } from '@/ui/atoms';
+import { Button } from '@/ui/atoms/ui.button';
 import { Modal } from '@/ui/atoms/ui.modal';
-import { Calendar } from '@/ui/molecules';
+import { Calendar } from '@/ui/molecules/calendar';
 import { TZDate } from '@date-fns/tz';
 import { IconCalendar, IconX } from '@tabler/icons-react';
 import { format, subYears } from 'date-fns-jalali';
 import { useState } from 'react';
 
-const TEHRAN_TZ = 'Asia/Tehran';
+export const TEHRAN_TZ = 'Asia/Tehran';
 
-interface ReportDateRangePickerProps {
-  from: Date;
-  to: Date;
-  onChange: (range: { from: Date; to: Date }) => void;
-}
-
-interface DateFieldProps {
+interface DatePickerFieldProps {
   label: string;
   value: Date;
-  minSelectableDate: Date;
   onSelect: (date: Date) => void;
+  /** Defaults to two years back — reports look at history, deadlines look forward. */
+  minSelectableDate?: Date;
+  className?: string;
+  disabled?: boolean;
 }
 
-/** Single-day picker reusing the shared Calendar; unlike ReservationDatePicker
- * this allows past dates — historical usage is the whole point of a report. */
-function DateField({ label, value, minSelectableDate, onSelect }: DateFieldProps) {
+/**
+ * Single-day Jalali picker built on the shared Calendar, lifted out of the
+ * reports domain when the finance module became its second consumer.
+ *
+ * Displays Jalali (`yyyy/MM/dd`); the Date it hands back is a normal instant,
+ * so callers keep working in Gregorian ISO at the API boundary.
+ */
+export function DatePickerField({
+  label,
+  value,
+  onSelect,
+  minSelectableDate,
+  className,
+  disabled,
+}: DatePickerFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const min = minSelectableDate ?? subYears(TZDate.tz(TEHRAN_TZ, new Date()), 2);
 
   return (
     <>
@@ -34,7 +44,8 @@ function DateField({ label, value, minSelectableDate, onSelect }: DateFieldProps
         type="button"
         variant="outline"
         size="sm"
-        className="gap-2"
+        disabled={disabled}
+        className={className ?? 'gap-2'}
         onClick={() => setIsOpen(true)}
       >
         <IconCalendar className="size-4 text-slate-400" />
@@ -58,7 +69,7 @@ function DateField({ label, value, minSelectableDate, onSelect }: DateFieldProps
         </div>
         <Calendar
           selectedDates={[value]}
-          minSelectableDate={minSelectableDate}
+          minSelectableDate={min}
           onSelectDates={(dates) => {
             const next = dates[dates.length - 1];
             if (next) {
@@ -72,18 +83,28 @@ function DateField({ label, value, minSelectableDate, onSelect }: DateFieldProps
   );
 }
 
-export function ReportDateRangePicker({ from, to, onChange }: ReportDateRangePickerProps) {
-  const minSelectableDate = subYears(TZDate.tz(TEHRAN_TZ, new Date()), 2);
+interface DateRangePickerProps {
+  from: Date;
+  to: Date;
+  onChange: (range: { from: Date; to: Date }) => void;
+  minSelectableDate?: Date;
+}
 
+export function DateRangePicker({
+  from,
+  to,
+  onChange,
+  minSelectableDate,
+}: DateRangePickerProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <DateField
+      <DatePickerField
         label="از تاریخ"
         value={from}
         minSelectableDate={minSelectableDate}
         onSelect={(date) => onChange({ from: date, to })}
       />
-      <DateField
+      <DatePickerField
         label="تا تاریخ"
         value={to}
         minSelectableDate={minSelectableDate}
