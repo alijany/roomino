@@ -164,84 +164,86 @@ export default function PaymentSourcesPage() {
         </div>
 
         <Modal isOpen={formOpen} onClose={() => setFormOpen(false)} className="bg-white lg:min-w-[480px]">
-          <div className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
+          <div className="flex min-h-0 flex-col">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
               <h3 className="font-bold text-lg text-slate-800">افزودن منبع پرداخت</h3>
               <Button variant="outline" className="!px-2" onClick={() => setFormOpen(false)}>
                 <IconX className="size-5" />
               </Button>
             </div>
 
-            <Input
-              label="عنوان"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="مثلاً حساب جاری بانک ملت"
-              required
-            />
-
-            <div>
-              <label className="mb-2 block font-medium text-slate-700">نوع</label>
-              <Dropdown
-                items={Object.values(PaymentSourceType).map((value) => ({
-                  label: PAYMENT_SOURCE_TYPE_LABELS[value],
-                  value,
-                }))}
-                value={type}
-                onChange={(value) => setType(value as PaymentSourceType)}
-                variant="outline"
+            <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
+              <Input
+                label="عنوان"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="مثلاً حساب جاری بانک ملت"
+                required
               />
+
+              <div>
+                <label className="mb-2 block font-medium text-slate-700">نوع</label>
+                <Dropdown
+                  items={Object.values(PaymentSourceType).map((value) => ({
+                    label: PAYMENT_SOURCE_TYPE_LABELS[value],
+                    value,
+                  }))}
+                  value={type}
+                  onChange={(value) => setType(value as PaymentSourceType)}
+                  variant="outline"
+                />
+              </div>
+
+              <Input
+                label="نام بانک"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+              />
+
+              <Input
+                label="شماره شبا"
+                dir="ltr"
+                className="text-left"
+                value={sheba}
+                onChange={(e) => setSheba(e.target.value)}
+                placeholder="IR000000000000000000000000"
+              />
+
+              <Input
+                label="چهار رقم آخر کارت"
+                dir="ltr"
+                className="text-left"
+                maxLength={4}
+                value={cardLast4}
+                onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, ''))}
+                labelRight={
+                  <span className="text-xs font-normal text-slate-400">
+                    شماره کامل کارت ذخیره نمی‌شود
+                  </span>
+                }
+              />
+
+              <Input
+                label="صاحب حساب"
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+              />
+
+              <div>
+                <label className="mb-2 block font-medium text-slate-700">واحد پول</label>
+                <Dropdown
+                  items={Object.values(Currency).map((value) => ({
+                    label: CURRENCY_LABELS[value],
+                    value,
+                  }))}
+                  value={currency}
+                  onChange={(value) => setCurrency(value as Currency)}
+                  variant="outline"
+                />
+              </div>
             </div>
 
-            <Input
-              label="نام بانک"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-            />
-
-            <Input
-              label="شماره شبا"
-              dir="ltr"
-              className="text-left"
-              value={sheba}
-              onChange={(e) => setSheba(e.target.value)}
-              placeholder="IR000000000000000000000000"
-            />
-
-            <Input
-              label="چهار رقم آخر کارت"
-              dir="ltr"
-              className="text-left"
-              maxLength={4}
-              value={cardLast4}
-              onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, ''))}
-              labelRight={
-                <span className="text-xs font-normal text-slate-400">
-                  شماره کامل کارت ذخیره نمی‌شود
-                </span>
-              }
-            />
-
-            <Input
-              label="صاحب حساب"
-              value={accountHolder}
-              onChange={(e) => setAccountHolder(e.target.value)}
-            />
-
-            <div>
-              <label className="mb-2 block font-medium text-slate-700">واحد پول</label>
-              <Dropdown
-                items={Object.values(Currency).map((value) => ({
-                  label: CURRENCY_LABELS[value],
-                  value,
-                }))}
-                value={currency}
-                onChange={(value) => setCurrency(value as Currency)}
-                variant="outline"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
+            <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
               <Button
                 className="flex-1"
                 disabled={!label.trim() || create.isLoading}

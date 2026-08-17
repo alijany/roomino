@@ -299,15 +299,15 @@ function RecurringForm({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="bg-white lg:min-w-[520px]">
-      <div className="flex max-h-[85vh] flex-col">
-        <div className="flex items-center justify-between border-b border-slate-100 p-5">
+      <div className="flex min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
           <h3 className="font-bold text-lg text-slate-800">هزینه دوره‌ای جدید</h3>
           <Button variant="outline" className="!px-2" onClick={onClose}>
             <IconX className="size-5" />
           </Button>
         </div>
 
-        <div className="grow space-y-4 overflow-y-auto p-5">
+        <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
           <Input
             label="عنوان"
             value={title}
@@ -452,7 +452,7 @@ function RecurringForm({
           </p>
         </div>
 
-        <div className="flex gap-3 border-t border-slate-100 p-5">
+        <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
           <Button
             className="flex-1"
             disabled={!valid || create.isLoading}

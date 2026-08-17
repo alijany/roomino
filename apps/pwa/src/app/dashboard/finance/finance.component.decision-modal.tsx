@@ -71,24 +71,26 @@ export function DecisionModal({
 
   return (
     <Modal isOpen={Boolean(kind)} onClose={handleClose} className="bg-white lg:min-w-[480px]">
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
+      <div className="flex min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
           <h3 className="font-bold text-lg text-slate-800">{copy?.title}</h3>
           <Button variant="outline" className="!px-2" onClick={handleClose}>
             <IconX className="size-5" />
           </Button>
         </div>
 
-        <Input
-          textarea
-          rows={4}
-          label={copy?.reasonRequired ? 'دلیل' : 'یادداشت'}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder={copy?.hint}
-        />
+        <div className="min-h-0 grow overflow-y-auto p-5">
+          <Input
+            textarea
+            rows={4}
+            label={copy?.reasonRequired ? 'دلیل' : 'یادداشت'}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={copy?.hint}
+          />
+        </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
           <Button
             className={copy?.danger ? 'flex-1 !bg-rose-500 text-white' : 'flex-1'}
             disabled={blocked || isLoading}

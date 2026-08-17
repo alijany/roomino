@@ -39,8 +39,11 @@ export function Modal({ isOpen, onClose, children, className = '', fullScreen = 
                             leaveFrom={fullScreen ? "opacity-100" : "translate-y-0 lg:scale-100 lg:opacity-100"}
                             leaveTo={fullScreen ? "opacity-0" : "translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"}
                         >
-                            <DialogPanel className={`w-full transform transition-all
-                                    ${fullScreen ? 'h-screen' : 'lg:w-auto lg:max-w-2xl lg:rounded-2xl max-h-[calc(100vh-2rem)] lg:max-h-[calc(100vh-8rem)]'}
+                            {/* A flex column so panel content can split into a fixed
+                                header, a scrolling body and a footer that stays visible
+                                however short the viewport is. */}
+                            <DialogPanel className={`w-full transform transition-all flex flex-col
+                                    ${fullScreen ? 'h-screen' : 'lg:w-auto lg:max-w-2xl lg:rounded-2xl max-h-[calc(100dvh-2rem)] lg:max-h-[calc(100dvh-8rem)]'}
                                     bg-slate-50 shadow-xl shadow-black/5
                                     overflow-hidden
                                     ${className}`}>

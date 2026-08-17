@@ -233,8 +233,8 @@ export function RequestForm({
   return (
     <>
       <Modal isOpen={isOpen} onClose={handleClose} className="bg-white lg:min-w-[620px]">
-        <div className="flex max-h-[85vh] flex-col">
-          <div className="flex items-center justify-between border-b border-slate-100 p-5">
+        <div className="flex min-h-0 flex-col">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
             <div>
               <h2 className="font-bold text-lg text-slate-800">
                 {existing ? 'اصلاح درخواست پرداخت' : 'درخواست پرداخت جدید'}
@@ -249,7 +249,7 @@ export function RequestForm({
           </div>
 
           {/* Step rail */}
-          <div className="flex gap-1 px-5 pt-4">
+          <div className="flex shrink-0 gap-1 px-5 pt-4">
             {STEPS.map((label, index) => (
               <div key={label} className="flex-1">
                 <div
@@ -262,7 +262,7 @@ export function RequestForm({
             ))}
           </div>
 
-          <div className="grow overflow-y-auto p-5 space-y-4">
+          <div className="min-h-0 grow overflow-y-auto p-5 space-y-4">
             {step === 0 && (
               <>
                 <div>
@@ -497,7 +497,7 @@ export function RequestForm({
             )}
           </div>
 
-          <div className="flex gap-3 border-t border-slate-100 p-5">
+          <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
             {step > 0 && (
               <Button
                 variant="ghost"

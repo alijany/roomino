@@ -248,73 +248,80 @@ export default function VendorsPage() {
           onClose={() => setFormOpen(false)}
           className="bg-white lg:min-w-[480px]"
         >
-          <div className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
+          <div className="flex min-h-0 flex-col">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
               <h3 className="font-bold text-lg text-slate-800">طرف‌حساب جدید</h3>
               <Button variant="outline" className="!px-2" onClick={() => setFormOpen(false)}>
                 <IconX className="size-5" />
               </Button>
             </div>
 
-            <Input label="نام" value={name} onChange={(e) => setName(e.target.value)} required />
-            <Input
-              label="نام لاتین (اختیاری)"
-              dir="ltr"
-              className="text-left"
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
-            />
+            <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
+              <Input
+                label="نام"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <Input
+                label="نام لاتین (اختیاری)"
+                dir="ltr"
+                className="text-left"
+                value={nameEn}
+                onChange={(e) => setNameEn(e.target.value)}
+              />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block font-medium text-slate-700">نوع</label>
-                <Dropdown
-                  items={Object.values(VendorKind).map((value) => ({
-                    label: VENDOR_KIND_LABELS[value],
-                    value,
-                  }))}
-                  value={kind}
-                  onChange={(value) => setKind(value as VendorKind)}
-                  variant="outline"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block font-medium text-slate-700">نوع</label>
+                  <Dropdown
+                    items={Object.values(VendorKind).map((value) => ({
+                      label: VENDOR_KIND_LABELS[value],
+                      value,
+                    }))}
+                    value={kind}
+                    onChange={(value) => setKind(value as VendorKind)}
+                    variant="outline"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block font-medium text-slate-700">
+                    واحد پول پیش‌فرض
+                  </label>
+                  <Dropdown
+                    items={Object.values(Currency).map((value) => ({
+                      label: CURRENCY_LABELS[value],
+                      value,
+                    }))}
+                    value={currency}
+                    onChange={(value) => setCurrency(value as Currency)}
+                    variant="outline"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="mb-2 block font-medium text-slate-700">
-                  واحد پول پیش‌فرض
-                </label>
-                <Dropdown
-                  items={Object.values(Currency).map((value) => ({
-                    label: CURRENCY_LABELS[value],
-                    value,
-                  }))}
-                  value={currency}
-                  onChange={(value) => setCurrency(value as Currency)}
-                  variant="outline"
-                />
-              </div>
+
+              <Input
+                label="کد اقتصادی (اختیاری)"
+                dir="ltr"
+                className="text-left"
+                value={economicCode}
+                onChange={(e) => setEconomicCode(e.target.value)}
+              />
+              <Input
+                label="نام رابط (اختیاری)"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+              />
+              <Input
+                label="شماره تماس (اختیاری)"
+                dir="ltr"
+                className="text-left"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
             </div>
 
-            <Input
-              label="کد اقتصادی (اختیاری)"
-              dir="ltr"
-              className="text-left"
-              value={economicCode}
-              onChange={(e) => setEconomicCode(e.target.value)}
-            />
-            <Input
-              label="نام رابط (اختیاری)"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-            />
-            <Input
-              label="شماره تماس (اختیاری)"
-              dir="ltr"
-              className="text-left"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-            />
-
-            <div className="flex gap-3 pt-2">
+            <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
               <Button
                 className="flex-1"
                 disabled={!name.trim() || createVendor.isLoading}
@@ -426,8 +433,8 @@ function PayeeAccountModal({
       onClose={onClose}
       className="bg-white lg:min-w-[480px]"
     >
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
+      <div className="flex min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
           <h3 className="font-bold text-lg text-slate-800">
             حساب‌های مقصد {vendor?.name}
           </h3>
@@ -436,87 +443,94 @@ function PayeeAccountModal({
           </Button>
         </div>
 
-        {vendor && vendor.accounts.length > 0 && (
-          <ul className="space-y-2">
-            {vendor.accounts.map((account) => (
-              <li
-                key={account.id}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"
-              >
-                <div className="grow min-w-0">
-                  <div className="font-medium text-slate-800">
-                    {account.label}
-                    {account.isDefault && (
-                      <span className="mr-2 text-xs text-slate-400">پیش‌فرض</span>
-                    )}
-                  </div>
-                  <div dir="ltr" className="truncate font-mono text-xs text-slate-500">
-                    {account.sheba || account.cardNumber || account.iban || account.details}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="!px-2 border-none text-rose-500"
-                  onClick={() => handleRemove(account.id)}
-                  aria-label={`حذف ${account.label}`}
+        <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
+          {vendor && vendor.accounts.length > 0 && (
+            <ul className="space-y-2">
+              {vendor.accounts.map((account) => (
+                <li
+                  key={account.id}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"
                 >
-                  <IconTrash className="size-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <div className="grow min-w-0">
+                    <div className="font-medium text-slate-800">
+                      {account.label}
+                      {account.isDefault && (
+                        <span className="mr-2 text-xs text-slate-400">پیش‌فرض</span>
+                      )}
+                    </div>
+                    <div dir="ltr" className="truncate font-mono text-xs text-slate-500">
+                      {account.sheba || account.cardNumber || account.iban || account.details}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="!px-2 border-none text-rose-500"
+                    onClick={() => handleRemove(account.id)}
+                    aria-label={`حذف ${account.label}`}
+                  >
+                    <IconTrash className="size-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <div className="space-y-3 border-t border-slate-100 pt-4">
-          <Input
-            label="عنوان حساب"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="مثلاً حساب اصلی"
-          />
-
-          <div>
-            <label className="mb-2 block font-medium text-slate-700">نوع حساب</label>
-            <Dropdown
-              items={Object.values(PayeeAccountType).map((item) => ({
-                label: PAYEE_ACCOUNT_TYPE_LABELS[item],
-                value: item,
-              }))}
-              value={type}
-              onChange={(next) => setType(next as PayeeAccountType)}
-              variant="outline"
+          <div className="space-y-3 border-t border-slate-100 pt-4">
+            <Input
+              label="عنوان حساب"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="مثلاً حساب اصلی"
             />
+
+            <div>
+              <label className="mb-2 block font-medium text-slate-700">نوع حساب</label>
+              <Dropdown
+                items={Object.values(PayeeAccountType).map((item) => ({
+                  label: PAYEE_ACCOUNT_TYPE_LABELS[item],
+                  value: item,
+                }))}
+                value={type}
+                onChange={(next) => setType(next as PayeeAccountType)}
+                variant="outline"
+              />
+            </div>
+
+            <Input
+              label="نام صاحب حساب"
+              value={holderName}
+              onChange={(e) => setHolderName(e.target.value)}
+            />
+
+            <Input
+              label={PAYEE_ACCOUNT_TYPE_LABELS[type]}
+              dir="ltr"
+              className="text-left"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+            />
+
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={isDefault}
+                onChange={(e) => setIsDefault(e.target.checked)}
+              />
+              حساب پیش‌فرض این طرف‌حساب باشد
+            </label>
           </div>
+        </div>
 
-          <Input
-            label="نام صاحب حساب"
-            value={holderName}
-            onChange={(e) => setHolderName(e.target.value)}
-          />
-
-          <Input
-            label={PAYEE_ACCOUNT_TYPE_LABELS[type]}
-            dir="ltr"
-            className="text-left"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-          />
-
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-            />
-            حساب پیش‌فرض این طرف‌حساب باشد
-          </label>
-
+        <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
           <Button
-            className="w-full"
+            className="flex-1"
             disabled={!label.trim() || !value.trim() || add.isLoading}
             onClick={handleAdd}
           >
             {add.isLoading ? 'در حال ذخیره...' : 'افزودن حساب'}
+          </Button>
+          <Button variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>
+            بستن
           </Button>
         </div>
       </div>

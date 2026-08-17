@@ -99,8 +99,8 @@ export function PaymentModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="bg-white lg:min-w-[560px]">
-      <div className="flex max-h-[85vh] flex-col">
-        <div className="flex items-center justify-between border-b border-slate-100 p-5">
+      <div className="flex min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
           <div>
             <h3 className="font-bold text-lg text-slate-800">ثبت پرداخت</h3>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -112,7 +112,7 @@ export function PaymentModal({
           </Button>
         </div>
 
-        <div className="grow space-y-4 overflow-y-auto p-5">
+        <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
           <div>
             <label className="mb-2 block font-medium text-slate-700">منبع پرداخت</label>
             <Dropdown
@@ -214,7 +214,7 @@ export function PaymentModal({
           />
         </div>
 
-        <div className="flex gap-3 border-t border-slate-100 p-5">
+        <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">
           <Button className="flex-1" disabled={!valid || isLoading} onClick={handleConfirm}>
             {isLoading ? 'در حال ثبت...' : 'ثبت پرداخت'}
           </Button>
