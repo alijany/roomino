@@ -14,6 +14,8 @@ import { User, UserRole } from './users.types';
 interface UserRowProps {
     user: User;
     onChanged?: () => void;
+    /** Role add/remove and delete are admin-only; HR can only confirm registrations. */
+    canManageRoles?: boolean;
 }
 
 function RoleBadge({ role, onRemove, removable }: { role: UserRole; onRemove?: () => void; removable: boolean }) {
@@ -34,7 +36,7 @@ function RoleBadge({ role, onRemove, removable }: { role: UserRole; onRemove?: (
     );
 }
 
-export function UserRow({ user, onChanged }: UserRowProps) {
+export function UserRow({ user, onChanged, canManageRoles = false }: UserRowProps) {
     const approve = useApproveUser();
     const addRole = useAddUserRole();
     const removeRole = useRemoveUserRole();
@@ -118,12 +120,12 @@ export function UserRow({ user, onChanged }: UserRowProps) {
                         <RoleBadge
                             key={role.id}
                             role={role}
-                            removable={user.roles.length > 1}
+                            removable={canManageRoles && user.roles.length > 1}
                             onRemove={() => handleRemoveRole(role)}
                         />
                     ))}
 
-                    {addableRoles.length > 0 && (
+                    {canManageRoles && addableRoles.length > 0 && (
                         <Dropdown
                             items={addableRoles}
                             value={null}
@@ -160,14 +162,16 @@ export function UserRow({ user, onChanged }: UserRowProps) {
                             </Button>
                         )}
                     </div>
-                    <Button
-                        variant="outline"
-                        className="!px-2.5 text-rose-500 hover:bg-rose-50"
-                        onClick={() => setConfirmDelete(true)}
-                        aria-label="حذف کاربر"
-                    >
-                        <IconTrash className="size-5" />
-                    </Button>
+                    {canManageRoles && (
+                        <Button
+                            variant="outline"
+                            className="!px-2.5 text-rose-500 hover:bg-rose-50"
+                            onClick={() => setConfirmDelete(true)}
+                            aria-label="حذف کاربر"
+                        >
+                            <IconTrash className="size-5" />
+                        </Button>
+                    )}
                 </div>
             </div>
 

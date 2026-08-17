@@ -36,13 +36,13 @@ export const RouteItems = {
   rooms: {
     href: "/dashboard/rooms",
     label: "مدیریت اتاق‌ها",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.HR],
     icon: <IconDoor className="size-5" />
   },
   users: {
     href: "/dashboard/users",
     label: "کاربران",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.HR],
     icon: <IconUsers className="size-5" />
   },
   reports: {

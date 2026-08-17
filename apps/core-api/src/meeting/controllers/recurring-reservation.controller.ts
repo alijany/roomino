@@ -26,7 +26,7 @@ export class RecurringReservationController {
   constructor(private readonly recurringService: RecurringReservationService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async list(@Query() query: ListQueryDto) {
     const { page = 0, limit = 50 } = query;
     const [items, total] = await this.recurringService.listPaginated(
@@ -40,13 +40,13 @@ export class RecurringReservationController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   create(@Body() dto: CreateRecurringDto) {
     return this.recurringService.createChecked(dto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.recurringService.remove({ id });
     return { success: true };

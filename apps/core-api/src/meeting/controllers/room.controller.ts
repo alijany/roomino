@@ -28,7 +28,7 @@ export class RoomController {
   constructor(private readonly roomService: MeetingRoomService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async list(@Query() query: ListQueryDto) {
     const { page = 0, limit = 10 } = query;
     const [items, total] = await this.roomService.listPaginated(page, limit);
@@ -39,7 +39,7 @@ export class RoomController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   create(@Body() dto: CreateRoomDto) {
     return this.roomService.create({
       name: dto.name,
@@ -51,13 +51,13 @@ export class RoomController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoomDto) {
     return this.roomService.updateOne({ id }, dto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.roomService.deleteWithDependents(id);
     return { success: true };

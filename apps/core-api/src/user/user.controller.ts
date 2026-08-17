@@ -46,7 +46,7 @@ export class UserController {
   }
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async getAllUsers(@Query() filters?: UsersGetDto): Promise<{
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
@@ -87,7 +87,7 @@ export class UserController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.HR)
   async approveUser(@Param('id', ParseIntPipe) id: number) {
     return this.userService.approveUser(id);
   }

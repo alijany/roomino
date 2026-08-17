@@ -1,6 +1,8 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
+import { Role } from '@/components/auth/auth.constants.roles';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { DataView, Pagination } from '@/ui/molecules';
@@ -19,6 +21,8 @@ const USER_TABS = [
 
 export default function UsersPage() {
     const [filters, setFilters] = useState<UserFilterDto>({});
+    const { hasRole } = useAuth();
+    const isAdmin = hasRole(Role.ADMIN);
 
     const { data, error, isLoading, refresh } = useUsers(filters);
 
@@ -43,7 +47,7 @@ export default function UsersPage() {
                                 {count > 0 ? `${count} کاربر` : 'کاربران'} و درخواست‌های تایید را مدیریت کنید
                             </p>
                         </div>
-                        <AddUserForm onSuccess={refresh} />
+                        {isAdmin && <AddUserForm onSuccess={refresh} />}
                     </div>
 
                     {/* Tabs + content */}
@@ -66,7 +70,7 @@ export default function UsersPage() {
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                                     {data?.items?.map((user) => (
-                                        <UserRow key={user.id} user={user} onChanged={refresh} />
+                                        <UserRow key={user.id} user={user} onChanged={refresh} canManageRoles={isAdmin} />
                                     ))}
                                 </div>
 
