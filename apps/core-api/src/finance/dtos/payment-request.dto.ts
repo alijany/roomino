@@ -41,6 +41,15 @@ export class CreatePaymentRequestDto {
   @IsEnum(Currency, { message: 'واحد پول نامعتبر است' })
   currency: Currency;
 
+  /**
+   * Optional link to the vendor directory. The payee fields below are still
+   * required and are stored on the request — picking a vendor pre-fills them in
+   * the UI, it does not replace them, because a payment record must not change
+   * when a vendor later edits their bank details.
+   */
+  @IsOptional() @Type(() => Number) @IsInt() vendorId?: number;
+  @IsOptional() @Type(() => Number) @IsInt() payeeAccountId?: number;
+
   @IsString()
   @IsNotEmpty({ message: 'نام طرف‌حساب را وارد کنید' })
   @MaxLength(200)
@@ -97,6 +106,8 @@ export class UpdatePaymentRequestDto {
   @IsOptional() @Type(() => Number) @IsInt() categoryId?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) amountMinor?: number;
   @IsOptional() @IsEnum(Currency) currency?: Currency;
+  @IsOptional() @Type(() => Number) @IsInt() vendorId?: number;
+  @IsOptional() @Type(() => Number) @IsInt() payeeAccountId?: number;
   @IsOptional() @IsString() @IsNotEmpty() @MaxLength(200) payeeName?: string;
   @IsOptional() @IsEnum(PayeeAccountType) payeeAccountType?: PayeeAccountType;
   @IsOptional() @IsString() @MaxLength(200) payeeAccountHolder?: string;

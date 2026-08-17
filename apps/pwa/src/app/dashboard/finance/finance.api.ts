@@ -14,19 +14,33 @@ import {
   ApprovalPreview,
   ApprovalRule,
   ApprovalRuleInput,
+  CreatePayeeAccountDto,
   CreatePaymentSourceDto,
+  CreateRecurringDto,
   CreateRequestDto,
+  CreateVendorDto,
   Currency,
   ExpenseCategory,
   FinanceBadges,
+  FinanceDashboard,
   GetRequestsResponse,
+  MonthlyReport,
+  NamedTotal,
+  PaginationMeta,
+  PayeeAccount,
   PaymentRequest,
   PaymentRequestDetail,
   PaymentSource,
   RecordPaymentDto,
+  RecurringExpense,
+  RecurringFilterDto,
   RequestAttachment,
   RequestFilterDto,
+  TrendPoint,
+  UpcomingCommitments,
   UpdateRequestDto,
+  Vendor,
+  VendorFilterDto,
 } from './finance.types';
 
 // --- requests ---------------------------------------------------------------
@@ -202,6 +216,199 @@ export function useDeletePaymentSource() {
       '/finance/payment-sources',
       (_key: string, { arg }: { arg: number }) =>
         deleteFetcher<{ success: boolean }>(`/finance/payment-sources/${arg}`)
+    )
+  );
+}
+
+// --- vendors (phase 2) ------------------------------------------------------
+
+export function useVendors(filters?: VendorFilterDto) {
+  return useSwrHelper(
+    useSWR<{ items: Vendor[]; meta: PaginationMeta }>(
+      withQuery('/finance/vendors', filters as Record<string, never>),
+      fetcher
+    )
+  );
+}
+
+export function useVendor(id?: number) {
+  return useSwrHelper(
+    useSWR<Vendor>(id ? `/finance/vendors/${id}` : null, fetcher)
+  );
+}
+
+export function useCreateVendor() {
+  return useSwrMutationHelper(
+    useSWRMutation('/finance/vendors', postFetcher<CreateVendorDto, Vendor>)
+  );
+}
+
+export function useUpdateVendor() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/vendors',
+      (_key: string, { arg }: { arg: { id: number; data: Partial<CreateVendorDto> } }) =>
+        patchFetcher<Partial<CreateVendorDto>, Vendor>(
+          `/finance/vendors/${arg.id}`,
+          { arg: arg.data }
+        )
+    )
+  );
+}
+
+export function useDeleteVendor() {
+  return useSwrMutationHelper(
+    useSWRMutation('/finance/vendors', (_key: string, { arg }: { arg: number }) =>
+      deleteFetcher<{ success: boolean; deactivated: boolean }>(
+        `/finance/vendors/${arg}`
+      )
+    )
+  );
+}
+
+export function useAddPayeeAccount() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/vendors/accounts',
+      (
+        _key: string,
+        { arg }: { arg: { vendorId: number; data: CreatePayeeAccountDto } }
+      ) =>
+        postFetcher<CreatePayeeAccountDto, PayeeAccount>(
+          `/finance/vendors/${arg.vendorId}/accounts`,
+          { arg: arg.data }
+        )
+    )
+  );
+}
+
+export function useDeletePayeeAccount() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/vendors/accounts',
+      (_key: string, { arg }: { arg: number }) =>
+        deleteFetcher<{ success: boolean }>(`/finance/vendors/accounts/${arg}`)
+    )
+  );
+}
+
+// --- recurring expenses (phase 2) -------------------------------------------
+
+export function useRecurringExpenses(filters?: RecurringFilterDto) {
+  return useSwrHelper(
+    useSWR<{ items: RecurringExpense[]; meta: PaginationMeta }>(
+      withQuery('/finance/recurring', filters as Record<string, never>),
+      fetcher
+    )
+  );
+}
+
+export function useCreateRecurring() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/recurring',
+      postFetcher<CreateRecurringDto, RecurringExpense>
+    )
+  );
+}
+
+export function useUpdateRecurring() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/recurring',
+      (
+        _key: string,
+        { arg }: { arg: { id: number; data: Partial<CreateRecurringDto> } }
+      ) =>
+        patchFetcher<Partial<CreateRecurringDto>, RecurringExpense>(
+          `/finance/recurring/${arg.id}`,
+          { arg: arg.data }
+        )
+    )
+  );
+}
+
+export function useDeleteRecurring() {
+  return useSwrMutationHelper(
+    useSWRMutation('/finance/recurring', (_key: string, { arg }: { arg: number }) =>
+      deleteFetcher<{ success: boolean; deactivated: boolean }>(
+        `/finance/recurring/${arg}`
+      )
+    )
+  );
+}
+
+/** `generate` creates this cycle's request now; `skip` rolls past it. */
+function useRecurringAction(action: 'generate' | 'skip') {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      `/finance/recurring/${action}`,
+      (_key: string, { arg }: { arg: number }) =>
+        postFetcher<Record<string, never>, unknown>(
+          `/finance/recurring/${arg}/${action}`,
+          { arg: {} }
+        )
+    )
+  );
+}
+
+export const useGenerateRecurring = () => useRecurringAction('generate');
+export const useSkipRecurring = () => useRecurringAction('skip');
+
+// --- reporting (phase 3) ----------------------------------------------------
+
+export function useFinanceDashboard(range?: { from?: string; to?: string }) {
+  return useSwrHelper(
+    useSWR<FinanceDashboard>(
+      withQuery('/finance/dashboard', range as Record<string, never>),
+      fetcher
+    )
+  );
+}
+
+export function useSpendByCategory(range?: { from?: string; to?: string }) {
+  return useSwrHelper(
+    useSWR<{ items: NamedTotal[] }>(
+      withQuery('/finance/reports/by-category', range as Record<string, never>),
+      fetcher
+    )
+  );
+}
+
+export function useSpendByVendor(range?: { from?: string; to?: string }) {
+  return useSwrHelper(
+    useSWR<{ items: NamedTotal[] }>(
+      withQuery('/finance/reports/by-vendor', range as Record<string, never>),
+      fetcher
+    )
+  );
+}
+
+export function useSpendTrend(months = 12) {
+  return useSwrHelper(
+    useSWR<{ items: TrendPoint[] }>(
+      withQuery('/finance/reports/trend', { months }),
+      fetcher
+    )
+  );
+}
+
+export function useUpcomingCommitments(days = 30) {
+  return useSwrHelper(
+    useSWR<UpcomingCommitments>(
+      withQuery('/finance/reports/upcoming', { days }),
+      fetcher
+    )
+  );
+}
+
+export function useMonthlyReport(year?: number, month?: number) {
+  return useSwrHelper(
+    useSWR<MonthlyReport>(
+      year && month
+        ? withQuery('/finance/reports/monthly', { year, month })
+        : null,
+      fetcher
     )
   );
 }

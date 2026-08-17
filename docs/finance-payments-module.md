@@ -1,11 +1,13 @@
 # Finance & External Payments — Product & Development Plan
 
-**Status:** Phase 0 and Phase 1 **shipped**. Phases 2–4 not started.
+**Status:** Phases 0–3 **shipped**. Phase 4 (deferred) not started.
 **Owner:** Product / Engineering
 **Target repo:** `alijany/roomino` — branch `claude/finance-external-payments-module-o6xdrs`
 
-> **Implementation state.** The request → approve → pay spine is built, running
-> and verified end to end (30/30 checks, §16). Module references for agents:
+> **Implementation state.** The whole of v1 is built, running and verified end
+> to end (66/66 checks, §16): the request → approve → pay spine, the vendor
+> directory and recurring expenses with their scheduled jobs, and the dashboard,
+> monthly close and CSV export. Module references for agents:
 > [`apps/core-api/src/finance/README.md`](../apps/core-api/src/finance/README.md)
 > and [`apps/pwa/src/app/dashboard/finance/README.md`](../apps/pwa/src/app/dashboard/finance/README.md).
 >
@@ -462,7 +464,7 @@ Frontend: sidebar group · `my-requests` (list + 3-step create + review) · `app
 
 **Done when:** an employee submits a request from a phone, the approver is notified and approves, Finance records payment with a reference number and receipt, the requester is notified, and the full timeline is visible — with self-approval blocked at every step.
 
-### Phase 2 — Vendors and recurring (~7 days)
+### Phase 2 — Vendors and recurring ✅ shipped
 
 Backend: `Vendor`, `PayeeAccount`, `RecurringExpense` entities and CRUD · daily materialiser + reminder cron · `NotificationCategory.FINANCE` + migration · enforce notification preferences for reminders (not for approvals) · skip/regenerate actions.
 
@@ -470,7 +472,7 @@ Frontend: `vendors` (list, detail, accounts, deactivate-not-delete) · `recurrin
 
 **Done when:** a Figma subscription is registered once, the owner gets a decision-shaped reminder 30 days out, and a pre-filled request appears in Finance's queue on schedule.
 
-### Phase 3 — Dashboard, reports, export (~7 days)
+### Phase 3 — Dashboard, reports, export ✅ shipped
 
 Backend: aggregation service (single-pass SQL, not N+1 over requests) · `/finance/dashboard`, `/reports/*`, CSV export with BOM · monthly-report cron.
 
@@ -480,29 +482,43 @@ Frontend: `finance` dashboard (8 tiles + 4 charts, chart↔table toggle) · `rep
 
 ### What actually shipped, and where it diverged from this plan
 
-Phases 0 and 1 are complete. Three deliberate deviations:
+Phases 0–3 are complete. The deliberate deviations:
 
 | Planned | Built | Why |
 |---|---|---|
 | `VendorEntity` + `PayeeAccountEntity` referenced from the request | Payee is **free-text** on `PaymentRequestEntity` (`payeeName`, `payeeSheba`, …) | The vendor directory is Phase 2. The fields an employee supplies are the same either way, so Phase 2 adds a nullable vendor FK beside them rather than reshaping anything. |
 | `requestInfo` clears the approval chain | Steps are retired to `SKIPPED`, never deleted; a resubmit appends a new round with continuing sequence numbers | Deleting them erased the audit history *and* cut the approver's only link to a request they had just returned — which produced a 403 after the transition had already committed. See "the re-read trap" in the module README. |
 | Not planned | `PaymentRequestEntity.pendingRole` / `pendingSequence` | Denormalised pointer to the outstanding step. "What is waiting on me?" is asked on every approver's page load and drives the nav badge; without it that is a per-row scan for the lowest pending sequence. |
+| Category breakdown as a **donut** (§13) | A horizontal ranked **bar** | Seven slices with long Persian category names is where pie charts fail. The reader's question is "what cost the most" — a magnitude comparison, which also drops the need for seven categorical hues. |
+| Not planned | `RecurringExpenseEntity.calendar` (Gregorian \| Jalali) | A real distinction in this context, not a nicety: SaaS bills on Gregorian months while rent and local services fall on Jalali ones. Advancing an Esfand-15 rent by a Gregorian month drifts off the agreed day within a year. Verified: 2026-03-05 advances to 2026-04-03 (Jalali) vs 2026-04-05 (Gregorian). |
+| Not planned | Every foreign-currency request routes to an approver | Found by the phase-2 test run. A foreign amount has no rial value until Finance sets a rate, so `toRial` returns 0 and the matrix put a USD 50,000 invoice in the same band as a USD 5 one. When the thresholds cannot be applied, a human looks instead. |
 
-Also delivered but not called out in the original plan: an
-`/approval-preview` endpoint (so the form can show the approver chain before
-submit), a `meta/badges` endpoint for nav counts, and a `permissions` object on
-the request detail so the UI never re-derives the action rules.
+Also delivered but not called out in the original plan: an `/approval-preview`
+endpoint (so the form can show the approver chain before submit), a
+`meta/badges` endpoint for nav counts, a `permissions` object on the request
+detail so the UI never re-derives the action rules, and a fix to
+`MigrationService` — it diffed the entities *before* applying pending
+migrations, so a fresh database produced a whole-schema migration that then
+collided with the migrations it came from.
 
-**Verified against a real Postgres**, not just lint: migrations generate and
-apply cleanly from an empty database, `FinanceBootstrapService` seeds 9
-categories and 3 approval bands, and the §16 script passes 30/30 — including
-both segregation-of-duties rules, the needs-info round trip, the two-step chain,
-foreign-currency payment with FX rate and fee, and the full access-control
-matrix.
+**Verified against a real Postgres**, not just lint. All seven migrations apply
+cleanly from an empty database, `FinanceBootstrapService` seeds 9 categories and
+3 approval bands, and three suites pass **66/66**:
 
-Deferred from Phase 1 as planned: nothing. `S3StorageService.getSignedReadUrl()`
-was added and finance attachments upload with `acl: 'private'`, so the
-public-read risk in §17 is closed.
+| Suite | Covers |
+|---|---|
+| Phase 1 — 30 checks | threshold routing at all three bands, the needs-info round trip, both segregation-of-duties rules, the two-step chain, foreign-currency payment with FX rate and fee, the access-control matrix, the user-deletion guard |
+| Phase 2 — 18 checks | vendor CRUD and permissions, payee-account defaulting, vendor pre-fill on a request, schedule creation, materialisation with payee snapshotting, idempotency on re-generation, skip, the daily job and its admin-only guard |
+| Phase 3 — 18 checks | dashboard KPIs summing *settled* not requested amounts, null change-percent with no baseline, category/vendor/trend breakdowns, monthly close with the variance row, CSV with a UTF-8 BOM and intact Persian headers, upcoming commitments, and role gating on every report endpoint |
+
+Checked separately, outside the suites: renewal reminders fire once per window
+and de-duplicate on a second same-day run, with the right decision-shaped
+Persian message and amount; and the two billing calendars genuinely diverge.
+
+Both open risks from §17 are closed: `S3StorageService.getSignedReadUrl()` was
+added and finance attachments upload with `acl: 'private'`, and
+`UserService.removeUser()` now refuses to delete a user carrying finance
+history.
 
 ### Phase 4 — Deferred
 

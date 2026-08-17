@@ -2,13 +2,17 @@
 
 import {
   IconBuildingBank,
+  IconBuildingStore,
   IconCashBanknote,
+  IconChartPie,
   IconChecklist,
   IconDashboard,
   IconDoor,
   IconNotification,
   IconReceipt,
   IconReportAnalytics,
+  IconReportMoney,
+  IconRepeat,
   IconSettings,
   IconUser,
   IconUsers,
@@ -67,6 +71,12 @@ export const RouteItems = {
   },
 
   // --- Finance & External Payments -----------------------------------------
+  financeDashboard: {
+    href: "/dashboard/finance",
+    label: "پیشخوان مالی",
+    roles: [Role.FINANCE, Role.ADMIN],
+    icon: <IconChartPie className="size-5" />
+  },
   financeMyRequests: {
     href: "/dashboard/finance/my-requests",
     label: "درخواست‌های پرداخت من",
@@ -84,6 +94,24 @@ export const RouteItems = {
     label: "صف پرداخت",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconCashBanknote className="size-5" />
+  },
+  financeVendors: {
+    href: "/dashboard/finance/vendors",
+    label: "طرف‌حساب‌ها",
+    roles: [Role.FINANCE, Role.ADMIN],
+    icon: <IconBuildingStore className="size-5" />
+  },
+  financeRecurring: {
+    href: "/dashboard/finance/recurring",
+    label: "هزینه‌های دوره‌ای",
+    roles: [Role.FINANCE, Role.ADMIN],
+    icon: <IconRepeat className="size-5" />
+  },
+  financeReports: {
+    href: "/dashboard/finance/reports",
+    label: "گزارش‌های مالی",
+    roles: [Role.FINANCE, Role.ADMIN],
+    icon: <IconReportMoney className="size-5" />
   },
   financeSources: {
     href: "/dashboard/finance/sources",
@@ -116,9 +144,13 @@ export const routeGroups: RouteGroup[] = [
   {
     label: "مالی",
     routes: [
+      RouteItems.financeDashboard,
       RouteItems.financeMyRequests,
       RouteItems.financeApprovals,
       RouteItems.financeQueue,
+      RouteItems.financeVendors,
+      RouteItems.financeRecurring,
+      RouteItems.financeReports,
       RouteItems.financeSources,
       RouteItems.financeSettings,
     ]

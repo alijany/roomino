@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   Property,
+  Unique,
   types,
 } from '@mikro-orm/core';
 import { BaseEntity } from '../../libs/orm/orm.entity.base';
@@ -19,7 +20,10 @@ import {
 } from '../finance.constants';
 import { ApprovalStepEntity } from './approval-step.entity';
 import { ExpenseCategoryEntity } from './expense-category.entity';
+import { PayeeAccountEntity } from './payee-account.entity';
+import { RecurringExpenseEntity } from './recurring-expense.entity';
 import { RequestAttachmentEntity } from './request-attachment.entity';
+import { VendorEntity } from './vendor.entity';
 
 /**
  * The core object: one external payment the company needs to make, from the
@@ -31,6 +35,10 @@ import { RequestAttachmentEntity } from './request-attachment.entity';
 @Entity()
 @Index({ properties: ['status', 'dueDate'] })
 @Index({ properties: ['requester', 'status'] })
+@Index({ properties: ['paidAt'] })
+// One request per schedule per cycle. This is what makes the daily
+// materialiser idempotent — a second run collides instead of double-paying.
+@Unique({ properties: ['recurringSource', 'dueDate'] })
 export class PaymentRequestEntity extends BaseEntity {
   /** Who asked. For company-level payments this is the Finance user. */
   @ManyToOne(() => UserEntity)
@@ -58,8 +66,16 @@ export class PaymentRequestEntity extends BaseEntity {
   currency: Currency = Currency.IRR;
 
   // --- payee (طرف‌حساب) ------------------------------------------------------
-  // Free-text in this phase. The vendor directory (Phase 2) adds a nullable
-  // vendor FK that pre-fills these, so nothing here has to move.
+  // The vendor directory pre-fills these, but they are still stored on the
+  // request. A payment is a historical fact: if the vendor later changes their
+  // bank details, the record of where this money actually went must not change
+  // with them.
+
+  @ManyToOne(() => VendorEntity, { nullable: true })
+  vendor?: VendorEntity;
+
+  @ManyToOne(() => PayeeAccountEntity, { nullable: true })
+  payeeAccount?: PayeeAccountEntity;
 
   @Property()
   payeeName: string;
@@ -112,6 +128,14 @@ export class PaymentRequestEntity extends BaseEntity {
    */
   @Property({ nullable: true })
   costCenter?: string;
+
+  /**
+   * The schedule that produced this request, when it came from a recurring
+   * expense. The (recurringSource, dueDate) pair is unique, which is what makes
+   * the daily materialiser safe to re-run.
+   */
+  @ManyToOne(() => RecurringExpenseEntity, { nullable: true })
+  recurringSource?: RecurringExpenseEntity;
 
   /** Reason attached to the most recent needs-info or rejection. */
   @Property({ nullable: true })

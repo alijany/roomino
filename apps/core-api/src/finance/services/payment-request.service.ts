@@ -19,14 +19,18 @@ import {
 } from '../dtos/payment-request.dto';
 import { ApprovalStepEntity } from '../entities/approval-step.entity';
 import { ExpenseCategoryEntity } from '../entities/expense-category.entity';
+import { PayeeAccountEntity } from '../entities/payee-account.entity';
 import { PaymentRequestEntity } from '../entities/payment-request.entity';
 import { PaymentSourceEntity } from '../entities/payment-source.entity';
 import { PaymentEntity } from '../entities/payment.entity';
+import { RecurringExpenseEntity } from '../entities/recurring-expense.entity';
 import { RequestAttachmentEntity } from '../entities/request-attachment.entity';
+import { VendorEntity } from '../entities/vendor.entity';
 import {
   ApprovalStepStatus,
   AttachmentKind,
   Currency,
+  PayeeAccountType,
   EDITABLE_STATUSES,
   FinanceActivityAction,
   PAYABLE_STATUSES,
@@ -76,6 +80,58 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
 
   private hasOversight(user: UserEntity): boolean {
     return this.rolesOf(user).some((role) => OVERSIGHT_ROLES.includes(role));
+  }
+
+  /**
+   * Applies the two rules that override an empty approval chain.
+   *
+   * A foreign amount has no rial value until Finance sets a rate at payment
+   * time, so `toRial` returns 0 for it and the matrix lands it in the lowest
+   * band — meaning a USD 50,000 invoice would otherwise skip approval entirely
+   * for the same reason a USD 5 one does. When the thresholds cannot be applied,
+   * a human looks instead.
+   *
+   * A company-level payment likewise always gets one approver: without it,
+   * Finance could raise a below-threshold request and pay it with no second
+   * pair of eyes anywhere in the trail.
+   */
+  private enforceMinimumApproval(
+    chain: Role[],
+    currency: Currency,
+    origin: RequestOrigin,
+  ): Role[] {
+    if (chain.length > 0) {
+      return chain;
+    }
+
+    // Checked first, and with the stronger reviewer: "Finance must not approve
+    // its own payment" is an integrity rule, while "we cannot price this yet"
+    // is only a measurement problem. When both apply, integrity wins.
+    if (origin === RequestOrigin.FINANCE) {
+      return [Role.ADMIN];
+    }
+
+    if (currency !== Currency.IRR) {
+      return [Role.APPROVER];
+    }
+
+    return chain;
+  }
+
+  /**
+   * The same rule, for the pre-submit preview — where origin is not settled yet,
+   * so the caller says whether this would be a company-level payment.
+   */
+  previewMinimumApproval(
+    chain: Role[],
+    currency: Currency,
+    asFinance: boolean,
+  ): Role[] {
+    return this.enforceMinimumApproval(
+      chain,
+      currency,
+      asFinance ? RequestOrigin.FINANCE : RequestOrigin.EMPLOYEE,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -207,7 +263,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         orderBy: { dueDate: QueryOrder.ASC, id: QueryOrder.DESC },
         limit,
         offset: page * limit,
-        populate: ['requester', 'category'] as never,
+        populate: ['requester', 'category', 'vendor'] as never,
       },
     );
 
@@ -232,6 +288,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         populate: [
           'requester',
           'category',
+          'vendor',
+          'payeeAccount',
+          'recurringSource',
           'approvalSteps',
           'approvalSteps.actor',
           'attachments',
@@ -352,6 +411,12 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       title: dto.title,
       description: dto.description,
       category: this.em.getReference(ExpenseCategoryEntity, category.id),
+      vendor: dto.vendorId
+        ? this.em.getReference(VendorEntity, dto.vendorId)
+        : undefined,
+      payeeAccount: dto.payeeAccountId
+        ? this.em.getReference(PayeeAccountEntity, dto.payeeAccountId)
+        : undefined,
       amountMinor: dto.amountMinor,
       currency: dto.currency,
       payeeName: dto.payeeName,
@@ -379,6 +444,147 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
     return request;
   }
 
+  /**
+   * Creates and submits the request for one cycle of a recurring expense.
+   *
+   * Runs with no acting user — the schedule's owner becomes the requester, and
+   * the audit entry records a null actor, which the timeline renders as a
+   * system event. Everything else is the ordinary path: the same approval
+   * matrix, the same statuses, the same trail. Nothing is ever paid straight
+   * off a schedule.
+   *
+   * Idempotent by the unique (recurringSource, dueDate) pair — a second run on
+   * the same day returns the existing request instead of creating a duplicate.
+   */
+  async createFromSchedule(
+    schedule: RecurringExpenseEntity,
+    dueDate: Date,
+  ): Promise<PaymentRequestEntity> {
+    const existing = await this.findOne({
+      recurringSource: schedule.id,
+      dueDate,
+    } as FilterQuery<PaymentRequestEntity>);
+
+    if (existing) {
+      return existing;
+    }
+
+    const account = schedule.payeeAccount;
+
+    const request = await this.create({
+      requester: this.em.getReference(UserEntity, schedule.owner.id),
+      origin: RequestOrigin.RECURRING,
+      title: schedule.title,
+      description: schedule.notes,
+      category: this.em.getReference(
+        ExpenseCategoryEntity,
+        schedule.category.id,
+      ),
+      vendor: this.em.getReference(VendorEntity, schedule.vendor.id),
+      payeeAccount: account
+        ? this.em.getReference(PayeeAccountEntity, account.id)
+        : undefined,
+      amountMinor: readBigint(schedule.amountMinor),
+      currency: schedule.currency,
+      // Snapshot, not a lookup: if the vendor changes bank details later, the
+      // record of where this money was sent must not change with them.
+      payeeName: schedule.vendor.name,
+      payeeAccountType: account?.type ?? PayeeAccountType.SHEBA,
+      payeeAccountHolder: account?.holderName,
+      payeeSheba: account?.sheba,
+      payeeCardNumber: account?.cardNumber,
+      payeeAccountDetails:
+        account?.details ??
+        [account?.iban, account?.swift].filter(Boolean).join(' / ') ??
+        undefined,
+      dueDate,
+      recurringSource: this.em.getReference(
+        RecurringExpenseEntity,
+        schedule.id,
+      ),
+      status: PaymentRequestStatus.DRAFT,
+    });
+
+    await this.activity.record({
+      requestId: request.id,
+      action: FinanceActivityAction.CREATED,
+      toStatus: PaymentRequestStatus.DRAFT,
+      comment: 'به‌صورت خودکار از هزینه دوره‌ای ساخته شد',
+      meta: { recurringExpenseId: schedule.id },
+    });
+
+    return this.submitAsSystem(request.id);
+  }
+
+  /**
+   * Submit path for a request nobody clicked submit on.
+   *
+   * Skips the ownership check (there is no acting user) but keeps every other
+   * rule: the invoice requirement is deliberately *not* enforced, because a
+   * subscription renewal has no invoice until the vendor issues one.
+   */
+  private async submitAsSystem(id: number): Promise<PaymentRequestEntity> {
+    const request = await this.loadFullOrFail(id);
+
+    const amountRial = toRial(
+      readBigint(request.amountMinor),
+      request.currency,
+    );
+    const chain = this.enforceMinimumApproval(
+      await this.approvalRules.resolveChain(amountRial, request.category.id),
+      request.currency,
+      request.origin,
+    );
+
+    await this.withTransaction(async (em) => {
+      const steps = chain.map((role, index) =>
+        em.create(ApprovalStepEntity, {
+          request: em.getReference(PaymentRequestEntity, id),
+          sequence: index,
+          requiredRole: role,
+          status: ApprovalStepStatus.PENDING,
+        } as never),
+      );
+
+      if (steps.length > 0) {
+        await em.persistAndFlush(steps);
+      }
+
+      const target = await em.findOne(PaymentRequestEntity, { id });
+      em.assign(target, {
+        // No approver needed → SCHEDULED, i.e. approved with a future payment
+        // date, so it sits in the queue ordered by deadline rather than
+        // pretending to be due today.
+        status:
+          chain.length > 0
+            ? PaymentRequestStatus.PENDING_APPROVAL
+            : PaymentRequestStatus.SCHEDULED,
+        pendingRole: chain.length > 0 ? chain[0] : null,
+        pendingSequence: chain.length > 0 ? 0 : null,
+        submittedAt: new Date(),
+      });
+      await em.persistAndFlush(target);
+    });
+
+    const updated = await this.loadFullOrFail(id);
+
+    await this.activity.record({
+      requestId: id,
+      action: FinanceActivityAction.SUBMITTED,
+      fromStatus: PaymentRequestStatus.DRAFT,
+      toStatus: updated.status,
+      meta: { chain, system: true },
+    });
+
+    if (updated.status === PaymentRequestStatus.PENDING_APPROVAL) {
+      await this.notifications.notifyApprovalNeeded(updated, chain[0]);
+    } else {
+      await this.notifications.notifyReadyToPay(updated);
+    }
+
+    return updated;
+  }
+
   async updateRequest(
     id: number,
     user: UserEntity,
@@ -402,7 +608,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       assertSafeAmount(dto.amountMinor);
     }
 
-    const { categoryId, dueDate, ...rest } = dto;
+    const { categoryId, vendorId, payeeAccountId, dueDate, ...rest } = dto;
 
     await this.updateOne(
       { id },
@@ -411,6 +617,20 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         ...(categoryId
           ? {
               category: this.em.getReference(ExpenseCategoryEntity, categoryId),
+            }
+          : {}),
+        ...(vendorId !== undefined
+          ? {
+              vendor: vendorId
+                ? this.em.getReference(VendorEntity, vendorId)
+                : null,
+            }
+          : {}),
+        ...(payeeAccountId !== undefined
+          ? {
+              payeeAccount: payeeAccountId
+                ? this.em.getReference(PayeeAccountEntity, payeeAccountId)
+                : null,
             }
           : {}),
         ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
@@ -462,17 +682,11 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       readBigint(request.amountMinor),
       request.currency,
     );
-    let chain = await this.approvalRules.resolveChain(
-      amountRial,
-      request.category.id,
+    const chain = this.enforceMinimumApproval(
+      await this.approvalRules.resolveChain(amountRial, request.category.id),
+      request.currency,
+      request.origin,
     );
-
-    // A company-level payment always gets at least one approver. Without this,
-    // a Finance user could raise a below-threshold request and pay it with no
-    // second pair of eyes anywhere in the trail.
-    if (request.origin === RequestOrigin.FINANCE && chain.length === 0) {
-      chain = [Role.ADMIN];
-    }
 
     const fromStatus = request.status;
 

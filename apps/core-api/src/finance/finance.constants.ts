@@ -120,6 +120,45 @@ export enum PaymentStatus {
   FAILED = 'failed',
 }
 
+/**
+ * Domestic vs foreign is operational, not cosmetic: a foreign vendor cannot be
+ * paid directly from Iran, so those payments carry an intermediary and a rate.
+ */
+export enum VendorKind {
+  DOMESTIC = 'domestic',
+  FOREIGN = 'foreign',
+}
+
+export const VendorKindLabels: Record<VendorKind, string> = {
+  [VendorKind.DOMESTIC]: 'داخلی',
+  [VendorKind.FOREIGN]: 'خارجی',
+};
+
+export enum RecurrenceCycle {
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  YEARLY = 'yearly',
+  CUSTOM_DAYS = 'custom_days',
+}
+
+export const RecurrenceCycleLabels: Record<RecurrenceCycle, string> = {
+  [RecurrenceCycle.MONTHLY]: 'ماهانه',
+  [RecurrenceCycle.QUARTERLY]: 'سه‌ماهه',
+  [RecurrenceCycle.YEARLY]: 'سالانه',
+  [RecurrenceCycle.CUSTOM_DAYS]: 'دوره دلخواه',
+};
+
+/** SaaS bills on Gregorian months; rent and local services on Jalali ones. */
+export enum BillingCalendar {
+  GREGORIAN = 'gregorian',
+  JALALI = 'jalali',
+}
+
+export const BillingCalendarLabels: Record<BillingCalendar, string> = {
+  [BillingCalendar.GREGORIAN]: 'میلادی',
+  [BillingCalendar.JALALI]: 'شمسی',
+};
+
 /** Append-only audit actions written to FinanceActivityEntity. */
 export enum FinanceActivityAction {
   CREATED = 'created',
@@ -137,6 +176,9 @@ export enum FinanceActivityAction {
 
 /** Rial per Toman. Storage is rial; display is Toman. */
 export const RIAL_PER_TOMAN = 10;
+
+/** Every scheduled finance job runs on Iran civil time. */
+export const TEHRAN_TZ = 'Asia/Tehran';
 
 /** S3 folder for request attachments. */
 export const FINANCE_ATTACHMENT_FOLDER = 'finance-attachments';

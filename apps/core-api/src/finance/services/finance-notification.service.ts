@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { NotificationCategory } from '../../notification/notification.constants';
+import { NotificationPreferenceService } from '../../notification/services/notification-preference.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { Role } from '../../roles/roles.constants';
 import { RolesService } from '../../roles/roles.service';
@@ -21,7 +23,33 @@ export class FinanceNotificationService {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly rolesService: RolesService,
+    private readonly preferences: NotificationPreferenceService,
   ) {}
+
+  /**
+   * Whether the user has explicitly muted the finance category.
+   *
+   * Deliberately *not* `NotificationPreferenceService.isNotificationEnabled()`:
+   * that returns false when no preference row exists, which would silence
+   * everyone who has never opened the settings page. Absence of a preference
+   * means "not muted".
+   *
+   * Only advisory notifications consult this. An approval request or a payment
+   * failure is not something a person gets to opt out of — a silently ignored
+   * approval is how a deadline gets missed.
+   */
+  private async isMuted(userId: number): Promise<boolean> {
+    try {
+      const preference = await this.preferences.getPreferenceByCategory(
+        userId,
+        NotificationCategory.FINANCE,
+      );
+
+      return preference ? !preference.enabled : false;
+    } catch {
+      return false;
+    }
+  }
 
   /** Human-readable amount for a notification body. */
   private amountText(request: PaymentRequestEntity): string {
@@ -149,6 +177,131 @@ export class FinanceNotificationService {
       `درخواست «${request.title}» پرداخت شد.${reference}`,
       'normal',
       { requestId: request.id, link: this.link(request) },
+    );
+  }
+
+  /**
+   * A subscription is coming up for renewal.
+   *
+   * Addressed to the schedule's owner, not Finance, and phrased as a decision
+   * rather than an FYI — converting a passive notice into a spend decision is
+   * the entire value of renewal tracking. Silenceable: unlike an approval, this
+   * is advisory.
+   */
+  async notifyRenewalDue(
+    ownerId: number,
+    schedule: {
+      id: number;
+      title: string;
+      vendorName: string;
+      amountMinor: number;
+      currency: Currency;
+    },
+    daysRemaining: number,
+  ) {
+    if (await this.isMuted(ownerId)) {
+      return;
+    }
+
+    const amount =
+      schedule.currency === Currency.IRR
+        ? formatTomanFa(toRial(schedule.amountMinor, Currency.IRR))
+        : `${(schedule.amountMinor / 100).toLocaleString('fa-IR')} ${
+            schedule.currency
+          }`;
+
+    const when =
+      daysRemaining <= 1
+        ? 'فردا'
+        : `تا ${daysRemaining.toLocaleString('fa-IR')} روز دیگر`;
+
+    await this.safeSend(
+      ownerId,
+      `«${schedule.title}» (${schedule.vendorName}) ${when} تمدید می‌شود — ${amount}. ادامه می‌دهیم؟`,
+      daysRemaining <= 7 ? 'high' : 'normal',
+      {
+        recurringExpenseId: schedule.id,
+        link: '/dashboard/finance/recurring',
+      },
+    );
+  }
+
+  /** A payment is past its deadline and still sitting in the queue. */
+  async notifyOverdue(requests: PaymentRequestEntity[]) {
+    if (requests.length === 0) {
+      return;
+    }
+
+    const message =
+      `${requests.length.toLocaleString(
+        'fa-IR',
+      )} درخواست پرداخت از مهلت خود گذشته‌اند. ` +
+      `نزدیک‌ترین: «${requests[0].title}».`;
+
+    const financeUsers = await this.usersWithRole(Role.FINANCE);
+
+    await Promise.all(
+      financeUsers.map((id) =>
+        this.safeSend(id, message, 'high', {
+          link: '/dashboard/finance/queue',
+        }),
+      ),
+    );
+  }
+
+  /**
+   * An approval has been sitting untouched. Nudges the role that owns it; the
+   * escalation to admin is what stops a request dying in someone's inbox.
+   */
+  async notifyStaleApprovals(
+    byRole: Map<Role, PaymentRequestEntity[]>,
+    escalateToAdmin: boolean,
+  ) {
+    for (const [role, requests] of byRole) {
+      if (requests.length === 0) continue;
+
+      const message = `${requests.length.toLocaleString(
+        'fa-IR',
+      )} درخواست پرداخت بیش از سه روز است در انتظار تأیید شماست.`;
+
+      const targets = await this.usersWithRole(role);
+
+      await Promise.all(
+        targets.map((id) =>
+          this.safeSend(id, message, 'normal', {
+            link: '/dashboard/finance/approvals',
+          }),
+        ),
+      );
+
+      if (escalateToAdmin && role !== Role.ADMIN) {
+        const admins = await this.usersWithRole(Role.ADMIN);
+        await Promise.all(
+          admins.map((id) =>
+            this.safeSend(
+              id,
+              `${requests.length.toLocaleString(
+                'fa-IR',
+              )} درخواست پرداخت بیش از سه روز بدون تأیید مانده است.`,
+              'normal',
+              { link: '/dashboard/finance/approvals' },
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /** Monthly close is ready to look at. Advisory, so silenceable. */
+  async notifyMonthlyReport(userIds: number[], label: string) {
+    await Promise.all(
+      userIds.map(async (id) => {
+        if (await this.isMuted(id)) return;
+
+        await this.safeSend(id, `گزارش مالی ${label} آماده است.`, 'low', {
+          link: '/dashboard/finance/reports',
+        });
+      }),
     );
   }
 

@@ -25,4 +25,10 @@ export enum NotificationTemplate {
 export enum NotificationCategory {
   SYSTEM = 'system',
   GENERAL = 'general',
+  /**
+   * Finance & external payments. Only *advisory* finance notifications honour
+   * a mute here — renewal reminders and the monthly report. Approval requests
+   * and payment failures are always delivered.
+   */
+  FINANCE = 'finance',
 }

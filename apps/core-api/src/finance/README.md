@@ -3,7 +3,8 @@
 How the company pays for things: SaaS, internet, vendors, one-off purchases.
 Request → approve → pay → recorded, with an append-only audit trail.
 
-**Status:** Phase 0 + Phase 1 shipped. Phases 2–4 are in
+**Status:** Phases 0–3 shipped. Phase 4 (budgets, cost centres, OCR,
+accounting export) is in
 [`docs/finance-payments-module.md`](../../../../docs/finance-payments-module.md).
 
 ---
@@ -21,8 +22,10 @@ floats and no decimal columns anywhere in this module.
 | Column type | `types.bigint` — reads back as a **string**, always pass through `readBigint()` |
 
 `toRial(amountMinor, currency, fxRate?)` in `utils/money.util.ts` is the only
-conversion. A foreign amount with no rate resolves to `0` rial, which routes it
-through the lowest approval band; the real figure is captured at payment time.
+conversion. A foreign amount with no rate resolves to `0` rial — the real figure
+is captured at payment time. Because that would otherwise land a USD 50,000
+invoice in the lowest approval band, `enforceMinimumApproval()` routes every
+foreign request to an approver regardless.
 
 Do not divide or multiply by ten anywhere else.
 
@@ -40,9 +43,13 @@ Do not divide or multiply by ten anywhere else.
 | `FinanceActivityEntity` | Append-only. Nothing updates or deletes a row. |
 | `ExpenseCategoryEntity` | `requiresInvoice` gates submission. Seeded on boot. |
 | `PaymentSourceEntity` | The company's own accounts. `Role.FINANCE` only, at the controller. Card numbers are last-4 only. |
+| `VendorEntity` / `PayeeAccountEntity` | The طرف‌حساب directory and where each wants to be paid. `kind` (domestic/foreign) is operational: a foreign vendor cannot be paid directly from Iran. |
+| `RecurringExpenseEntity` | A *schedule*, not a payment. Each cycle materialises an ordinary request. `calendar` picks Gregorian or Jalali month arithmetic. |
 
-Phase 2 adds `VendorEntity`, `PayeeAccountEntity`, `RecurringExpenseEntity`.
-The payee is free-text on the request today; the vendor FK slots in beside it.
+**The payee is snapshot onto the request, not looked up through the FK.**
+`vendorId`/`payeeAccountId` record where the details came from; `payeeName`,
+`payeeSheba` and friends record what was actually paid to. A vendor editing
+their bank details next year must not rewrite last year's payment record.
 
 ---
 
@@ -56,8 +63,13 @@ Invariants worth not breaking:
 
 - **Nobody approves their own request.** Enforced in `assertCanDecide()` — the
   single place that rule lives.
-- **A `finance`-origin request always gets at least one approver.** If the
-  matrix returns an empty chain, `Role.ADMIN` is injected in `submit()`.
+- **An empty approval chain is overridden in two cases**, both in
+  `enforceMinimumApproval()`: a `finance`-origin request gets `Role.ADMIN` (no
+  self-approval), and a foreign-currency request gets `Role.APPROVER` (the
+  thresholds cannot be applied to an amount with no rial value). Finance-origin
+  is checked first — integrity beats measurement, so it gets the stronger
+  reviewer. `/approval-preview` runs the same rule, so the preview never
+  promises a smoother path than the submit will take.
 - **Finance is never in an approval chain.** `ApprovalRuleService` strips
   anything that isn't `approver` or `admin`.
 - **Steps are materialised at submit time.** Editing the matrix later never
@@ -98,6 +110,17 @@ DELETE /finance/requests/attachments/:id
 GET|POST|PATCH|DELETE  /finance/categories        read: all · write: admin
 GET|PUT                /finance/approval-rules    admin only, PUT replaces the whole matrix
 GET|POST|PATCH|DELETE  /finance/payment-sources   finance only
+
+GET|POST|PATCH|DELETE  /finance/vendors           read: all · write: finance/admin
+GET|POST               /finance/vendors/:id/accounts
+PATCH|DELETE           /finance/vendors/accounts/:accountId
+GET|POST|PATCH|DELETE  /finance/recurring         finance/admin
+POST                   /finance/recurring/:id/{generate,skip}
+POST                   /finance/recurring/run-daily-cycle   admin — runs the 08:00 job now
+
+GET /finance/dashboard                     ?from&to — 8 KPIs
+GET /finance/reports/{by-category,by-vendor,trend,upcoming,monthly}
+GET /finance/reports/export                CSV, UTF-8 BOM
 ```
 
 `reject`, `request-info` and `fail` require a non-empty `comment`.
@@ -143,6 +166,17 @@ All user-facing messages are Persian.
   missing band is a choice, not something to restore.
 - Attachment uploads go to S3 with `acl: 'private'`; `getSignedReadUrl()`
   (15 min) is the only way to read one back.
+- **`MigrationService` applies pending migrations before generating a new one.**
+  It used to diff first, which on a fresh database emitted a whole-schema file
+  that then collided with the migrations it came from. Don't reorder it back.
+- **Recurring reminders de-duplicate on `lastReminderDaysSent`**, not on a
+  sent-log. Editing `nextDueDate` clears it so the new cycle warns again.
+- **Recurring materialisation is idempotent** via the unique
+  `(recurringSource, dueDate)` pair, not by the job being careful.
+- **Only advisory finance notifications are silenceable** (renewal reminders,
+  monthly report) — via `isMuted()`, which treats *absence* of a preference row
+  as "not muted". `NotificationPreferenceService.isNotificationEnabled()` does
+  the opposite and would silence everyone who never opened the settings page.
 
 ---
 
@@ -152,6 +186,12 @@ All user-facing messages are Persian.
 against a clean DB so `MigrationService` generates a migration — **review the
 generated file by hand**, it is not trustworthy blind.
 
-The end-to-end script in `docs/finance-payments-module.md` §16 covers threshold
-routing, the needs-info round trip, both segregation-of-duties rules, foreign
-currency, and the access-control matrix.
+The end-to-end scripts in `docs/finance-payments-module.md` §16 cover 66 checks
+across the three phases: threshold routing, the needs-info round trip, both
+segregation-of-duties rules, foreign currency, the access-control matrix, vendor
+snapshotting, recurring materialisation and idempotency, reminder
+de-duplication, Jalali vs Gregorian cycle advance, and the reporting figures.
+
+Reset the database by **stopping the API first** — `DROP DATABASE` fails
+silently while a connection is open, and the next run then reports doubled
+figures rather than a failure.

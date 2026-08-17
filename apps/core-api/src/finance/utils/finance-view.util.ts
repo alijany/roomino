@@ -1,9 +1,12 @@
 import { UserEntity } from '../../user/user.entity';
 import { ApprovalStepEntity } from '../entities/approval-step.entity';
 import { FinanceActivityEntity } from '../entities/finance-activity.entity';
+import { PayeeAccountEntity } from '../entities/payee-account.entity';
 import { PaymentRequestEntity } from '../entities/payment-request.entity';
 import { PaymentEntity } from '../entities/payment.entity';
+import { RecurringExpenseEntity } from '../entities/recurring-expense.entity';
 import { RequestAttachmentEntity } from '../entities/request-attachment.entity';
+import { VendorEntity } from '../entities/vendor.entity';
 import {
   ActivityView,
   ApprovalStepView,
@@ -49,6 +52,10 @@ export function toListItem(
     category: request.category
       ? { id: request.category.id, name: request.category.name }
       : undefined,
+    vendor: request.vendor
+      ? { id: request.vendor.id, name: request.vendor.name }
+      : undefined,
+    recurringSourceId: request.recurringSource?.id,
     submittedAt: request.submittedAt,
     paidAt: request.paidAt,
     pendingRole: request.pendingRole,
@@ -102,6 +109,84 @@ export function toPaymentView(payment: PaymentEntity): PaymentView {
     paymentSource: payment.paymentSource
       ? { id: payment.paymentSource.id, label: payment.paymentSource.label }
       : undefined,
+  };
+}
+
+export function toPayeeAccountView(account: PayeeAccountEntity) {
+  return {
+    id: account.id,
+    label: account.label,
+    type: account.type,
+    holderName: account.holderName,
+    sheba: account.sheba,
+    cardNumber: account.cardNumber,
+    iban: account.iban,
+    swift: account.swift,
+    details: account.details,
+    isDefault: account.isDefault,
+    active: account.active,
+  };
+}
+
+export function toVendorView(vendor: VendorEntity) {
+  return {
+    id: vendor.id,
+    name: vendor.name,
+    nameEn: vendor.nameEn,
+    kind: vendor.kind,
+    economicCode: vendor.economicCode,
+    nationalId: vendor.nationalId,
+    website: vendor.website,
+    contactName: vendor.contactName,
+    contactPhone: vendor.contactPhone,
+    defaultCurrency: vendor.defaultCurrency,
+    notes: vendor.notes,
+    active: vendor.active,
+    accounts: vendor.accounts.isInitialized()
+      ? vendor.accounts.getItems().map(toPayeeAccountView)
+      : [],
+  };
+}
+
+export function toRecurringView(schedule: RecurringExpenseEntity) {
+  const amountMinor = readBigint(schedule.amountMinor);
+
+  return {
+    id: schedule.id,
+    title: schedule.title,
+    vendor: schedule.vendor
+      ? {
+          id: schedule.vendor.id,
+          name: schedule.vendor.name,
+          kind: schedule.vendor.kind,
+        }
+      : undefined,
+    category: schedule.category
+      ? { id: schedule.category.id, name: schedule.category.name }
+      : undefined,
+    payeeAccount: schedule.payeeAccount
+      ? toPayeeAccountView(schedule.payeeAccount)
+      : undefined,
+    defaultPaymentSource: schedule.defaultPaymentSource
+      ? {
+          id: schedule.defaultPaymentSource.id,
+          label: schedule.defaultPaymentSource.label,
+        }
+      : undefined,
+    amountMinor,
+    currency: schedule.currency,
+    amountRial: toRial(amountMinor, schedule.currency),
+    cycle: schedule.cycle,
+    cycleDays: schedule.cycleDays,
+    calendar: schedule.calendar,
+    nextDueDate: schedule.nextDueDate,
+    endDate: schedule.endDate,
+    reminderDays: schedule.reminderDays,
+    leadDays: schedule.leadDays,
+    owner: toUserSummary(schedule.owner),
+    autoGenerate: schedule.autoGenerate,
+    notes: schedule.notes,
+    active: schedule.active,
   };
 }
 

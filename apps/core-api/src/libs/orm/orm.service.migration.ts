@@ -24,24 +24,32 @@ export class MigrationService implements OnModuleInit {
     await generator.ensureDatabase({
       create: true,
     });
-    // create migrations if there are any pending
     const migrator = this.orm.getMigrator();
     const executedMigrations = await migrator.getExecutedMigrations();
     const pendingMigrations = await migrator.getPendingMigrations();
-    await this.createMigration(pendingMigrations, executedMigrations, migrator);
-    // run pending migrations
-    for (const migration of await migrator.getPendingMigrations()) {
+
+    // Apply what is already committed FIRST. Diffing the entities against a
+    // schema that is behind by even one migration produces a file that
+    // re-creates objects the pending migrations are about to create.
+    for (const migration of pendingMigrations) {
       await migrator.up(migration.name);
     }
+
+    await this.createMigration(pendingMigrations, executedMigrations, migrator);
   }
 
   /**
-   * Creates a new migration if there are pending migrations.
-   * If there are no pending or executed migrations, it creates an initial migration.
-   * This method is only executed in non-production environments.
-   * @param pendingMigrations - The list of pending migrations.
-   * @param executedMigrations - The list of executed migrations.
-   * @param migrator - The migrator instance.
+   * Generates a migration for whatever the entities now say that the database
+   * does not, in non-production only.
+   *
+   * Runs *after* pending migrations have been applied, so the diff is against
+   * the real current schema. Generating beforehand — as this used to — meant a
+   * fresh database produced a whole-schema migration that then collided with
+   * the very migrations it was derived from, on the next boot.
+   *
+   * @param pendingMigrations - migrations that were outstanding at boot.
+   * @param executedMigrations - migrations already recorded as applied.
+   * @param migrator - the migrator instance.
    */
   private async createMigration(
     pendingMigrations: UmzugMigration[],
@@ -49,9 +57,12 @@ export class MigrationService implements OnModuleInit {
     migrator,
   ) {
     if (this.configService.get('NODE_ENV') === 'production') return;
+
     if (pendingMigrations.length === 0 && executedMigrations.length === 0) {
       await migrator.createInitialMigration();
+      return;
     }
+
     await migrator.createMigration();
   }
 }

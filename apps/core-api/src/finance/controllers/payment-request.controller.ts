@@ -84,15 +84,18 @@ export class PaymentRequestController {
     @CurrentUser() user: UserEntity,
   ) {
     const amountRial = toRial(dto.amountMinor, dto.currency);
-    let chain = await this.approvalRules.resolveChain(
+    const resolved = await this.approvalRules.resolveChain(
       amountRial,
       dto.categoryId,
     );
 
-    // Mirrors the rule in submit(): a company-level payment always gets an approver.
-    if (chain.length === 0 && this.requests.hasRole(user, Role.FINANCE)) {
-      chain = [Role.ADMIN];
-    }
+    // Mirrors the overrides in submit(), so the preview never promises a
+    // smoother path than the request will actually take.
+    const chain = this.requests.previewMinimumApproval(
+      resolved,
+      dto.currency,
+      this.requests.hasRole(user, Role.FINANCE),
+    );
 
     return { amountRial, chain, requiresApproval: chain.length > 0 };
   }

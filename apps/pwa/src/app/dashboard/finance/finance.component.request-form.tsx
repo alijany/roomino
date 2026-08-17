@@ -13,6 +13,7 @@ import {
   useExpenseCategories,
   useSubmitRequest,
   useUpdateRequest,
+  useVendors,
 } from './finance.api';
 import { AttachmentPanel } from './finance.component.attachments';
 import { CURRENCY_LABELS, PAYEE_ACCOUNT_TYPE_LABELS } from './finance.constants';
@@ -88,9 +89,51 @@ export function RequestForm({
     existing?.payeeAccountDetails ?? ''
   );
 
+  const [vendorId, setVendorId] = useState<number | null>(null);
+  const [payeeAccountId, setPayeeAccountId] = useState<number | null>(null);
+
   const { data: categoriesData } = useExpenseCategories();
   const categories = categoriesData?.items ?? [];
   const selectedCategory = categories.find((c) => c.id === categoryId);
+
+  const { data: vendorsData } = useVendors({ activeOnly: true, limit: 100 });
+  const vendors = vendorsData?.items ?? [];
+  const selectedVendor = vendors.find((v) => v.id === vendorId);
+  const defaultAccount =
+    selectedVendor?.accounts.find((a) => a.isDefault) ?? selectedVendor?.accounts[0];
+
+  /**
+   * Copies the vendor's saved details into the form. They are *copied*, not
+   * referenced: the request stores what it was paid to, so a later edit to the
+   * vendor never rewrites a historical payment.
+   */
+  const applyVendor = (id: number) => {
+    if (!id) {
+      setVendorId(null);
+      setPayeeAccountId(null);
+      return;
+    }
+
+    const vendor = vendors.find((v) => v.id === id);
+    if (!vendor) return;
+
+    const account = vendor.accounts.find((a) => a.isDefault) ?? vendor.accounts[0];
+
+    setVendorId(id);
+    setPayeeAccountId(account?.id ?? null);
+    setPayeeName(vendor.name);
+    setCurrency(vendor.defaultCurrency);
+
+    if (account) {
+      setPayeeAccountType(account.type);
+      setPayeeAccountHolder(account.holderName ?? '');
+      setPayeeSheba(account.sheba ?? '');
+      setPayeeCardNumber(account.cardNumber ?? '');
+      setPayeeAccountDetails(
+        account.details ?? [account.iban, account.swift].filter(Boolean).join(' / ')
+      );
+    }
+  };
 
   const create = useCreateRequest();
   const update = useUpdateRequest(requestId ?? 0);
@@ -136,6 +179,8 @@ export function RequestForm({
     categoryId: categoryId as number,
     amountMinor: amountMinor as number,
     currency,
+    vendorId: vendorId ?? undefined,
+    payeeAccountId: payeeAccountId ?? undefined,
     payeeName: payeeName.trim(),
     payeeAccountType,
     payeeAccountHolder: payeeAccountHolder.trim() || undefined,
@@ -318,6 +363,30 @@ export function RequestForm({
 
             {step === 1 && (
               <>
+                {vendors.length > 0 && (
+                  <div>
+                    <label className="mb-2 block font-medium text-slate-700">
+                      از طرف‌حساب‌های ثبت‌شده
+                    </label>
+                    <Dropdown
+                      items={[
+                        { label: 'طرف‌حساب جدید (دستی وارد می‌کنم)', value: 0 },
+                        ...vendors.map((v) => ({ label: v.name, value: v.id })),
+                      ]}
+                      value={vendorId ?? 0}
+                      onChange={(value) => applyVendor(value as number)}
+                      placeholder="انتخاب طرف‌حساب"
+                      variant="outline"
+                    />
+                    {vendorId && !defaultAccount && (
+                      <p className="mt-2 text-sm text-amber-600">
+                        برای این طرف‌حساب حساب مقصدی ثبت نشده — اطلاعات را دستی وارد
+                        کنید.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <Input
                   label="نام طرف‌حساب"
                   value={payeeName}

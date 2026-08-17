@@ -1,10 +1,13 @@
 import { BadgeTone } from '@/ui/atoms/ui.badge';
 import {
   AttachmentKind,
+  BillingCalendar,
   Currency,
   PayeeAccountType,
   PaymentRequestStatus,
   PaymentSourceType,
+  RecurrenceCycle,
+  VendorKind,
 } from './finance.types';
 
 /**
@@ -109,11 +112,32 @@ export const ACTIVITY_LABELS: Record<string, string> = {
   attachment_removed: 'پیوست حذف شد',
 };
 
+export const VENDOR_KIND_LABELS: Record<VendorKind, string> = {
+  [VendorKind.DOMESTIC]: 'داخلی',
+  [VendorKind.FOREIGN]: 'خارجی',
+};
+
+export const RECURRENCE_CYCLE_LABELS: Record<RecurrenceCycle, string> = {
+  [RecurrenceCycle.MONTHLY]: 'ماهانه',
+  [RecurrenceCycle.QUARTERLY]: 'سه‌ماهه',
+  [RecurrenceCycle.YEARLY]: 'سالانه',
+  [RecurrenceCycle.CUSTOM_DAYS]: 'دوره دلخواه',
+};
+
+export const BILLING_CALENDAR_LABELS: Record<BillingCalendar, string> = {
+  [BillingCalendar.GREGORIAN]: 'میلادی',
+  [BillingCalendar.JALALI]: 'شمسی',
+};
+
 export const FINANCE_ROUTES = {
   myRequests: '/dashboard/finance/my-requests',
   approvals: '/dashboard/finance/approvals',
   queue: '/dashboard/finance/queue',
   sources: '/dashboard/finance/sources',
   settings: '/dashboard/finance/settings',
+  vendors: '/dashboard/finance/vendors',
+  recurring: '/dashboard/finance/recurring',
+  dashboard: '/dashboard/finance',
+  reports: '/dashboard/finance/reports',
   request: (id: number) => `/dashboard/finance/requests/${id}`,
 };

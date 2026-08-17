@@ -43,6 +43,10 @@ pnpm --filter pwa lint                # lint frontend
 
 Tests (`pnpm test`, `pnpm test:e2e`) are currently unstable. Use `lint` (which also type-checks) as the verification loop — no need to run `build`.
 
+For anything with real behaviour, `lint` is not enough: boot the API against a
+Postgres and exercise it. The finance module's end-to-end scripts are described
+in `docs/finance-payments-module.md` §16.
+
 ## Dev Environment Setup
 
 ### Dev Container (recommended)
@@ -162,7 +166,7 @@ See `apps/pwa/AGENTS.md` for the full API integration pattern with code examples
 **Backend:**
 1. Create `apps/core-api/src/<feature>/` with the standard module files
 2. Register the module in `apps/core-api/src/app.module.ts`
-3. Restart the dev server — `MigrationService` auto-generates and runs any pending migrations on startup
+3. Restart the dev server — `MigrationService` applies pending migrations, then auto-generates one for whatever your entities added. **Review the generated file by hand**; enum changes in particular need the check constraint dropped and re-added.
 
 **Frontend:**
 1. Create `apps/pwa/src/app/<feature>/` as a self-contained domain

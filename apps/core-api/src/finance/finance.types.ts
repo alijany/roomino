@@ -82,6 +82,9 @@ export interface PaymentRequestListItem {
   payeeName: string;
   requester: UserSummary;
   category?: { id: number; name: string };
+  vendor?: { id: number; name: string };
+  /** Present when a recurring schedule produced this request. */
+  recurringSourceId?: number;
   submittedAt?: Date;
   paidAt?: Date;
   /** Role that must act next, when the request is awaiting approval. */

@@ -64,6 +64,43 @@ export function formatForeign(
   return `${digits} ${currency}`;
 }
 
+/**
+ * Short Toman for axis ticks and dense tiles, where a full thousands-separated
+ * number would collide with its neighbour.
+ *
+ * @example formatMoneyCompact(125_000_000_000) // "۱۲٫۵ میلیارد تومان"
+ */
+export function formatMoneyCompact(
+  rial: number | undefined | null,
+  options: { withUnit?: boolean } = {}
+): string {
+  const { withUnit = true } = options;
+
+  if (rial === undefined || rial === null || Number.isNaN(rial)) {
+    return '—';
+  }
+
+  const toman = Math.round(rial / RIAL_PER_TOMAN);
+  const abs = Math.abs(toman);
+
+  const scale =
+    abs >= 1_000_000_000
+      ? { divisor: 1_000_000_000, suffix: 'میلیارد' }
+      : abs >= 1_000_000
+        ? { divisor: 1_000_000, suffix: 'میلیون' }
+        : abs >= 1_000
+          ? { divisor: 1_000, suffix: 'هزار' }
+          : { divisor: 1, suffix: '' };
+
+  const value = toman / scale.divisor;
+  const digits = value.toLocaleString('fa-IR', {
+    maximumFractionDigits: scale.divisor === 1 ? 0 : 1,
+  });
+
+  const parts = [digits, scale.suffix, withUnit ? 'تومان' : ''].filter(Boolean);
+  return parts.join(' ');
+}
+
 export const toRialFromToman = (toman: number): number => toman * RIAL_PER_TOMAN;
 export const toTomanFromRial = (rial: number): number =>
   Math.round(rial / RIAL_PER_TOMAN);

@@ -62,6 +62,23 @@ export enum AttachmentKind {
   OTHER = 'other',
 }
 
+export enum VendorKind {
+  DOMESTIC = 'domestic',
+  FOREIGN = 'foreign',
+}
+
+export enum RecurrenceCycle {
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  YEARLY = 'yearly',
+  CUSTOM_DAYS = 'custom_days',
+}
+
+export enum BillingCalendar {
+  GREGORIAN = 'gregorian',
+  JALALI = 'jalali',
+}
+
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -159,6 +176,8 @@ export interface PaymentRequest {
   payeeName: string;
   requester: UserSummary;
   category?: { id: number; name: string };
+  vendor?: { id: number; name: string };
+  recurringSourceId?: number;
   submittedAt?: string;
   paidAt?: string;
   pendingRole?: Role;
@@ -266,6 +285,208 @@ export interface ApprovalRuleInput {
   approverChain: Role[];
   priority?: number;
   description?: string;
+}
+
+// --- vendors & recurring (phase 2) -----------------------------------------
+
+export interface PayeeAccount {
+  id: number;
+  label: string;
+  type: PayeeAccountType;
+  holderName?: string;
+  sheba?: string;
+  cardNumber?: string;
+  iban?: string;
+  swift?: string;
+  details?: string;
+  isDefault: boolean;
+  active: boolean;
+}
+
+export interface Vendor {
+  id: number;
+  name: string;
+  nameEn?: string;
+  kind: VendorKind;
+  economicCode?: string;
+  nationalId?: string;
+  website?: string;
+  contactName?: string;
+  contactPhone?: string;
+  defaultCurrency: Currency;
+  notes?: string;
+  active: boolean;
+  accounts: PayeeAccount[];
+}
+
+export interface RecurringExpense {
+  id: number;
+  title: string;
+  vendor?: { id: number; name: string; kind: VendorKind };
+  category?: { id: number; name: string };
+  payeeAccount?: PayeeAccount;
+  defaultPaymentSource?: { id: number; label: string };
+  amountMinor: number;
+  currency: Currency;
+  amountRial?: number;
+  cycle: RecurrenceCycle;
+  cycleDays?: number;
+  calendar: BillingCalendar;
+  nextDueDate: string;
+  endDate?: string;
+  reminderDays: number[];
+  leadDays: number;
+  owner?: UserSummary;
+  autoGenerate: boolean;
+  notes?: string;
+  active: boolean;
+}
+
+export interface CreateVendorDto {
+  name: string;
+  nameEn?: string;
+  kind?: VendorKind;
+  economicCode?: string;
+  nationalId?: string;
+  website?: string;
+  contactName?: string;
+  contactPhone?: string;
+  defaultCurrency?: Currency;
+  notes?: string;
+  active?: boolean;
+}
+
+export interface CreatePayeeAccountDto {
+  label: string;
+  type: PayeeAccountType;
+  holderName?: string;
+  sheba?: string;
+  cardNumber?: string;
+  iban?: string;
+  swift?: string;
+  details?: string;
+  isDefault?: boolean;
+  active?: boolean;
+}
+
+export interface CreateRecurringDto {
+  title: string;
+  vendorId: number;
+  categoryId: number;
+  payeeAccountId?: number;
+  defaultPaymentSourceId?: number;
+  amountMinor: number;
+  currency: Currency;
+  cycle: RecurrenceCycle;
+  cycleDays?: number;
+  calendar?: BillingCalendar;
+  nextDueDate: string;
+  endDate?: string;
+  reminderDays?: number[];
+  leadDays?: number;
+  ownerId?: number;
+  autoGenerate?: boolean;
+  notes?: string;
+  active?: boolean;
+}
+
+export interface VendorFilterDto {
+  page?: number;
+  limit?: number;
+  text?: string;
+  kind?: VendorKind;
+  activeOnly?: boolean;
+}
+
+export interface RecurringFilterDto {
+  page?: number;
+  limit?: number;
+  text?: string;
+  vendorId?: number;
+  activeOnly?: boolean;
+  dueWithinDays?: number;
+}
+
+// --- reporting (phase 3) ----------------------------------------------------
+
+export interface FinanceDashboard {
+  range: { from: string; to: string };
+  paid: {
+    totalRial: number;
+    count: number;
+    previousTotalRial: number;
+    /** Null when there is no prior period to compare against. */
+    changePercent: number | null;
+  };
+  pendingApproval: { count: number; totalRial: number };
+  readyToPay: { count: number; totalRial: number };
+  overdueCount: number;
+  upcoming30DaysRial: number;
+  recurring: { activeCount: number; monthlyRunRateRial: number };
+  averageApprovalDays: number;
+  foreignSpend: { totalRial: number; feesRial: number; count: number };
+}
+
+export interface NamedTotal {
+  id?: number;
+  name: string;
+  totalRial: number;
+  count: number;
+}
+
+export interface TrendPoint {
+  month: string;
+  totalRial: number;
+  foreignRial: number;
+  domesticRial: number;
+  count: number;
+}
+
+export interface VarianceRow {
+  id: number;
+  title: string;
+  requestedMinor: number;
+  currency: Currency;
+  settledRial: number;
+  fxRateRialPerUnit?: number;
+  feeRial?: number;
+  intermediary?: string;
+}
+
+export interface MonthlyReport {
+  period: { year: number; month: number; from: string; to: string };
+  summary: { totalRial: number; feesRial: number; count: number };
+  byCategory: NamedTotal[];
+  byVendor: NamedTotal[];
+  bySource: NamedTotal[];
+  foreign: {
+    totalRial: number;
+    feesRial: number;
+    count: number;
+    averageRateRial: number;
+  };
+  variance: VarianceRow[];
+  stillUnpaid: { count: number; totalRial: number };
+}
+
+export interface UpcomingCommitments {
+  requests: Array<{
+    id: number;
+    title: string;
+    dueDate: string;
+    status: PaymentRequestStatus;
+    amountMinor: number;
+    currency: Currency;
+    vendorName?: string;
+  }>;
+  schedules: Array<{
+    id: number;
+    title: string;
+    nextDueDate: string;
+    amountMinor: number;
+    currency: Currency;
+    vendorName?: string;
+  }>;
 }
 
 export interface CreatePaymentSourceDto {
