@@ -129,6 +129,11 @@ export class PaymentRequestController {
       payeeSheba: request.payeeSheba,
       payeeCardNumber: request.payeeCardNumber,
       payeeAccountDetails: request.payeeAccountDetails,
+      destinationUrl: request.destinationUrl,
+      destinationAccount: request.destinationAccount,
+      // Presence only — the value itself never rides along with the detail
+      // payload; it comes from the reveal endpoint below.
+      hasDestinationCredential: Boolean(request.destinationCredentialEnc),
       approvalSteps: request.approvalSteps
         .getItems()
         .sort((a, b) => a.sequence - b.sequence)
@@ -137,6 +142,22 @@ export class PaymentRequestController {
       payments: payments.map(toPaymentView),
       permissions: this.requests.permissionsFor(request, user),
     };
+  }
+
+  /**
+   * Reveals the stored login for an online top-up, to the requester who
+   * supplied it or to Finance who has to use it.
+   *
+   * A separate endpoint rather than a field on the detail payload, so the
+   * secret is fetched deliberately and does not sit in every cached response
+   * of a page four other roles can open.
+   */
+  @Get(':id/credential')
+  async credential(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserEntity,
+  ) {
+    return { credential: await this.requests.revealCredential(id, user) };
   }
 
   @Get(':id/activity')

@@ -39,6 +39,15 @@ export enum Currency {
   TRY = 'TRY',
 }
 
+/**
+ * Two genuinely different destinations. A bank transfer needs an account to pay
+ * into; topping up an account on a website needs the site and the login.
+ */
+export enum PaymentDestinationKind {
+  BANK_TRANSFER = 'bank_transfer',
+  ONLINE_ACCOUNT = 'online_account',
+}
+
 export enum PayeeAccountType {
   SHEBA = 'sheba',
   CARD = 'card',
@@ -177,6 +186,7 @@ export interface PaymentRequest {
   requester: UserSummary;
   category?: { id: number; name: string };
   vendor?: { id: number; name: string };
+  destinationKind: PaymentDestinationKind;
   recurringSourceId?: number;
   submittedAt?: string;
   paidAt?: string;
@@ -188,11 +198,16 @@ export interface PaymentRequestDetail extends PaymentRequest {
   description?: string;
   costCenter?: string;
   lastDecisionComment?: string;
-  payeeAccountType: PayeeAccountType;
+  /** Null for an online top-up — there is no payee bank instrument. */
+  payeeAccountType?: PayeeAccountType;
   payeeAccountHolder?: string;
   payeeSheba?: string;
   payeeCardNumber?: string;
   payeeAccountDetails?: string;
+  destinationUrl?: string;
+  destinationAccount?: string;
+  /** Whether a login is stored. The value comes from the reveal endpoint. */
+  hasDestinationCredential: boolean;
   approvalSteps: ApprovalStep[];
   attachments: RequestAttachment[];
   payments: RecordedPayment[];
@@ -230,11 +245,15 @@ export interface CreateRequestDto {
   amountMinor: number;
   currency: Currency;
   payeeName: string;
-  payeeAccountType: PayeeAccountType;
+  payeeAccountType?: PayeeAccountType;
   payeeAccountHolder?: string;
   payeeSheba?: string;
   payeeCardNumber?: string;
   payeeAccountDetails?: string;
+  destinationKind?: PaymentDestinationKind;
+  destinationUrl?: string;
+  destinationAccount?: string;
+  destinationCredential?: string;
   dueDate: string;
   costCenter?: string;
   submit?: boolean;

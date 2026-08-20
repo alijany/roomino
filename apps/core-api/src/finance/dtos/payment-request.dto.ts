@@ -14,6 +14,7 @@ import {
 import {
   Currency,
   PayeeAccountType,
+  PaymentDestinationKind,
   PaymentRequestStatus,
   RequestOrigin,
 } from '../finance.constants';
@@ -50,13 +51,36 @@ export class CreatePaymentRequestDto {
   @IsOptional() @Type(() => Number) @IsInt() vendorId?: number;
   @IsOptional() @Type(() => Number) @IsInt() payeeAccountId?: number;
 
+  /**
+   * Which shape the destination takes. Defaults to a bank transfer so existing
+   * clients keep working; the service validates the matching fields.
+   */
+  @IsOptional()
+  @IsEnum(PaymentDestinationKind, { message: 'نوع مقصد پرداخت نامعتبر است' })
+  destinationKind?: PaymentDestinationKind;
+
+  @IsOptional() @IsString() @MaxLength(300) destinationUrl?: string;
+  @IsOptional() @IsString() @MaxLength(200) destinationAccount?: string;
+
+  /**
+   * Optional login secret. Encrypted at rest, never returned in a list, and
+   * cleared when the request closes — see `utils/secret.util.ts`.
+   */
+  @IsOptional() @IsString() @MaxLength(200) destinationCredential?: string;
+
   @IsString()
   @IsNotEmpty({ message: 'نام طرف‌حساب را وارد کنید' })
   @MaxLength(200)
   payeeName: string;
 
+  /**
+   * Required for a bank transfer, meaningless for an online top-up — the
+   * service enforces that pairing rather than the decorator, which cannot see
+   * `destinationKind`.
+   */
+  @IsOptional()
   @IsEnum(PayeeAccountType, { message: 'نوع حساب مقصد نامعتبر است' })
-  payeeAccountType: PayeeAccountType;
+  payeeAccountType?: PayeeAccountType;
 
   @IsOptional()
   @IsString()
@@ -108,6 +132,12 @@ export class UpdatePaymentRequestDto {
   @IsOptional() @IsEnum(Currency) currency?: Currency;
   @IsOptional() @Type(() => Number) @IsInt() vendorId?: number;
   @IsOptional() @Type(() => Number) @IsInt() payeeAccountId?: number;
+  @IsOptional()
+  @IsEnum(PaymentDestinationKind)
+  destinationKind?: PaymentDestinationKind;
+  @IsOptional() @IsString() @MaxLength(300) destinationUrl?: string;
+  @IsOptional() @IsString() @MaxLength(200) destinationAccount?: string;
+  @IsOptional() @IsString() @MaxLength(200) destinationCredential?: string;
   @IsOptional() @IsString() @IsNotEmpty() @MaxLength(200) payeeName?: string;
   @IsOptional() @IsEnum(PayeeAccountType) payeeAccountType?: PayeeAccountType;
   @IsOptional() @IsString() @MaxLength(200) payeeAccountHolder?: string;

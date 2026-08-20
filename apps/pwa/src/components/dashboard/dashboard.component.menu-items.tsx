@@ -60,9 +60,13 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
       <div className="flex flex-col overflow-auto  my-6">
         {routeGroups.map((group, index) => {
           // Filter routes based on user roles and selected role
-          const filteredRoutes = group.routes.filter(route =>
-            !route.roles ||
-            (selectedRole ? route.roles.some(role => role === selectedRole.role) : hasAnyRole(route.roles))
+          // Filtered against ALL of the user's roles, not the selected one.
+          // Route guards and the API both check every role a person holds, so
+          // filtering the nav by one of them hid work the user was responsible
+          // for: someone with finance+approver simply had no link to their
+          // approvals inbox. The role dropdown stays as an identity display.
+          const filteredRoutes = group.routes.filter(
+            route => !route.roles || hasAnyRole(route.roles)
           );
 
           // Only show group if it has at least one route the user can access

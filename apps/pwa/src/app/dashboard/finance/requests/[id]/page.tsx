@@ -26,6 +26,7 @@ import {
   useRecordPayment,
   useRejectRequest,
   useRequestInfo,
+  useRevealCredential,
   useSubmitRequest,
 } from '../../finance.api';
 import { AttachmentPanel } from '../../finance.component.attachments';
@@ -44,6 +45,7 @@ import {
 } from '../../finance.constants';
 import {
   ApprovalStepStatus,
+  PaymentDestinationKind,
   PaymentRequestStatus,
   RecordPaymentDto,
 } from '../../finance.types';
@@ -53,9 +55,11 @@ import {
   formatRequestAmount,
   isOverdue,
 } from '../../finance.util';
-import { getRoleName } from '@/components/auth/auth.constants.roles';
+import { getRoleName, Role } from '@/components/auth/auth.constants.roles';
+import { useAuth } from '@/components/auth/auth.context.provider';
 
 export default function PaymentRequestDetailPage() {
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const id = Number(params?.id);
@@ -127,6 +131,35 @@ export default function PaymentRequestDetailPage() {
 
   const permissions = data?.permissions;
   const meta = data ? STATUS_META[data.status] : undefined;
+
+  const roles = user?.roles?.map((entry) => entry.role) ?? [];
+  /**
+   * Someone who both approves and pays. Rare on a big team, normal on a small
+   * one — and worth naming rather than hiding, because the two acts stay
+   * separate and both land in the trail under the same name.
+   */
+  const wearsBothHats =
+    roles.includes(Role.FINANCE) &&
+    (roles.includes(Role.APPROVER) || roles.includes(Role.ADMIN));
+
+  const approvedByMe = Boolean(
+    data?.approvalSteps.some(
+      (step) =>
+        step.status === ApprovalStepStatus.APPROVED &&
+        step.actor?.id === user?.id
+    )
+  );
+
+  const isOnlineAccount =
+    data?.destinationKind === PaymentDestinationKind.ONLINE_ACCOUNT;
+
+  /** The outstanding step this viewer is the one to decide. */
+  const myPendingStepId = data?.approvalSteps.find(
+    (step) =>
+      step.status === ApprovalStepStatus.PENDING &&
+      roles.includes(step.requiredRole) &&
+      data.requester?.id !== user?.id
+  )?.id;
 
   return (
     <ProtectedRoute>
@@ -216,6 +249,17 @@ export default function PaymentRequestDetailPage() {
                   )}
                 </div>
 
+                {/* A person holding both hats gets an explicit handoff rather
+                    than a silently re-rendered button: the approval and the
+                    payment are two separate acts, and the trail records both
+                    against the same name. */}
+                {wearsBothHats && permissions?.canPay && approvedByMe && (
+                  <div className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-sky-900">
+                    شما این درخواست را به‌عنوان تأییدکننده تأیید کردید. حالا می‌توانید
+                    به‌عنوان مالی آن را پرداخت کنید — هر دو اقدام به نام شما ثبت می‌شود.
+                  </div>
+                )}
+
                 {/* Actions */}
                 {(permissions?.canDecide ||
                   permissions?.canPay ||
@@ -227,7 +271,9 @@ export default function PaymentRequestDetailPage() {
                       <>
                         <Button className="gap-2" onClick={() => setDecision('approve')}>
                           <IconCheck className="size-4" />
-                          تأیید و ارسال به مالی
+                          {wearsBothHats
+                            ? 'تأیید به‌عنوان تأییدکننده'
+                            : 'تأیید و ارسال به مالی'}
                         </Button>
                         <Button
                           variant="outline"
@@ -250,7 +296,9 @@ export default function PaymentRequestDetailPage() {
 
                     {permissions?.canPay && (
                       <>
-                        <Button onClick={() => setPayOpen(true)}>ثبت پرداخت</Button>
+                        <Button onClick={() => setPayOpen(true)}>
+                          {wearsBothHats ? 'ثبت پرداخت به‌عنوان مالی' : 'ثبت پرداخت'}
+                        </Button>
                         <Button
                           variant="outline"
                           className="border-rose-200 text-rose-600"
@@ -297,18 +345,40 @@ export default function PaymentRequestDetailPage() {
                 <div className="grid gap-3 lg:grid-cols-2">
                   {/* Payee */}
                   <section className="rounded-2xl border border-slate-200/80 bg-white p-5">
-                    <h2 className="mb-3 font-bold text-slate-800">حساب مقصد</h2>
-                    <dl className="space-y-2 text-sm">
-                      <Row label="طرف‌حساب" value={data.payeeName} />
-                      <Row
-                        label="نوع حساب"
-                        value={PAYEE_ACCOUNT_TYPE_LABELS[data.payeeAccountType]}
-                      />
-                      <Row label="صاحب حساب" value={data.payeeAccountHolder} />
-                      <Row label="شماره شبا" value={data.payeeSheba} ltr />
-                      <Row label="شماره کارت" value={data.payeeCardNumber} ltr />
-                      <Row label="اطلاعات حساب" value={data.payeeAccountDetails} ltr />
-                    </dl>
+                    <h2 className="mb-3 font-bold text-slate-800">
+                      {isOnlineAccount ? 'حساب مقصد در سایت' : 'حساب مقصد'}
+                    </h2>
+
+                    {isOnlineAccount ? (
+                      <dl className="space-y-2 text-sm">
+                        <Row label="نام سرویس" value={data.payeeName} />
+                        <Row label="آدرس سایت" value={data.destinationUrl} ltr />
+                        <Row
+                          label="نام کاربری / شناسه حساب"
+                          value={data.destinationAccount}
+                          ltr
+                        />
+                        {data.hasDestinationCredential && (
+                          <CredentialRow requestId={id} />
+                        )}
+                      </dl>
+                    ) : (
+                      <dl className="space-y-2 text-sm">
+                        <Row label="طرف‌حساب" value={data.payeeName} />
+                        <Row
+                          label="نوع حساب"
+                          value={
+                            data.payeeAccountType
+                              ? PAYEE_ACCOUNT_TYPE_LABELS[data.payeeAccountType]
+                              : undefined
+                          }
+                        />
+                        <Row label="صاحب حساب" value={data.payeeAccountHolder} />
+                        <Row label="شماره شبا" value={data.payeeSheba} ltr />
+                        <Row label="شماره کارت" value={data.payeeCardNumber} ltr />
+                        <Row label="اطلاعات حساب" value={data.payeeAccountDetails} ltr />
+                      </dl>
+                    )}
 
                     {data.description && (
                       <p className="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-600">
@@ -334,6 +404,11 @@ export default function PaymentRequestDetailPage() {
                             <span className="text-slate-700">
                               {(step.sequence + 1).toLocaleString('fa-IR')}.{' '}
                               {getRoleName(step.requiredRole)}
+                              {step.id === myPendingStepId && (
+                                <span className="mr-2 text-xs font-medium text-primary">
+                                  نوبت شماست
+                                </span>
+                              )}
                             </span>
                             <span className="flex items-center gap-2">
                               {step.actor?.name && (
@@ -430,13 +505,18 @@ export default function PaymentRequestDetailPage() {
           isLoading={approve.isLoading || reject.isLoading || requestInfo.isLoading}
         />
 
-        <PaymentModal
-          request={data}
-          isOpen={payOpen}
-          onClose={() => setPayOpen(false)}
-          onConfirm={handlePay}
-          isLoading={pay.isLoading}
-        />
+        {/* Mounted only for Finance. It loads payment sources, which every
+            other role is forbidden from reading — an approver opening this
+            page was firing a guaranteed 403 on every visit. */}
+        {permissions?.canPay && (
+          <PaymentModal
+            request={data}
+            isOpen={payOpen}
+            onClose={() => setPayOpen(false)}
+            onConfirm={handlePay}
+            isLoading={pay.isLoading}
+          />
+        )}
 
         <DecisionModal
           kind={failOpen ? 'payment-failed' : null}
@@ -474,6 +554,55 @@ export default function PaymentRequestDetailPage() {
         )}
       </DashbaordLayout>
     </ProtectedRoute>
+  );
+}
+
+/**
+ * The stored login, fetched only when someone asks for it.
+ *
+ * Not rendered inline with the rest of the request: a password on screen by
+ * default is a password read by whoever is standing behind you, and the value
+ * is deliberately absent from the detail payload until this fires.
+ */
+function CredentialRow({ requestId }: { requestId: number }) {
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const reveal = useRevealCredential();
+
+  const handleReveal = async () => {
+    setBusy(true);
+    try {
+      const result = await reveal.submit(requestId);
+      setRevealed(result?.credential ?? '—');
+    } catch (revealError) {
+      toast.error(
+        (revealError as Error)?.message ?? 'نمایش اطلاعات ورود انجام نشد'
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-slate-500">رمز ورود</dt>
+      <dd className="text-left">
+        {revealed ? (
+          <span dir="ltr" className="font-mono text-xs text-slate-800">
+            {revealed}
+          </span>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={handleReveal}
+          >
+            {busy ? 'در حال نمایش...' : 'نمایش رمز'}
+          </Button>
+        )}
+      </dd>
+    </div>
   );
 }
 

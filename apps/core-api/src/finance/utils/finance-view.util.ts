@@ -55,6 +55,7 @@ export function toListItem(
     vendor: request.vendor
       ? { id: request.vendor.id, name: request.vendor.name }
       : undefined,
+    destinationKind: request.destinationKind,
     recurringSourceId: request.recurringSource?.id,
     submittedAt: request.submittedAt,
     paidAt: request.paidAt,

@@ -4,6 +4,7 @@ import {
   BillingCalendar,
   Currency,
   PayeeAccountType,
+  PaymentDestinationKind,
   PaymentRequestStatus,
   PaymentSourceType,
   RecurrenceCycle,
@@ -67,11 +68,16 @@ export const STATUS_META: Record<
 };
 
 export const CURRENCY_LABELS: Record<Currency, string> = {
-  [Currency.IRR]: 'ریال ایران',
+  [Currency.IRR]: 'تومان',
   [Currency.USD]: 'دلار آمریکا',
   [Currency.EUR]: 'یورو',
   [Currency.AED]: 'درهم امارات',
   [Currency.TRY]: 'لیر ترکیه',
+};
+
+export const DESTINATION_KIND_LABELS: Record<PaymentDestinationKind, string> = {
+  [PaymentDestinationKind.BANK_TRANSFER]: 'واریز به حساب بانکی',
+  [PaymentDestinationKind.ONLINE_ACCOUNT]: 'شارژ حساب در یک سایت',
 };
 
 export const PAYEE_ACCOUNT_TYPE_LABELS: Record<PayeeAccountType, string> = {

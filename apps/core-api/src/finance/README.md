@@ -51,6 +51,45 @@ Do not divide or multiply by ten anywhere else.
 `payeeSheba` and friends record what was actually paid to. A vendor editing
 their bank details next year must not rewrite last year's payment record.
 
+### Two destination kinds
+
+`destinationKind` splits a request into the two shapes Finance actually pays,
+and each one uses a different half of the columns:
+
+| Kind | Required | Null by construction |
+|---|---|---|
+| `bank_transfer` | `payeeAccountType` **and** one of `payeeSheba` / `payeeCardNumber` / `payeeAccountDetails` | `destinationUrl`, `destinationAccount` |
+| `online_account` | `destinationUrl`, `destinationAccount` | `payeeAccountType`, `payeeAccountHolder`, `payeeSheba`, `payeeCardNumber`, `payeeAccountDetails` |
+
+`payeeName` is required either way — for an online top-up it is the service
+name («OpenAI»), and it is what the vendor rollup report groups by.
+
+Two rules that are easy to get wrong:
+
+- **`payeeAccountType` is nullable.** An online top-up has no bank instrument,
+  and storing `sheba` on one would be a lie every report repeats. Validation
+  lives in `assertDestinationUsable()`, not in a DTO decorator — a decorator
+  cannot see `destinationKind`.
+- **Switching kind wipes the other side.** `destinationFields()` writes the
+  unused half back as `null` rather than leaving it. Someone who types a Sheba,
+  changes their mind and switches to an online top-up must not leave a payable
+  account number behind for Finance to wire money to by mistake.
+
+### The one stored secret
+
+`destinationCredentialEnc` holds the site login for an online top-up,
+AES-256-GCM encrypted by `utils/secret.util.ts` under `FINANCE_SECRET_KEY`
+(≥16 chars; **without it, saving a credential is refused, not silently
+skipped**).
+
+- Never returned by list or detail — detail exposes only
+  `hasDestinationCredential: boolean`.
+- Read through `GET /finance/requests/:id/credential`, and only by the
+  requester who supplied it or `Role.FINANCE`. Not admin, not the approver.
+- Cleared on every terminal state (`paid`, `rejected`, `cancelled`), so a
+  closed request stops being a password store.
+- Absent from the CSV export.
+
 ---
 
 ## Status model
@@ -98,6 +137,7 @@ with **0-based** paging; deletes return `{ success: true }`.
 GET    /finance/requests                     ?scope=mine|awaiting_me|payable|all
                                              &status=a,b &categoryId &text &from &to &overdue
 GET    /finance/requests/:id                 detail + permissions + signed attachment URLs
+GET    /finance/requests/:id/credential      online-account login — requester or finance only
 GET    /finance/requests/:id/activity        audit timeline
 GET    /finance/requests/meta/badges         { awaitingMe, payable, mineOpen } — nav counts
 POST   /finance/requests                     { …, submit?: true }
@@ -186,12 +226,20 @@ All user-facing messages are Persian.
 against a clean DB so `MigrationService` generates a migration — **review the
 generated file by hand**, it is not trustworthy blind.
 
-The end-to-end scripts in `docs/finance-payments-module.md` §16 cover 66 checks
-across the three phases: threshold routing, the needs-info round trip, both
+The end-to-end suites in [`docs/finance-e2e/`](../../../../docs/finance-e2e/README.md) cover 84 checks
+across four suites: threshold routing, the needs-info round trip, both
 segregation-of-duties rules, foreign currency, the access-control matrix, vendor
 snapshotting, recurring materialisation and idempotency, reminder
-de-duplication, Jalali vs Gregorian cycle advance, and the reporting figures.
+de-duplication, Jalali vs Gregorian cycle advance, the reporting figures, and
+the destination fork with its credential rules.
 
-Reset the database by **stopping the API first** — `DROP DATABASE` fails
-silently while a connection is open, and the next run then reports doubled
-figures rather than a failure.
+Two things about running them:
+
+- **Stop the API before resetting the database.** `DROP DATABASE` fails while a
+  connection is open, and the next run then reports doubled figures rather than
+  a failure — a wrong answer, not an error.
+- **Suite 3 asserts absolute totals over the whole database**, so it must run on
+  a fresh DB, after suite 2 (whose recurring schedule it counts) and never after
+  suite 1 (whose payments it would add in). Suites 1 and 4 each want their own
+  fresh database. Running them in the wrong order produces nine plausible-looking
+  failures that are nothing but arithmetic over the wrong rows.

@@ -501,15 +501,16 @@ detail so the UI never re-derives the action rules, and a fix to
 migrations, so a fresh database produced a whole-schema migration that then
 collided with the migrations it came from.
 
-**Verified against a real Postgres**, not just lint. All seven migrations apply
+**Verified against a real Postgres**, not just lint. All migrations apply
 cleanly from an empty database, `FinanceBootstrapService` seeds 9 categories and
-3 approval bands, and three suites pass **66/66**:
+3 approval bands, and four suites pass **84/84**:
 
 | Suite | Covers |
 |---|---|
 | Phase 1 — 30 checks | threshold routing at all three bands, the needs-info round trip, both segregation-of-duties rules, the two-step chain, foreign-currency payment with FX rate and fee, the access-control matrix, the user-deletion guard |
 | Phase 2 — 18 checks | vendor CRUD and permissions, payee-account defaulting, vendor pre-fill on a request, schedule creation, materialisation with payee snapshotting, idempotency on re-generation, skip, the daily job and its admin-only guard |
 | Phase 3 — 18 checks | dashboard KPIs summing *settled* not requested amounts, null change-percent with no baseline, category/vendor/trend breakdowns, monthly close with the variance row, CSV with a UTF-8 BOM and intact Persian headers, upcoming commitments, and role gating on every report endpoint |
+| Phase 3.5 — 18 checks | an online-account request created with no bank details, the credential absent from the detail payload, reveal allowed for the requester and Finance but refused for the approver and admin, the credential wiped on payment, both kinds' validation, a kind switch clearing the other side, and ciphertext (not plaintext) in the column |
 
 Checked separately, outside the suites: renewal reminders fire once per window
 and de-duplicate on a second same-day run, with the right decision-shaped
@@ -519,6 +520,44 @@ Both open risks from §17 are closed: `S3StorageService.getSignedReadUrl()` was
 added and finance attachments upload with `acl: 'private'`, and
 `UserService.removeUser()` now refuses to delete a user carrying finance
 history.
+
+### Phase 3.5 — UX audit fixes ✅ shipped
+
+A friction audit of the shipped flow, run against the rendered UI rather than
+the code. Six findings, all fixed. Two were named by the product owner; four
+came out of the audit.
+
+| # | Finding | Evidence | Fix |
+|---|---|---|---|
+| 1 | The request form assumed a bank payee, but the **more common** real request is topping up a company account on a website — which has no Sheba or card, and does need a URL and a login | `[OBSERVED]` reported by the product owner; the form had no path for it | `destinationKind` splits step 2 into two peer choice cards; the online branch collects site, account and an optional password, and hides every bank field |
+| 2 | A user holding `finance` **and** `approver` had no link to their approvals inbox | `[OBSERVED]` rendered sidebar for such a user | Sidebar filters on `hasAnyRole`, not `selectedRole` — matching what the route guards and the API already did |
+| 3 | For the same user, nothing on the detail page said which of their two hats was needed next | `[OBSERVED]` generic «تأیید» and «ثبت پرداخت» buttons side by side | Buttons are hat-labelled, the viewer's own pending step is marked «نوبت شماست», and a banner explains why approve-then-pay stays two steps |
+| 4 | The payment modal rendered for anyone who could open the page | `[OBSERVED]` in `requests/[id]/page.tsx` | Wrapped in `permissions.canPay` — the API had always refused, but the UI offered |
+| 5 | The currency label said «ریال» while the input said «تومان» — a 10× ambiguity on every amount | `[OBSERVED]` `CURRENCY_LABELS` vs `<CurrencyInput unit="toman">` | Label corrected to «تومان», matching the canonical display unit |
+| 6 | Mobile bottom nav had no finance destination at all | `[OBSERVED]` at 390px | One role-aware slot: approvals → queue → my-requests |
+
+Two bugs surfaced while testing finding 1, both fixed:
+
+- `payeeAccountType` was still **required** by the create DTO, so an
+  online-account request was rejected outright by any client that did not send a
+  meaningless bank type. It is now nullable, and required only for bank
+  transfers — enforced in the service, which can see `destinationKind`, rather
+  than in a decorator, which cannot.
+- Switching kind mid-form **left the other side's fields populated**, so a
+  request could carry a payable Sheba it was never meant to be paid to.
+  `destinationFields()` now writes the unused half back as null.
+
+The stored login is the module's only secret: AES-256-GCM under
+`FINANCE_SECRET_KEY`, never in a list or the CSV export, readable only by the
+requester or Finance through a dedicated endpoint, and wiped when the request
+reaches a terminal state. Without the key configured, saving a credential is
+**refused rather than silently skipped** — the field is optional precisely so
+that refusing is a safe outcome.
+
+`[NEEDS PROOF]` Storing a shared site password in the tool at all is a policy
+call, not a technical one. The design keeps the blast radius small, but whether
+Finance wants passwords flowing through this system — versus a note saying "sent
+separately" — is worth confirming before rollout.
 
 ### Phase 4 — Deferred
 
@@ -543,6 +582,21 @@ Tests in this repo are documented as unstable, so `lint` (which type-checks) is 
 7. Delete a user with finance history → `removeUser` succeeds without an FK error.
 8. Employee opens another employee's request by direct URL → 403.
 9. `USER` role hits `/finance/payment-sources` directly → 403.
+10. Employee raises an online-account request → no bank fields asked, credential encrypted at rest, approver cannot reveal it, and it is gone once the request is paid.
+
+**Running the four scripted suites** ([`docs/finance-e2e/`](finance-e2e/README.md)).
+They are not independent, and running them in the wrong order produces failures
+that are arithmetic over the wrong rows rather than defects:
+
+| Order | Suite | Database state it needs |
+|---|---|---|
+| 1 | phase 1 (30) | its own fresh DB |
+| 2 | phase 2 (18) → phase 3 (18) | one fresh DB, in that order — phase 3 counts the schedule phase 2 created, and would count phase 1's payments if they were there |
+| 3 | phase 3.5 (18) | its own fresh DB |
+
+**Stop the API before `DROP DATABASE`.** With a connection open the drop fails,
+the next run reports doubled figures, and the output looks like a bug in the
+aggregation rather than a broken reset.
 
 **Rendered UX QA** (this cannot be done by reading code): every screen at 360px and 1440px · RTL with mixed LTR islands — Sheba, reference numbers, FX rates, all reading in the intended order · long Persian vendor names and long rejection reasons without overflow · Persian digits consistent in every displayed amount · keyboard-only path through the submit form with a visible focus ring · every empty, loading, error, and success state actually reachable and correct.
 

@@ -2,6 +2,7 @@ import { Role } from '../roles/roles.constants';
 import {
   ApprovalStepStatus,
   Currency,
+  PaymentDestinationKind,
   PaymentRequestStatus,
 } from './finance.constants';
 
@@ -83,6 +84,7 @@ export interface PaymentRequestListItem {
   requester: UserSummary;
   category?: { id: number; name: string };
   vendor?: { id: number; name: string };
+  destinationKind: PaymentDestinationKind;
   /** Present when a recurring schedule produced this request. */
   recurringSourceId?: number;
   submittedAt?: Date;
@@ -101,6 +103,13 @@ export interface PaymentRequestDetail extends PaymentRequestListItem {
   payeeSheba?: string;
   payeeCardNumber?: string;
   payeeAccountDetails?: string;
+  destinationUrl?: string;
+  destinationAccount?: string;
+  /**
+   * Whether a login is stored. The value itself is never in this payload — it
+   * comes from the reveal endpoint, to the requester or Finance only.
+   */
+  hasDestinationCredential: boolean;
   approvalSteps: ApprovalStepView[];
   attachments: AttachmentView[];
   payments: PaymentView[];

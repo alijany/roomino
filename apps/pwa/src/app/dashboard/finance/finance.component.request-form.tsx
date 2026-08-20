@@ -16,10 +16,15 @@ import {
   useVendors,
 } from './finance.api';
 import { AttachmentPanel } from './finance.component.attachments';
-import { CURRENCY_LABELS, PAYEE_ACCOUNT_TYPE_LABELS } from './finance.constants';
+import {
+  CURRENCY_LABELS,
+  DESTINATION_KIND_LABELS,
+  PAYEE_ACCOUNT_TYPE_LABELS,
+} from './finance.constants';
 import {
   Currency,
   PayeeAccountType,
+  PaymentDestinationKind,
   PaymentRequestDetail,
   RequestOrigin,
 } from './finance.types';
@@ -91,6 +96,23 @@ export function RequestForm({
 
   const [vendorId, setVendorId] = useState<number | null>(null);
   const [payeeAccountId, setPayeeAccountId] = useState<number | null>(null);
+
+  // Which shape the destination takes. Asked first in step 2, because it
+  // decides every field under it — and because the previous form only offered
+  // bank details, so "top up our account on this site" had nowhere to go.
+  const [destinationKind, setDestinationKind] = useState<PaymentDestinationKind>(
+    existing?.destinationKind ?? PaymentDestinationKind.BANK_TRANSFER
+  );
+  const [destinationUrl, setDestinationUrl] = useState(
+    existing?.destinationUrl ?? ''
+  );
+  const [destinationAccount, setDestinationAccount] = useState(
+    existing?.destinationAccount ?? ''
+  );
+  const [destinationCredential, setDestinationCredential] = useState('');
+
+  const isOnlineAccount =
+    destinationKind === PaymentDestinationKind.ONLINE_ACCOUNT;
 
   const { data: categoriesData } = useExpenseCategories();
   const categories = categoriesData?.items ?? [];
@@ -171,7 +193,17 @@ export function RequestForm({
   const step1Valid =
     Boolean(categoryId) && title.trim().length > 0 && (amountMinor ?? 0) > 0;
 
-  const step2Valid = payeeName.trim().length > 0 && !shebaError;
+  const step2Valid = isOnlineAccount
+    ? payeeName.trim().length > 0 &&
+      destinationUrl.trim().length > 0 &&
+      destinationAccount.trim().length > 0
+    : payeeName.trim().length > 0 &&
+      !shebaError &&
+      Boolean(
+        payeeSheba.trim() ||
+          payeeCardNumber.trim() ||
+          payeeAccountDetails.trim()
+      );
 
   const payload = () => ({
     title: title.trim(),
@@ -182,11 +214,28 @@ export function RequestForm({
     vendorId: vendorId ?? undefined,
     payeeAccountId: payeeAccountId ?? undefined,
     payeeName: payeeName.trim(),
-    payeeAccountType,
-    payeeAccountHolder: payeeAccountHolder.trim() || undefined,
-    payeeSheba: payeeSheba.replace(/\s/g, '').toUpperCase() || undefined,
-    payeeCardNumber: payeeCardNumber.replace(/\s/g, '') || undefined,
-    payeeAccountDetails: payeeAccountDetails.trim() || undefined,
+    // Bank fields are omitted wholesale for an online top-up: there is no
+    // account to describe, and sending a leftover Sheba would put a payable
+    // account number on a request nobody means to wire money to.
+    payeeAccountType: isOnlineAccount ? undefined : payeeAccountType,
+    payeeAccountHolder: isOnlineAccount
+      ? undefined
+      : payeeAccountHolder.trim() || undefined,
+    payeeSheba: isOnlineAccount
+      ? undefined
+      : payeeSheba.replace(/\s/g, '').toUpperCase() || undefined,
+    payeeCardNumber: isOnlineAccount
+      ? undefined
+      : payeeCardNumber.replace(/\s/g, '') || undefined,
+    payeeAccountDetails: isOnlineAccount
+      ? undefined
+      : payeeAccountDetails.trim() || undefined,
+    destinationKind,
+    destinationUrl: isOnlineAccount ? destinationUrl.trim() : undefined,
+    destinationAccount: isOnlineAccount ? destinationAccount.trim() : undefined,
+    destinationCredential: isOnlineAccount
+      ? destinationCredential.trim() || undefined
+      : undefined,
     dueDate: dueDate.toISOString(),
     ...(origin ? { origin } : {}),
   });
@@ -363,7 +412,48 @@ export function RequestForm({
 
             {step === 1 && (
               <>
-                {vendors.length > 0 && (
+                {/* The choice that shapes the rest of the step. Two buttons
+                    rather than a dropdown: it is a fork, not a setting, and
+                    both options need a sentence of explanation. */}
+                <div>
+                  <label className="mb-2 block font-medium text-slate-700">
+                    پول باید کجا برود؟
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {(
+                      [
+                        [
+                          PaymentDestinationKind.BANK_TRANSFER,
+                          'به حساب بانکی طرف‌حساب واریز می‌شود.',
+                        ],
+                        [
+                          PaymentDestinationKind.ONLINE_ACCOUNT,
+                          'حساب ما در یک سایت شارژ می‌شود.',
+                        ],
+                      ] as const
+                    ).map(([kind, hint]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => setDestinationKind(kind)}
+                        aria-pressed={destinationKind === kind}
+                        className={cn(
+                          'rounded-xl border p-3 text-right transition-colors',
+                          destinationKind === kind
+                            ? 'border-primary bg-sky-50/60'
+                            : 'border-slate-200 hover:bg-slate-50'
+                        )}
+                      >
+                        <div className="font-medium text-slate-800">
+                          {DESTINATION_KIND_LABELS[kind]}
+                        </div>
+                        <div className="mt-0.5 text-xs text-slate-500">{hint}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {!isOnlineAccount && vendors.length > 0 && (
                   <div>
                     <label className="mb-2 block font-medium text-slate-700">
                       از طرف‌حساب‌های ثبت‌شده
@@ -388,35 +478,89 @@ export function RequestForm({
                 )}
 
                 <Input
-                  label="نام طرف‌حساب"
+                  label={isOnlineAccount ? 'نام سرویس' : 'نام طرف‌حساب'}
                   value={payeeName}
                   onChange={(e) => setPayeeName(e.target.value)}
-                  placeholder="مثلاً شرکت خدمات ابری آروان"
+                  placeholder={
+                    isOnlineAccount
+                      ? 'مثلاً آروان‌کلاد'
+                      : 'مثلاً شرکت خدمات ابری آروان'
+                  }
                   required
                 />
 
-                <div>
-                  <label className="mb-2 block font-medium text-slate-700">
-                    نوع حساب مقصد
-                  </label>
-                  <Dropdown
-                    items={Object.values(PayeeAccountType).map((t) => ({
-                      label: PAYEE_ACCOUNT_TYPE_LABELS[t],
-                      value: t,
-                    }))}
-                    value={payeeAccountType}
-                    onChange={(value) => setPayeeAccountType(value as PayeeAccountType)}
-                    variant="outline"
-                  />
-                </div>
+                {isOnlineAccount && (
+                  <>
+                    <Input
+                      label="آدرس سایت"
+                      dir="ltr"
+                      className="text-left"
+                      value={destinationUrl}
+                      onChange={(e) => setDestinationUrl(e.target.value)}
+                      placeholder="https://panel.arvancloud.ir"
+                      required
+                    />
 
-                <Input
-                  label="نام صاحب حساب"
-                  value={payeeAccountHolder}
-                  onChange={(e) => setPayeeAccountHolder(e.target.value)}
-                />
+                    <Input
+                      label="نام کاربری یا شناسه حسابی که باید شارژ شود"
+                      dir="ltr"
+                      className="text-left"
+                      value={destinationAccount}
+                      onChange={(e) => setDestinationAccount(e.target.value)}
+                      placeholder="user@example.com"
+                      required
+                    />
 
-                {payeeAccountType === PayeeAccountType.SHEBA && (
+                    <Input
+                      label="رمز ورود (اختیاری)"
+                      type="password"
+                      dir="ltr"
+                      className="text-left"
+                      value={destinationCredential}
+                      onChange={(e) => setDestinationCredential(e.target.value)}
+                      labelRight={
+                        <span className="text-xs font-normal text-slate-400">
+                          فقط شما و تیم مالی آن را می‌بینید
+                        </span>
+                      }
+                    />
+
+                    <p className="text-xs text-slate-500">
+                      رمز رمزنگاری‌شده ذخیره می‌شود، در فهرست‌ها و خروجی اکسل
+                      نمی‌آید، و پس از بسته‌شدن درخواست پاک می‌شود. اگر ترجیح
+                      می‌دهید، آن را خالی بگذارید و جداگانه به مالی بدهید.
+                    </p>
+                  </>
+                )}
+
+                {!isOnlineAccount && (
+                  <>
+                    <div>
+                      <label className="mb-2 block font-medium text-slate-700">
+                        نوع حساب مقصد
+                      </label>
+                      <Dropdown
+                        items={Object.values(PayeeAccountType).map((t) => ({
+                          label: PAYEE_ACCOUNT_TYPE_LABELS[t],
+                          value: t,
+                        }))}
+                        value={payeeAccountType}
+                        onChange={(value) =>
+                          setPayeeAccountType(value as PayeeAccountType)
+                        }
+                        variant="outline"
+                      />
+                    </div>
+
+                    <Input
+                      label="نام صاحب حساب"
+                      value={payeeAccountHolder}
+                      onChange={(e) => setPayeeAccountHolder(e.target.value)}
+                    />
+                  </>
+                )}
+
+                {!isOnlineAccount && payeeAccountType === PayeeAccountType.SHEBA && (
                   <Input
                     label="شماره شبا"
                     dir="ltr"
@@ -428,7 +572,7 @@ export function RequestForm({
                   />
                 )}
 
-                {payeeAccountType === PayeeAccountType.CARD && (
+                {!isOnlineAccount && payeeAccountType === PayeeAccountType.CARD && (
                   <Input
                     label="شماره کارت"
                     dir="ltr"
@@ -439,11 +583,12 @@ export function RequestForm({
                   />
                 )}
 
-                {[
-                  PayeeAccountType.IBAN_SWIFT,
-                  PayeeAccountType.PAYPAL,
-                  PayeeAccountType.OTHER,
-                ].includes(payeeAccountType) && (
+                {!isOnlineAccount &&
+                  [
+                    PayeeAccountType.IBAN_SWIFT,
+                    PayeeAccountType.PAYPAL,
+                    PayeeAccountType.OTHER,
+                  ].includes(payeeAccountType) && (
                   <Input
                     textarea
                     rows={3}

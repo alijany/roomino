@@ -69,6 +69,22 @@ export function useRequestActivity(id?: number) {
   );
 }
 
+/**
+ * Fetches the stored login for an online top-up. A mutation rather than a
+ * query on purpose: it should fire when someone asks, not on page load.
+ */
+export function useRevealCredential() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/finance/requests/credential',
+      (_key: string, { arg }: { arg: number }) =>
+        fetcher<{ credential: string | null }>(
+          `/finance/requests/${arg}/credential`
+        )
+    )
+  );
+}
+
 export function useFinanceBadges() {
   return useSwrHelper(
     useSWR<FinanceBadges>('/finance/requests/meta/badges', fetcher)

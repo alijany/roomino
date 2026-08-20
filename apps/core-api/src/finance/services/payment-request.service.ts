@@ -31,6 +31,7 @@ import {
   AttachmentKind,
   Currency,
   PayeeAccountType,
+  PaymentDestinationKind,
   EDITABLE_STATUSES,
   FinanceActivityAction,
   PAYABLE_STATUSES,
@@ -41,6 +42,7 @@ import {
 } from '../finance.constants';
 import { RequestPermissions } from '../finance.types';
 import { assertSafeAmount, readBigint, toRial } from '../utils/money.util';
+import { decryptSecret, encryptSecret } from '../utils/secret.util';
 import { ApprovalRuleService } from './approval-rule.service';
 import { ExpenseCategoryService } from './expense-category.service';
 import { FinanceActivityService } from './finance-activity.service';
@@ -384,6 +386,143 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
   }
 
   // ---------------------------------------------------------------------------
+  // destination
+  // ---------------------------------------------------------------------------
+
+  /**
+   * A destination has to actually be payable.
+   *
+   * Which fields count depends on the kind, so this is checked here rather than
+   * with per-field DTO decorators: a bank transfer with no account number and
+   * an online top-up with no site are both "filled in" as far as
+   * class-validator can tell, and both are useless to Finance.
+   */
+  private assertDestinationUsable(
+    kind: PaymentDestinationKind,
+    fields: {
+      payeeAccountType?: PayeeAccountType;
+      payeeSheba?: string;
+      payeeCardNumber?: string;
+      payeeAccountDetails?: string;
+      destinationUrl?: string;
+      destinationAccount?: string;
+    },
+  ): void {
+    if (kind === PaymentDestinationKind.ONLINE_ACCOUNT) {
+      if (!fields.destinationUrl?.trim()) {
+        throw new BadRequestException('آدرس سایت مقصد را وارد کنید');
+      }
+
+      if (!fields.destinationAccount?.trim()) {
+        throw new BadRequestException(
+          'نام کاربری یا شناسه حسابی که باید شارژ شود را وارد کنید',
+        );
+      }
+
+      return;
+    }
+
+    if (!fields.payeeAccountType) {
+      throw new BadRequestException('نوع حساب مقصد را انتخاب کنید');
+    }
+
+    const hasAccount =
+      fields.payeeSheba?.trim() ||
+      fields.payeeCardNumber?.trim() ||
+      fields.payeeAccountDetails?.trim();
+
+    if (!hasAccount) {
+      throw new BadRequestException(
+        'برای واریز بانکی، شماره شبا، شماره کارت یا اطلاعات حساب مقصد لازم است',
+      );
+    }
+  }
+
+  /**
+   * Keeps the two destination shapes from bleeding into each other. Someone who
+   * fills in a Sheba and then switches to an online top-up must not leave a
+   * stale account number behind for Finance to pay by mistake — so whichever
+   * side the kind does not use is written back as null, not merely ignored.
+   */
+  private destinationFields(
+    kind: PaymentDestinationKind,
+    fields: {
+      payeeAccountType?: PayeeAccountType;
+      payeeAccountHolder?: string;
+      payeeSheba?: string;
+      payeeCardNumber?: string;
+      payeeAccountDetails?: string;
+      destinationUrl?: string;
+      destinationAccount?: string;
+    },
+  ) {
+    if (kind === PaymentDestinationKind.ONLINE_ACCOUNT) {
+      return {
+        destinationKind: kind,
+        destinationUrl: fields.destinationUrl,
+        destinationAccount: fields.destinationAccount,
+        payeeAccountType: null,
+        payeeAccountHolder: null,
+        payeeSheba: null,
+        payeeCardNumber: null,
+        payeeAccountDetails: null,
+      };
+    }
+
+    return {
+      destinationKind: kind,
+      destinationUrl: null,
+      destinationAccount: null,
+      payeeAccountType: fields.payeeAccountType,
+      payeeAccountHolder: fields.payeeAccountHolder,
+      payeeSheba: fields.payeeSheba,
+      payeeCardNumber: fields.payeeCardNumber,
+      payeeAccountDetails: fields.payeeAccountDetails,
+    };
+  }
+
+  /**
+   * Encrypts a supplied credential, or clears it when the caller sent an empty
+   * string. `undefined` means "leave whatever is stored alone".
+   */
+  private credentialPatch(
+    credential: string | undefined,
+    kind: PaymentDestinationKind,
+  ): { destinationCredentialEnc?: string | null } {
+    if (credential === undefined) {
+      return {};
+    }
+
+    const trimmed = credential.trim();
+
+    if (!trimmed || kind !== PaymentDestinationKind.ONLINE_ACCOUNT) {
+      return { destinationCredentialEnc: null };
+    }
+
+    return { destinationCredentialEnc: encryptSecret(trimmed) };
+  }
+
+  /**
+   * Reveals the stored login to the people who legitimately need it: the
+   * requester who supplied it, and Finance who has to use it. Every other
+   * viewer of the request never sees this field at all.
+   */
+  async revealCredential(id: number, user: UserEntity): Promise<string | null> {
+    const request = await this.getDetailOrFail(id, user);
+
+    const allowed =
+      request.requester.id === user.id || this.hasRole(user, Role.FINANCE);
+
+    if (!allowed) {
+      throw new ForbiddenException(
+        'شما به اطلاعات ورود این درخواست دسترسی ندارید',
+      );
+    }
+
+    return decryptSecret(request.destinationCredentialEnc);
+  }
+
+  // ---------------------------------------------------------------------------
   // writes
   // ---------------------------------------------------------------------------
 
@@ -405,6 +544,11 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         ? RequestOrigin.FINANCE
         : RequestOrigin.EMPLOYEE;
 
+    const destinationKind =
+      dto.destinationKind ?? PaymentDestinationKind.BANK_TRANSFER;
+
+    this.assertDestinationUsable(destinationKind, dto);
+
     const request = await this.create({
       requester: this.em.getReference(UserEntity, user.id),
       origin,
@@ -420,11 +564,8 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       amountMinor: dto.amountMinor,
       currency: dto.currency,
       payeeName: dto.payeeName,
-      payeeAccountType: dto.payeeAccountType,
-      payeeAccountHolder: dto.payeeAccountHolder,
-      payeeSheba: dto.payeeSheba,
-      payeeCardNumber: dto.payeeCardNumber,
-      payeeAccountDetails: dto.payeeAccountDetails,
+      ...this.destinationFields(destinationKind, dto),
+      ...this.credentialPatch(dto.destinationCredential, destinationKind),
       dueDate: new Date(dto.dueDate),
       costCenter: dto.costCenter,
       status: PaymentRequestStatus.DRAFT,
@@ -608,12 +749,44 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       assertSafeAmount(dto.amountMinor);
     }
 
-    const { categoryId, vendorId, payeeAccountId, dueDate, ...rest } = dto;
+    const { categoryId, vendorId, payeeAccountId, dueDate } = dto;
+
+    // Only the fields that are copied across verbatim. Everything to do with
+    // the destination is rebuilt below instead, because a patch that changes
+    // the kind has to rewrite both sides of it at once.
+    const plain = {
+      ...(dto.title !== undefined ? { title: dto.title } : {}),
+      ...(dto.description !== undefined
+        ? { description: dto.description }
+        : {}),
+      ...(dto.amountMinor !== undefined
+        ? { amountMinor: dto.amountMinor }
+        : {}),
+      ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
+      ...(dto.payeeName !== undefined ? { payeeName: dto.payeeName } : {}),
+      ...(dto.costCenter !== undefined ? { costCenter: dto.costCenter } : {}),
+    };
+
+    // Validate and write the destination as it will be *after* the patch, not
+    // as it was — a kind switch has to be judged on the merged result.
+    const nextKind = dto.destinationKind ?? request.destinationKind;
+    const nextDestination = {
+      payeeAccountType: dto.payeeAccountType ?? request.payeeAccountType,
+      payeeAccountHolder: dto.payeeAccountHolder ?? request.payeeAccountHolder,
+      payeeSheba: dto.payeeSheba ?? request.payeeSheba,
+      payeeCardNumber: dto.payeeCardNumber ?? request.payeeCardNumber,
+      payeeAccountDetails:
+        dto.payeeAccountDetails ?? request.payeeAccountDetails,
+      destinationUrl: dto.destinationUrl ?? request.destinationUrl,
+      destinationAccount: dto.destinationAccount ?? request.destinationAccount,
+    };
+
+    this.assertDestinationUsable(nextKind, nextDestination);
 
     await this.updateOne(
       { id },
       {
-        ...rest,
+        ...plain,
         ...(categoryId
           ? {
               category: this.em.getReference(ExpenseCategoryEntity, categoryId),
@@ -634,6 +807,8 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
             }
           : {}),
         ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
+        ...this.destinationFields(nextKind, nextDestination),
+        ...this.credentialPatch(dto.destinationCredential, nextKind),
       },
     );
 
@@ -844,6 +1019,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         pendingSequence: null,
         decidedAt: new Date(),
         lastDecisionComment: comment,
+        // The login was needed to make this payment. Now that the request is
+        // closed, keeping it is pure liability.
+        destinationCredentialEnc: null,
       });
 
       await em.persistAndFlush([target, parent]);
@@ -949,6 +1127,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         pendingRole: null,
         pendingSequence: null,
         decidedAt: new Date(),
+        // The login was needed to make this payment. Now that the request is
+        // closed, keeping it is pure liability.
+        destinationCredentialEnc: null,
       });
 
       await em.persistAndFlush(parent);
@@ -1038,6 +1219,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         paidAt: new Date(dto.paidAt),
         pendingRole: null,
         pendingSequence: null,
+        // The login was needed to make this payment. Now that the request is
+        // closed, keeping it is pure liability.
+        destinationCredentialEnc: null,
       });
 
       await em.persistAndFlush([payment, parent]);

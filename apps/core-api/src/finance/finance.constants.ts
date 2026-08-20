@@ -83,7 +83,7 @@ export enum Currency {
 }
 
 export const CurrencyLabels: Record<Currency, string> = {
-  [Currency.IRR]: 'ریال',
+  [Currency.IRR]: 'تومان',
   [Currency.USD]: 'دلار آمریکا',
   [Currency.EUR]: 'یورو',
   [Currency.AED]: 'درهم امارات',
@@ -97,6 +97,27 @@ export enum PaymentSourceType {
   PETTY_CASH = 'petty_cash',
   INTERMEDIARY = 'intermediary',
 }
+
+/**
+ * What kind of destination the money is going to.
+ *
+ * Two genuinely different jobs, not a cosmetic split. A bank transfer needs an
+ * account number Finance can pay *into*. Topping up a company account on a
+ * website needs the site and the login — asking for a Sheba there is asking for
+ * something that does not exist.
+ */
+export enum PaymentDestinationKind {
+  BANK_TRANSFER = 'bank_transfer',
+  ONLINE_ACCOUNT = 'online_account',
+}
+
+export const PaymentDestinationKindLabels: Record<
+  PaymentDestinationKind,
+  string
+> = {
+  [PaymentDestinationKind.BANK_TRANSFER]: 'واریز به حساب بانکی',
+  [PaymentDestinationKind.ONLINE_ACCOUNT]: 'شارژ حساب در یک سایت',
+};
 
 /** How the payee wants to be paid. */
 export enum PayeeAccountType {

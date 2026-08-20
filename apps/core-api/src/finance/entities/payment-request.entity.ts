@@ -15,6 +15,7 @@ import { UserEntity } from '../../user/user.entity';
 import {
   Currency,
   PayeeAccountType,
+  PaymentDestinationKind,
   PaymentRequestStatus,
   RequestOrigin,
 } from '../finance.constants';
@@ -77,11 +78,27 @@ export class PaymentRequestEntity extends BaseEntity {
   @ManyToOne(() => PayeeAccountEntity, { nullable: true })
   payeeAccount?: PayeeAccountEntity;
 
+  /**
+   * Which shape the destination takes. Everything below is validated against
+   * this — a bank transfer needs an account number, an online top-up needs a
+   * site and a login, and neither needs the other's fields.
+   */
+  @Enum({
+    items: () => PaymentDestinationKind,
+    default: PaymentDestinationKind.BANK_TRANSFER,
+  })
+  destinationKind: PaymentDestinationKind =
+    PaymentDestinationKind.BANK_TRANSFER;
+
   @Property()
   payeeName: string;
 
-  @Enum({ items: () => PayeeAccountType, default: PayeeAccountType.SHEBA })
-  payeeAccountType: PayeeAccountType = PayeeAccountType.SHEBA;
+  /**
+   * Null for an online top-up: there is no payee bank instrument to describe.
+   * Storing a bank type on such a request would be a lie the reports repeat.
+   */
+  @Enum({ items: () => PayeeAccountType, nullable: true })
+  payeeAccountType?: PayeeAccountType;
 
   @Property({ nullable: true })
   payeeAccountHolder?: string;
@@ -95,6 +112,27 @@ export class PaymentRequestEntity extends BaseEntity {
   /** IBAN / SWIFT / PayPal address / anything else, for foreign payees. */
   @Property({ nullable: true })
   payeeAccountDetails?: string;
+
+  // --- online account top-up ------------------------------------------------
+  // Used when destinationKind is ONLINE_ACCOUNT: "put credit on our account at
+  // this site" rather than "transfer to this bank account".
+
+  @Property({ nullable: true })
+  destinationUrl?: string;
+
+  /** Username, email or account id to top up on that site. */
+  @Property({ nullable: true })
+  destinationAccount?: string;
+
+  /**
+   * Login secret, **encrypted at rest** (see `utils/secret.util.ts`) and never
+   * included in list views, the CSV export, or notifications.
+   *
+   * Cleared automatically once the request reaches a terminal state — a
+   * password that outlives the payment it was needed for is pure liability.
+   */
+  @Property({ nullable: true, type: 'text' })
+  destinationCredentialEnc?: string;
 
   // --- scheduling -----------------------------------------------------------
 

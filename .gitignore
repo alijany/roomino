@@ -133,3 +133,7 @@ dist
 # next.js
 /.next/
 /out/
+
+# MikroORM writes a schema snapshot next to the migrations on every dev boot.
+# It is a local diff cache, not part of the migration history.
+.snapshot-*.json
