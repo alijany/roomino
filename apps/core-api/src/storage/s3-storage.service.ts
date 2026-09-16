@@ -16,6 +16,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 @Injectable()
 export class S3StorageService implements OnModuleInit {
   private readonly s3Client: S3Client;
+  private readonly publicReadClient: S3Client;
   private readonly logger = new Logger(S3StorageService.name);
   private readonly bucketName: string;
   private readonly region: BucketLocationConstraint;
@@ -24,18 +25,26 @@ export class S3StorageService implements OnModuleInit {
   constructor(private configService: ConfigService) {
     this.bucketName = this.configService.get<string>('S3_BUCKET_NAME');
     this.region = this.configService.get<BucketLocationConstraint>('S3_REGION');
-    this.domain = this.configService.get<string>('S3_DOMAIN');
+    this.domain = this.configService.get<string>('S3_DOMAIN')?.replace(/\/+$/, '');
 
-    // Initialize S3 client with Arvan cloud credentials
-    this.s3Client = new S3Client({
-      endpoint: this.configService.get<string>('S3_ENDPOINT'),
+    const clientConfig = {
       credentials: {
         accessKeyId: this.configService.get<string>('S3_ACCESS_KEY'),
         secretAccessKey: this.configService.get<string>('S3_SECRET_KEY'),
       },
       forcePathStyle: true, // Required for some S3 compatible services
       region: this.region,
+    };
+
+    // Keep object operations on the internal endpoint. Presigned links must
+    // use the public host because the host is part of the S3 signature.
+    this.s3Client = new S3Client({
+      ...clientConfig,
+      endpoint: this.configService.get<string>('S3_ENDPOINT'),
     });
+    this.publicReadClient = this.domain
+      ? new S3Client({ ...clientConfig, endpoint: this.domain })
+      : this.s3Client;
   }
 
   async onModuleInit() {
@@ -171,7 +180,7 @@ export class S3StorageService implements OnModuleInit {
       Key: key,
     });
 
-    return getSignedUrl(this.s3Client, command, {
+    return getSignedUrl(this.publicReadClient, command, {
       expiresIn: expiresInSeconds,
     });
   }
