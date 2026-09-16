@@ -168,6 +168,7 @@ export default function PaymentQueuePage() {
         </div>
 
         <RequestForm
+          key={String(formOpen)}
           isOpen={formOpen}
           onClose={() => setFormOpen(false)}
           onSuccess={refresh}

@@ -121,7 +121,6 @@ export class CreateRecurringExpenseDto {
   /** Defaults to the caller — whoever registers it usually owns it. */
   @IsOptional() @Type(() => Number) @IsInt() ownerId?: number;
 
-  @IsOptional() @IsBoolean() autoGenerate?: boolean;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
@@ -146,7 +145,6 @@ export class UpdateRecurringExpenseDto {
   reminderDays?: number[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) leadDays?: number;
   @IsOptional() @Type(() => Number) @IsInt() ownerId?: number;
-  @IsOptional() @IsBoolean() autoGenerate?: boolean;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }

@@ -185,7 +185,6 @@ export function toRecurringView(schedule: RecurringExpenseEntity) {
     reminderDays: schedule.reminderDays,
     leadDays: schedule.leadDays,
     owner: toUserSummary(schedule.owner),
-    autoGenerate: schedule.autoGenerate,
     notes: schedule.notes,
     active: schedule.active,
   };

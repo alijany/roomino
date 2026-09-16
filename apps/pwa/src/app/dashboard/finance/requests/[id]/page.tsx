@@ -191,7 +191,7 @@ export default function PaymentRequestDetailPage() {
                       <div className="mb-1 flex flex-wrap items-center gap-2">
                         <StatusBadge status={data.status} size="md" />
                         <span className="text-xs text-slate-500">
-                          {data.category?.name}
+                          {data.category?.name ?? 'بدون دسته'}
                         </span>
                       </div>
                       <h1 className="text-xl font-bold text-slate-800">{data.title}</h1>
@@ -262,6 +262,7 @@ export default function PaymentRequestDetailPage() {
 
                 {/* Actions */}
                 {(permissions?.canDecide ||
+                  permissions?.canReject ||
                   permissions?.canPay ||
                   permissions?.canSubmit ||
                   permissions?.canEdit ||
@@ -283,15 +284,18 @@ export default function PaymentRequestDetailPage() {
                           <IconPencilExclamation className="size-4" />
                           نیازمند اصلاح
                         </Button>
-                        <Button
-                          variant="outline"
-                          className="gap-2 border-rose-200 text-rose-600"
-                          onClick={() => setDecision('reject')}
-                        >
-                          <IconX className="size-4" />
-                          رد
-                        </Button>
                       </>
+                    )}
+
+                    {permissions?.canReject && (
+                      <Button
+                        variant="outline"
+                        className="gap-2 border-rose-200 text-rose-600"
+                        onClick={() => setDecision('reject')}
+                      >
+                        <IconX className="size-4" />
+                        رد درخواست
+                      </Button>
                     )}
 
                     {permissions?.canPay && (
@@ -441,9 +445,7 @@ export default function PaymentRequestDetailPage() {
                             </span>
                           </div>
                           <div className="mt-1 space-y-0.5 text-xs text-slate-500">
-                            {payment.paymentSource && (
-                              <div>از حساب: {payment.paymentSource.label}</div>
-                            )}
+                            <div>منبع پرداخت: {payment.paymentSource?.label ?? 'بدون منبع'}</div>
                             {payment.referenceNumber && (
                               <div>
                                 شماره پیگیری:{' '}
@@ -546,6 +548,7 @@ export default function PaymentRequestDetailPage() {
 
         {data && (
           <RequestForm
+            key={String(editOpen)}
             isOpen={editOpen}
             onClose={() => setEditOpen(false)}
             onSuccess={refresh}

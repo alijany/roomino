@@ -138,7 +138,6 @@ export class RecurringExpenseService extends BaseRepositoryService<RecurringExpe
       leadDays: dto.leadDays ?? 7,
       // Whoever registers it usually owns it; an admin can reassign later.
       owner: this.em.getReference(UserEntity, dto.ownerId ?? callerId),
-      autoGenerate: dto.autoGenerate ?? true,
       notes: dto.notes,
       active: dto.active ?? true,
     });
@@ -220,28 +219,9 @@ export class RecurringExpenseService extends BaseRepositoryService<RecurringExpe
     return { deactivated: false };
   }
 
-  /** Roll forward one cycle without generating anything — "not this month". */
-  async skipCycle(id: number): Promise<RecurringExpenseEntity> {
-    const schedule = await this.getOrFail(id);
-
-    return this.updateOne(
-      { id },
-      {
-        nextDueDate: advanceDueDate(
-          schedule.nextDueDate,
-          schedule.cycle,
-          schedule.calendar,
-          schedule.cycleDays,
-        ),
-        lastReminderDaysSent: null,
-      },
-    );
-  }
-
   /**
-   * Creates the request for the current cycle now, ahead of the job, and rolls
-   * the schedule forward. Used by the "generate now" action and by the daily
-   * materialiser.
+   * Creates the current cycle's request and rolls the schedule forward.
+   * Used by the demo seed; production schedules use the daily materialiser.
    */
   async generateNow(id: number) {
     const schedule = await this.getOrFail(id);
@@ -305,10 +285,7 @@ export class RecurringExpenseService extends BaseRepositoryService<RecurringExpe
           reminded += 1;
         }
 
-        if (
-          schedule.autoGenerate &&
-          daysUntil(schedule.nextDueDate, now) <= schedule.leadDays
-        ) {
+        if (daysUntil(schedule.nextDueDate, now) <= schedule.leadDays) {
           await this.requests.createFromSchedule(
             schedule,
             schedule.nextDueDate,

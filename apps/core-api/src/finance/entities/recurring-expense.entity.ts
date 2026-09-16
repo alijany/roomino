@@ -94,10 +94,6 @@ export class RecurringExpenseEntity extends BaseEntity {
   @ManyToOne(() => UserEntity)
   owner: UserEntity;
 
-  /** When false, the schedule only reminds; nothing is created automatically. */
-  @Property({ default: true })
-  autoGenerate: boolean = true;
-
   @Property({ nullable: true })
   notes?: string;
 

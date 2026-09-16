@@ -167,6 +167,7 @@ export interface RequestPermissions {
   canEdit: boolean;
   canSubmit: boolean;
   canDecide: boolean;
+  canReject: boolean;
   canPay: boolean;
   canCancel: boolean;
   canAttach: boolean;
@@ -241,7 +242,7 @@ export interface RequestFilterDto {
 export interface CreateRequestDto {
   title: string;
   description?: string;
-  categoryId: number;
+  categoryId?: number;
   amountMinor: number;
   currency: Currency;
   payeeName: string;
@@ -260,10 +261,12 @@ export interface CreateRequestDto {
   origin?: RequestOrigin;
 }
 
-export type UpdateRequestDto = Partial<Omit<CreateRequestDto, 'submit' | 'origin'>>;
+export type UpdateRequestDto = Partial<Omit<CreateRequestDto, 'submit' | 'origin' | 'categoryId'>> & {
+  categoryId?: number | null;
+};
 
 export interface RecordPaymentDto {
-  paymentSourceId: number;
+  paymentSourceId?: number;
   paidAt: string;
   settledAmountRial: number;
   fxRateRialPerUnit?: number;
@@ -356,7 +359,6 @@ export interface RecurringExpense {
   reminderDays: number[];
   leadDays: number;
   owner?: UserSummary;
-  autoGenerate: boolean;
   notes?: string;
   active: boolean;
 }
@@ -404,7 +406,6 @@ export interface CreateRecurringDto {
   reminderDays?: number[];
   leadDays?: number;
   ownerId?: number;
-  autoGenerate?: boolean;
   notes?: string;
   active?: boolean;
 }

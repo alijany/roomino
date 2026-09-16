@@ -184,10 +184,10 @@ export class FinanceReportService {
 
   async byCategory(from: Date, to: Date) {
     const rows = await this.em.getConnection().execute(
-      `select c.id, c.name, coalesce(sum(p.settled_amount_rial), 0) as total, count(*)::int as count
+      `select c.id, coalesce(c.name, 'بدون دسته') as name, coalesce(sum(p.settled_amount_rial), 0) as total, count(*)::int as count
        from payment_entity p
        join payment_request_entity r on r.id = p.request_id
-       join expense_category_entity c on c.id = r.category_id
+       left join expense_category_entity c on c.id = r.category_id
        where p.status = ? and p.paid_at >= ? and p.paid_at < ?
        group by c.id, c.name
        order by total desc`,
@@ -195,7 +195,7 @@ export class FinanceReportService {
     );
 
     return rows.map((row) => ({
-      id: this.num(row.id),
+      id: row.id == null ? undefined : this.num(row.id),
       name: row.name as string,
       totalRial: this.num(row.total),
       count: this.num(row.count),
@@ -226,9 +226,9 @@ export class FinanceReportService {
 
   async bySource(from: Date, to: Date) {
     const rows = await this.em.getConnection().execute(
-      `select s.label as name, coalesce(sum(p.settled_amount_rial), 0) as total, count(*)::int as count
+      `select coalesce(s.label, 'بدون منبع') as name, coalesce(sum(p.settled_amount_rial), 0) as total, count(*)::int as count
        from payment_entity p
-       join payment_source_entity s on s.id = p.payment_source_id
+       left join payment_source_entity s on s.id = p.payment_source_id
        where p.status = ? and p.paid_at >= ? and p.paid_at < ?
        group by s.label
        order by total desc`,
@@ -418,7 +418,7 @@ export class FinanceReportService {
     const rows = await this.em.getConnection().execute(
       `select r.id as request_id,
               r.title,
-              c.name as category,
+              coalesce(c.name, 'بدون دسته') as category,
               coalesce(v.name, r.payee_name) as payee,
               r.amount_minor,
               r.currency,
@@ -428,13 +428,13 @@ export class FinanceReportService {
               p.intermediary,
               p.reference_number,
               p.paid_at,
-              s.label as payment_source,
+              coalesce(s.label, 'بدون منبع') as payment_source,
               requester.first_name || ' ' || coalesce(requester.last_name, '') as requester,
               payer.first_name || ' ' || coalesce(payer.last_name, '') as paid_by
        from payment_entity p
        join payment_request_entity r on r.id = p.request_id
-       join expense_category_entity c on c.id = r.category_id
-       join payment_source_entity s on s.id = p.payment_source_id
+       left join expense_category_entity c on c.id = r.category_id
+       left join payment_source_entity s on s.id = p.payment_source_id
        left join vendor_entity v on v.id = r.vendor_id
        left join user_entity requester on requester.id = r.requester_id
        left join user_entity payer on payer.id = p.paid_by_id

@@ -3,7 +3,7 @@
 import { formatMoney } from '@/libs/format/format.util';
 import { Button, CurrencyInput, Dropdown, Input, Modal } from '@/ui/atoms';
 import { DatePickerField } from '@/ui/molecules';
-import { IconAlertTriangle, IconX } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { usePaymentSources } from './finance.api';
 import { ATTACHMENT_KIND_LABELS } from './finance.constants';
@@ -46,6 +46,12 @@ export function PaymentModal({
 
   const isForeign = request && request.currency !== Currency.IRR;
 
+  // Opening the dialog always starts with no source selected, including after
+  // someone chose a source and closed it without recording the payment.
+  useEffect(() => {
+    if (isOpen) setPaymentSourceId(null);
+  }, [isOpen]);
+
   // Pre-fill the settled amount for domestic requests — it usually matches, and
   // a wrong prefill is easier to notice than an empty required field.
   useEffect(() => {
@@ -71,16 +77,13 @@ export function PaymentModal({
       value: a.id,
     })) ?? [];
 
-  const valid =
-    Boolean(paymentSourceId) &&
-    (settledAmountRial ?? 0) > 0 &&
-    (!isForeign || Boolean(fxRate));
+  const valid = (settledAmountRial ?? 0) > 0 && (!isForeign || Boolean(fxRate));
 
   const handleConfirm = async () => {
     if (!valid) return;
 
     await onConfirm({
-      paymentSourceId: paymentSourceId as number,
+      paymentSourceId: paymentSourceId ?? undefined,
       paidAt: paidAt.toISOString(),
       settledAmountRial: settledAmountRial as number,
       fxRateRialPerUnit: fxRate ?? undefined,
@@ -114,23 +117,20 @@ export function PaymentModal({
 
         <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">
           <div>
-            <label className="mb-2 block font-medium text-slate-700">منبع پرداخت</label>
+            <label className="mb-2 block font-medium text-slate-700">منبع پرداخت (اختیاری)</label>
             <Dropdown
-              items={sources.map((source) => ({
-                label: `${source.label}${source.bankName ? ` — ${source.bankName}` : ''}`,
-                value: source.id,
-              }))}
+              items={[
+                { label: 'بدون منبع', value: null },
+                ...sources.map((source) => ({
+                  label: `${source.label}${source.bankName ? ` — ${source.bankName}` : ''}`,
+                  value: source.id,
+                })),
+              ]}
               value={paymentSourceId}
-              onChange={(value) => setPaymentSourceId(value as number)}
-              placeholder="از کدام حساب پرداخت شد؟"
+              onChange={(value) => setPaymentSourceId(value)}
+              placeholder="بدون منبع"
               variant="outline"
             />
-            {sources.length === 0 && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-600">
-                <IconAlertTriangle className="size-4" />
-                هنوز منبع پرداختی ثبت نشده است. ابتدا از بخش «منابع پرداخت» یکی اضافه کنید.
-              </p>
-            )}
           </div>
 
           <div>

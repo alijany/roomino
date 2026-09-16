@@ -190,8 +190,7 @@ export function RequestForm({
     return undefined;
   }, [payeeAccountType, payeeSheba]);
 
-  const step1Valid =
-    Boolean(categoryId) && title.trim().length > 0 && (amountMinor ?? 0) > 0;
+  const step1Valid = title.trim().length > 0 && (amountMinor ?? 0) > 0;
 
   const step2Valid = isOnlineAccount
     ? payeeName.trim().length > 0 &&
@@ -208,7 +207,7 @@ export function RequestForm({
   const payload = () => ({
     title: title.trim(),
     description: description.trim() || undefined,
-    categoryId: categoryId as number,
+    categoryId: categoryId ?? undefined,
     amountMinor: amountMinor as number,
     currency,
     vendorId: vendorId ?? undefined,
@@ -246,7 +245,7 @@ export function RequestForm({
 
     try {
       if (requestId) {
-        await update.submit(payload());
+        await update.submit({ ...payload(), categoryId });
       } else {
         const created = await create.submit(payload());
         setRequestId(created.id);
@@ -316,13 +315,16 @@ export function RequestForm({
               <>
                 <div>
                   <label className="mb-2 block font-medium text-slate-700">
-                    دسته هزینه
+                    دسته هزینه (اختیاری)
                   </label>
                   <Dropdown
-                    items={categories.map((c) => ({ label: c.name, value: c.id }))}
+                    items={[
+                      { label: 'بدون دسته', value: null },
+                      ...categories.map((c) => ({ label: c.name, value: c.id })),
+                    ]}
                     value={categoryId}
-                    onChange={(value) => setCategoryId(value as number)}
-                    placeholder="یک دسته انتخاب کنید"
+                    onChange={(value) => setCategoryId(value)}
+                    placeholder="بدون دسته"
                     variant="outline"
                   />
                 </div>
@@ -608,7 +610,7 @@ export function RequestForm({
                 <p className="text-sm text-slate-600">
                   {selectedCategory?.requiresInvoice
                     ? 'فاکتور یا پیش‌فاکتور را اضافه کنید. بدون آن، مالی نمی‌تواند پرداخت را انجام دهد.'
-                    : 'اگر مدرکی دارید اضافه کنید. برای این دسته هزینه، پیوست اجباری نیست.'}
+                    : 'اگر مدرکی دارید اضافه کنید. پیوست اجباری نیست.'}
                 </p>
                 <AttachmentPanel requestId={requestId} canEdit />
               </>
@@ -616,7 +618,7 @@ export function RequestForm({
 
             {step === 3 && (
               <div className="space-y-3">
-                <ReviewRow label="دسته هزینه" value={selectedCategory?.name} />
+                <ReviewRow label="دسته هزینه" value={selectedCategory?.name ?? 'بدون دسته'} />
                 <ReviewRow label="عنوان" value={title} />
                 <ReviewRow
                   label="مبلغ"

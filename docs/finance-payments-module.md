@@ -86,7 +86,7 @@ Confirmed decisions:
 | V1 | Core request→approve→pay spine · vendors + recurring subscriptions · dashboards, monthly reports, export |
 | Deferred | Budget envelopes, cost centres, budget-vs-actual |
 
-Budgets are deferred but not designed out: `PaymentRequestEntity` carries a nullable `costCenter` string and a category FK from day one, so budget envelopes attach later without a data migration.
+Budgets are deferred but not designed out: `PaymentRequestEntity` carries a nullable `costCenter` string and an optional category FK.
 
 ---
 
@@ -166,7 +166,7 @@ The design goal is that a first-time user gets it right without asking Finance w
 
 | Step | User's question | What they do | System response |
 |---|---|---|---|
-| **1. What & how much** | *Am I in the right place?* | Category (دسته هزینه), title, amount + currency, deadline | Live: which approvers this amount will need, before they invest effort |
+| **1. What & how much** | *Am I in the right place?* | Optional category (دسته هزینه), title, amount + currency, deadline | Live: which approvers this amount will need, before they invest effort |
 | **2. Who gets paid** | *Do I know their bank details?* | Pick an existing طرف‌حساب → destination account auto-fills. Or "new payee" → name + destination account | Known vendors collapse this step to one tap |
 | **3. Proof** | *Is this enough?* | Attach فاکتور / quote / screenshot; optional note | Checklist of what's required for this category, ticking as satisfied |
 
@@ -200,7 +200,7 @@ Multi-step chains are sequential, not parallel — the second approver only sees
 
 This is the daily-driver screen and the one to get most right. Finance opens the **صف پرداخت** — approved requests, sorted by deadline, overdue first.
 
-Recording a payment captures: منبع پرداخت (which of our accounts) · payment date · **actual** amount paid · شماره پیگیری · receipt attachment. For foreign currency, three more: FX rate applied, واسط پرداخت used, and their fee.
+Recording a payment captures: optional منبع پرداخت (which of our accounts) · payment date · **actual** amount paid · شماره پیگیری · receipt attachment. For foreign currency, three more: FX rate applied, واسط پرداخت used, and their fee.
 
 Design decisions:
 
@@ -221,8 +221,10 @@ A هزینه دوره‌ای (Figma, AWS, the office internet) holds vendor, amo
 
 A daily job at 08:00 Asia/Tehran:
 1. Fires reminders at 30 / 14 / 7 / 1 days before due — window configurable per expense.
-2. At due-date minus the lead time, materialises a real `PaymentRequestEntity` in `scheduled`, pre-filled and pre-attached to the recurring parent.
+2. At due-date minus the lead time, materialises a real `PaymentRequestEntity`, pre-filled and linked to the recurring parent.
 3. If the amount is under the approval threshold, it lands straight in Finance's queue. Above threshold, it routes for approval — because a price increase deserves a human look.
+
+Each generated request can be rejected separately by Finance or admin; the schedule continues for later cycles.
 
 The 30-day reminder is addressed to the **internal owner**, not Finance, and asks a decision question, not an informational one: «اشتراک Figma تا ۳۰ روز دیگر تمدید می‌شود — ۱٬۲۰۰٬۰۰۰ تومان. ادامه می‌دهیم؟» with **تمدید شود** / **لغو شود** / **تغییر پلن** inline. That converts a passive notice into a spend decision, which is the entire value of renewal tracking.
 
@@ -307,12 +309,12 @@ No `decimal` column exists anywhere in this codebase yet, and floats have no pla
 | `PayeeAccountEntity` | `vendor` M:1, `label`, `type` (sheba \| card \| iban_swift \| paypal \| other), `holderName`, `sheba?`, `cardNumber?`, `iban?`, `swift?`, `raw?` (json), `isDefault`, `active` |
 | `PaymentSourceEntity` | `label`, `type` (bank_account \| card \| petty_cash \| intermediary), `bankName?`, `sheba?`, `cardLast4?`, `currency`, `active`. **`finance` role only.** |
 | `ExpenseCategoryEntity` | `name`, `code`, `parent?` (self M:1), `requiresInvoice` (bool), `active` |
-| `PaymentRequestEntity` | `requester` M:1 User, `origin` (employee \| finance \| recurring), `title`, `description?`, `category` M:1, `vendor?` M:1, `payeeAccount?` M:1, `amountMinor` bigint, `currency`, `dueDate`, `status` enum, `costCenter?` (nullable, for deferred budgets), `recurringSource?` M:1, `submittedAt?`, `decidedAt?`, `paidAt?` |
+| `PaymentRequestEntity` | `requester` M:1 User, `origin` (employee \| finance \| recurring), `title`, `description?`, `category?` M:1, `vendor?` M:1, `payeeAccount?` M:1, `amountMinor` bigint, `currency`, `dueDate`, `status` enum, `costCenter?` (nullable, for deferred budgets), `recurringSource?` M:1, `submittedAt?`, `decidedAt?`, `paidAt?` |
 | `RequestAttachmentEntity` | `request` M:1, `url` (S3), `filename`, `mimeType`, `sizeBytes`, `kind` (invoice \| quote \| receipt \| contract \| other), `uploadedBy` M:1 |
 | `ApprovalRuleEntity` | `minAmountRial` bigint, `maxAmountRial?` bigint (null = ∞), `category?` M:1, `approverChain` json (ordered `Role[]`), `priority`, `active` |
 | `ApprovalStepEntity` | `request` M:1, `sequence`, `requiredRole`, `status` (pending \| approved \| rejected \| skipped), `actor?` M:1, `decidedAt?`, `comment?` |
-| `PaymentEntity` | `request` M:1, `paymentSource` M:1, `paidAt`, `settledAmountRial` bigint, `fxRateRialPerUnit?` bigint, `feeRial?` bigint, `intermediary?` M:1 Vendor, `referenceNumber?`, `receipt?` M:1 Attachment, `paidBy` M:1 User, `status` (succeeded \| failed), `failureReason?` |
-| `RecurringExpenseEntity` | `vendor` M:1, `category` M:1, `payeeAccount?`, `defaultPaymentSource?`, `title`, `amountMinor` bigint, `currency`, `cycle` (monthly \| quarterly \| yearly \| custom_days), `cycleDays?`, `nextDueDate`, `endDate?`, `reminderDays` json (default `[30,14,7,1]`), `owner` M:1 User, `autoGenerate` bool, `active` |
+| `PaymentEntity` | `request` M:1, `paymentSource?` M:1, `paidAt`, `settledAmountRial` bigint, `fxRateRialPerUnit?` bigint, `feeRial?` bigint, `intermediary?` M:1 Vendor, `referenceNumber?`, `receipt?` M:1 Attachment, `paidBy` M:1 User, `status` (succeeded \| failed), `failureReason?` |
+| `RecurringExpenseEntity` | `vendor` M:1, `category` M:1, `payeeAccount?`, `defaultPaymentSource?`, `title`, `amountMinor` bigint, `currency`, `cycle` (monthly \| quarterly \| yearly \| custom_days), `cycleDays?`, `nextDueDate`, `endDate?`, `reminderDays` json (default `[30,14,7,1]`), `owner` M:1 User, `active` |
 | `FinanceActivityEntity` | `request` M:1, `actor?` M:1, `action` enum, `fromStatus?`, `toStatus?`, `comment?`, `meta` json. **Append-only.** |
 
 ### Migration and integration notes
@@ -352,8 +354,7 @@ GET|PUT                /finance/approval-rules    (admin only)
 
 # Recurring
 GET|POST|PATCH|DELETE  /finance/recurring
-POST   /finance/recurring/:id/generate    materialise the next request now
-POST   /finance/recurring/:id/skip        skip one cycle
+POST   /finance/recurring/run-daily-cycle    admin-only manual run of the scheduler
 
 # Reporting
 GET    /finance/dashboard?from&to
@@ -466,7 +467,7 @@ Frontend: sidebar group · `my-requests` (list + 3-step create + review) · `app
 
 ### Phase 2 — Vendors and recurring ✅ shipped
 
-Backend: `Vendor`, `PayeeAccount`, `RecurringExpense` entities and CRUD · daily materialiser + reminder cron · `NotificationCategory.FINANCE` + migration · enforce notification preferences for reminders (not for approvals) · skip/regenerate actions.
+Backend: `Vendor`, `PayeeAccount`, `RecurringExpense` entities and CRUD · daily materialiser + reminder cron · `NotificationCategory.FINANCE` + migration · enforce notification preferences for reminders (not for approvals) · reject individual generated requests.
 
 Frontend: `vendors` (list, detail, accounts, deactivate-not-delete) · `recurring` (list with next-due countdown, create/edit, calendar view of the next 90 days) · vendor picker wired into the request form so destination accounts auto-fill.
 
@@ -508,7 +509,7 @@ cleanly from an empty database, `FinanceBootstrapService` seeds 9 categories and
 | Suite | Covers |
 |---|---|
 | Phase 1 — 30 checks | threshold routing at all three bands, the needs-info round trip, both segregation-of-duties rules, the two-step chain, foreign-currency payment with FX rate and fee, the access-control matrix, the user-deletion guard |
-| Phase 2 — 18 checks | vendor CRUD and permissions, payee-account defaulting, vendor pre-fill on a request, schedule creation, materialisation with payee snapshotting, idempotency on re-generation, skip, the daily job and its admin-only guard |
+| Phase 2 — recurring checks | vendor CRUD and permissions, payee-account defaulting, vendor pre-fill on a request, schedule creation, automatic materialisation with payee snapshotting, idempotency on repeated daily runs, per-request rejection, and the daily job's admin-only guard |
 | Phase 3 — 18 checks | dashboard KPIs summing *settled* not requested amounts, null change-percent with no baseline, category/vendor/trend breakdowns, monthly close with the variance row, CSV with a UTF-8 BOM and intact Persian headers, upcoming commitments, and role gating on every report endpoint |
 | Phase 3.5 — 18 checks | an online-account request created with no bank details, the credential absent from the detail payload, reveal allowed for the requester and Finance but refused for the approver and admin, the credential wiped on payment, both kinds' validation, a kind switch clearing the other side, and ciphertext (not plaintext) in the column |
 

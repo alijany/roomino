@@ -108,6 +108,7 @@ export default function MyRequestsPage() {
         </div>
 
         <RequestForm
+          key={String(formOpen)}
           isOpen={formOpen}
           onClose={() => setFormOpen(false)}
           onSuccess={refresh}

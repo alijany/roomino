@@ -1,6 +1,6 @@
 # Finance module — end-to-end suites
 
-84 checks against a running API and a real Postgres. `lint` type-checks; these
+End-to-end checks against a running API and a real Postgres. `lint` type-checks; these
 are what actually prove the module behaves. Plain `curl` + `psql`, no framework,
 because the point is to exercise the HTTP surface a client sees.
 

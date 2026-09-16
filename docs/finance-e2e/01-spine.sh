@@ -5,6 +5,7 @@ ADM=$(cat /var/tmp/t_adm); EMP2=$(cat /var/tmp/t_emp2)
 j(){ curl -s -X "$1" "$API$2" -H "Authorization: Bearer $3" -H "Content-Type: application/json" ${4:+-d "$4"}; }
 code(){ curl -s -o /dev/null -w "%{http_code}" -X "$1" "$API$2" -H "Authorization: Bearer $3" -H "Content-Type: application/json" ${4:+-d "$4"}; }
 g(){ python3 -c "import sys,json;d=json.load(sys.stdin);print(eval('d'+sys.argv[1]))" "$1"; }
+e(){ python3 -c "import sys,json;d=json.load(sys.stdin);print(eval(sys.argv[1]))" "$1"; }
 DUE=$(date -u -d "+10 days" +%Y-%m-%dT00:00:00.000Z); PAID=$(date -u +%Y-%m-%dT00:00:00.000Z)
 PASS=0; FAIL=0
 chk(){ if [ "$2" = "$3" ]; then echo "  ✓ $1"; PASS=$((PASS+1)); else echo "  ✗ $1 — got '$2', expected '$3'"; FAIL=$((FAIL+1)); fi; }
@@ -69,6 +70,19 @@ echo "8. failed payment returns to queue"
 j POST /finance/requests/$ID1/fail "$FIN" '{"comment":"حساب مقصد مسدود بود"}' >/dev/null
 chk "status failed"                   "$(j GET /finance/requests/$ID1 "$FIN"|g "['status']")" "failed"
 chk "still payable"                   "$(j GET /finance/requests/$ID1 "$FIN"|g "['permissions']['canPay']")" "True"
+
+echo "9. optional category and payment source"
+R=$(j POST /finance/requests "$EMP" "{\"title\":\"هزینه بدون دسته\",\"amountMinor\":10000000,\"currency\":\"IRR\",\"payeeName\":\"طرف\",\"payeeAccountType\":\"sheba\",\"payeeSheba\":\"IR012345678901234567890123\",\"dueDate\":\"$DUE\",\"submit\":true}")
+ID_OPTIONAL=$(echo "$R"|g "['id']")
+chk "request without category submitted" "$(echo "$R"|g "['status']")" "approved"
+chk "category stays empty" "$(echo "$R"|g ".get('category')")" "None"
+j POST /finance/requests/$ID_OPTIONAL/pay "$FIN" "{\"paidAt\":\"$PAID\",\"settledAmountRial\":10000000}" >/dev/null
+OPTIONAL=$(j GET /finance/requests/$ID_OPTIONAL "$FIN")
+chk "payment without source recorded" "$(echo "$OPTIONAL"|g "['status']")" "paid"
+chk "source stays empty" "$(echo "$OPTIONAL"|g "['payments'][0].get('paymentSource')")" "None"
+chk "uncategorised payment included in report" "$(j GET /finance/reports/by-category "$FIN"|e "any(r['name'] == 'بدون دسته' and r['totalRial'] == 10000000 for r in d['items'])")" "True"
+Y=$(date -u +%Y); M=$(date -u +%-m)
+chk "payment without source included in report" "$(j GET "/finance/reports/monthly?year=$Y&month=$M" "$FIN"|e "any(r['name'] == 'بدون منبع' and r['totalRial'] == 10000000 for r in d['bySource'])")" "True"
 
 echo
 echo "── audit timeline for request $ID2 ──"

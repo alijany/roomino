@@ -354,23 +354,6 @@ export function useDeleteRecurring() {
   );
 }
 
-/** `generate` creates this cycle's request now; `skip` rolls past it. */
-function useRecurringAction(action: 'generate' | 'skip') {
-  return useSwrMutationHelper(
-    useSWRMutation(
-      `/finance/recurring/${action}`,
-      (_key: string, { arg }: { arg: number }) =>
-        postFetcher<Record<string, never>, unknown>(
-          `/finance/recurring/${arg}/${action}`,
-          { arg: {} }
-        )
-    )
-  );
-}
-
-export const useGenerateRecurring = () => useRecurringAction('generate');
-export const useSkipRecurring = () => useRecurringAction('skip');
-
 // --- reporting (phase 3) ----------------------------------------------------
 
 export function useFinanceDashboard(range?: { from?: string; to?: string }) {

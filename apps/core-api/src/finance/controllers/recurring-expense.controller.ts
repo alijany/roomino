@@ -25,7 +25,7 @@ import {
   UpdateRecurringExpenseDto,
 } from '../dtos/vendor.dto';
 import { RecurringExpenseService } from '../services/recurring-expense.service';
-import { toListItem, toRecurringView } from '../utils/finance-view.util';
+import { toRecurringView } from '../utils/finance-view.util';
 
 /**
  * هزینه‌های دوره‌ای — subscriptions, bills and contracts that come round again.
@@ -77,21 +77,6 @@ export class RecurringExpenseController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     const { deactivated } = await this.recurring.removeSchedule(id);
     return { success: true, deactivated };
-  }
-
-  /** Create this cycle's request now rather than waiting for the lead time. */
-  @Post(':id/generate')
-  @Roles(Role.FINANCE, Role.ADMIN)
-  async generate(@Param('id', ParseIntPipe) id: number) {
-    return toListItem(await this.recurring.generateNow(id));
-  }
-
-  /** Roll forward one cycle without creating anything — "not this month". */
-  @Post(':id/skip')
-  @Roles(Role.FINANCE, Role.ADMIN)
-  async skip(@Param('id', ParseIntPipe) id: number) {
-    await this.recurring.skipCycle(id);
-    return toRecurringView(await this.recurring.getOrFail(id));
   }
 
   /**

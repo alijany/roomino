@@ -109,7 +109,7 @@ export default function PaymentSourcesPage() {
                 error={error}
                 isLoading={isLoading}
                 isEmpty={(d) => !d?.items.length}
-                emptyMessage="هنوز منبع پرداختی ثبت نشده است. برای ثبت پرداخت‌ها حداقل به یکی نیاز دارید."
+                emptyMessage="هنوز منبع پرداختی ثبت نشده است. ثبت پرداخت بدون انتخاب منبع هم ممکن است."
                 onRetry={refresh}
               >
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

@@ -28,7 +28,7 @@ export function RequestTable({ requests, hide = [] }: RequestTableProps) {
       render: (row) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-medium text-slate-800">{row.title}</span>
-          <span className="text-xs text-slate-500">{row.category?.name}</span>
+          <span className="text-xs text-slate-500">{row.category?.name ?? 'بدون دسته'}</span>
         </div>
       ),
     },

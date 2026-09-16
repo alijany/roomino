@@ -27,8 +27,8 @@ export class PaymentEntity extends BaseEntity {
   @ManyToOne(() => PaymentRequestEntity)
   request: PaymentRequestEntity;
 
-  @ManyToOne(() => PaymentSourceEntity)
-  paymentSource: PaymentSourceEntity;
+  @ManyToOne(() => PaymentSourceEntity, { nullable: true })
+  paymentSource?: PaymentSourceEntity;
 
   @Property({ columnType: 'timestamptz' })
   paidAt: Date;

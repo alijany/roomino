@@ -54,8 +54,8 @@ export class PaymentRequestEntity extends BaseEntity {
   @Property({ nullable: true })
   description?: string;
 
-  @ManyToOne(() => ExpenseCategoryEntity)
-  category: ExpenseCategoryEntity;
+  @ManyToOne(() => ExpenseCategoryEntity, { nullable: true })
+  category?: ExpenseCategoryEntity;
 
   // --- amount ---------------------------------------------------------------
 

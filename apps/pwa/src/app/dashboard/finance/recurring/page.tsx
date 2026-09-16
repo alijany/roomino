@@ -16,9 +16,7 @@ import {
   useCreateRecurring,
   useDeleteRecurring,
   useExpenseCategories,
-  useGenerateRecurring,
   useRecurringExpenses,
-  useSkipRecurring,
   useVendors,
 } from '../finance.api';
 import {
@@ -45,8 +43,6 @@ export default function RecurringPage() {
   const [pendingDelete, setPendingDelete] = useState<RecurringExpense | null>(null);
 
   const { data, error, isLoading, refresh } = useRecurringExpenses({ limit: 50 });
-  const generate = useGenerateRecurring();
-  const skip = useSkipRecurring();
   const remove = useDeleteRecurring();
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
@@ -128,11 +124,6 @@ export default function RecurringPage() {
           <Badge tone={row.active ? 'success' : 'muted'}>
             {row.active ? 'فعال' : 'غیرفعال'}
           </Badge>
-          {!row.autoGenerate && (
-            <Badge tone="warning" withDot={false}>
-              فقط یادآوری
-            </Badge>
-          )}
         </div>
       ),
     },
@@ -141,24 +132,6 @@ export default function RecurringPage() {
       header: 'اقدام',
       render: (row) => (
         <div className="flex flex-wrap gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={generate.isLoading}
-            onClick={() =>
-              act(() => generate.submit(row.id), 'درخواست این دوره ساخته شد')
-            }
-          >
-            ساخت درخواست
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={skip.isLoading}
-            onClick={() => act(() => skip.submit(row.id), 'این دوره رد شد')}
-          >
-            رد این دوره
-          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -183,8 +156,8 @@ export default function RecurringPage() {
             <div className="grow">
               <h1 className="font-bold text-slate-800">هزینه‌های دوره‌ای</h1>
               <p className="text-sm text-slate-500">
-                اشتراک‌ها و قبض‌هایی که هر دوره تکرار می‌شوند. یادآوری برای مسئول هر
-                مورد ارسال می‌شود.
+                برای هر دوره، درخواست پرداخت طبق زمان‌بندی ساخته می‌شود. هر درخواست
+                را می‌توان جداگانه بررسی یا رد کرد.
               </p>
             </div>
             <Button className="gap-2" onClick={() => setFormOpen(true)}>
@@ -200,7 +173,7 @@ export default function RecurringPage() {
                 error={error}
                 isLoading={isLoading}
                 isEmpty={(d) => !d?.items.length}
-                emptyMessage="هنوز هزینه دوره‌ای ثبت نشده است. با ثبت هر اشتراک، پیش از تمدید به مسئول آن یادآوری می‌شود."
+                emptyMessage="هنوز هزینه دوره‌ای ثبت نشده است. پس از ثبت، درخواست هر دوره طبق زمان‌بندی ساخته می‌شود."
                 onRetry={refresh}
               >
                 <Table

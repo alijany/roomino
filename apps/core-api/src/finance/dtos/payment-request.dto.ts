@@ -30,9 +30,11 @@ export class CreatePaymentRequestDto {
   @MaxLength(2000)
   description?: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'دسته هزینه را انتخاب کنید' })
-  categoryId: number;
+  @Min(1)
+  categoryId?: number;
 
   @Type(() => Number)
   @IsInt({ message: 'مبلغ باید عدد صحیح باشد' })
@@ -127,7 +129,7 @@ export class CreatePaymentRequestDto {
 export class UpdatePaymentRequestDto {
   @IsOptional() @IsString() @IsNotEmpty() @MaxLength(200) title?: string;
   @IsOptional() @IsString() @MaxLength(2000) description?: string;
-  @IsOptional() @Type(() => Number) @IsInt() categoryId?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) categoryId?: number | null;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) amountMinor?: number;
   @IsOptional() @IsEnum(Currency) currency?: Currency;
   @IsOptional() @Type(() => Number) @IsInt() vendorId?: number;
@@ -203,9 +205,11 @@ export class ReasonRequiredDto {
 }
 
 export class RecordPaymentDto {
+  @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'منبع پرداخت را انتخاب کنید' })
-  paymentSourceId: number;
+  @Min(1)
+  paymentSourceId?: number;
 
   @IsISO8601({}, { message: 'تاریخ پرداخت نامعتبر است' })
   paidAt: string;

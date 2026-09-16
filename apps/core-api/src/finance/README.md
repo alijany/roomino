@@ -155,7 +155,6 @@ GET|POST|PATCH|DELETE  /finance/vendors           read: all · write: finance/ad
 GET|POST               /finance/vendors/:id/accounts
 PATCH|DELETE           /finance/vendors/accounts/:accountId
 GET|POST|PATCH|DELETE  /finance/recurring         finance/admin
-POST                   /finance/recurring/:id/{generate,skip}
 POST                   /finance/recurring/run-daily-cycle   admin — runs the 08:00 job now
 
 GET /finance/dashboard                     ?from&to — 8 KPIs
@@ -165,7 +164,13 @@ GET /finance/reports/export                CSV, UTF-8 BOM
 
 `reject`, `request-info` and `fail` require a non-empty `comment`.
 
-`detail` returns a `permissions` object (`canEdit`, `canSubmit`, `canDecide`,
+The category on a payment request and the source on a recorded payment are
+optional. Reports group records without either value under «بدون دسته» and
+«بدون منبع». Recurring schedules create a request automatically at `leadDays`
+before each due date. Finance or admin can reject an individual recurring
+request without changing the schedule for later cycles.
+
+`detail` returns a `permissions` object (`canEdit`, `canSubmit`, `canDecide`, `canReject`,
 `canPay`, `canCancel`, `canAttach`). The UI renders from it rather than
 re-deriving the rules, so buttons and API can't disagree.
 

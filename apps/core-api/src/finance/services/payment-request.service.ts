@@ -373,10 +373,18 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       Boolean(request.pendingRole) &&
       decidableRoles.includes(request.pendingRole);
 
+    const canReject =
+      canDecide ||
+      (Boolean(request.recurringSource) &&
+        this.hasOversight(user) &&
+        request.status !== PaymentRequestStatus.DRAFT &&
+        !TERMINAL_STATUSES.includes(request.status));
+
     return {
       canEdit: isOwner && editable,
       canSubmit: isOwner && request.status === PaymentRequestStatus.DRAFT,
       canDecide,
+      canReject,
       canPay: isFinance && PAYABLE_STATUSES.includes(request.status),
       canCancel: isOwner && !TERMINAL_STATUSES.includes(request.status),
       canAttach:
@@ -531,9 +539,11 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
     dto: CreatePaymentRequestDto,
   ): Promise<PaymentRequestEntity> {
     assertSafeAmount(dto.amountMinor);
-    const category = await this.categories.getOrFail(dto.categoryId);
+    const category = dto.categoryId
+      ? await this.categories.getOrFail(dto.categoryId)
+      : undefined;
 
-    if (!category.active) {
+    if (category && !category.active) {
       throw new BadRequestException('این دسته هزینه غیرفعال است');
     }
 
@@ -554,7 +564,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       origin,
       title: dto.title,
       description: dto.description,
-      category: this.em.getReference(ExpenseCategoryEntity, category.id),
+      category: category
+        ? this.em.getReference(ExpenseCategoryEntity, category.id)
+        : undefined,
       vendor: dto.vendorId
         ? this.em.getReference(VendorEntity, dto.vendorId)
         : undefined,
@@ -607,7 +619,12 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
     } as FilterQuery<PaymentRequestEntity>);
 
     if (existing) {
-      return existing;
+      // A previous run may have saved the draft but failed before submitting
+      // it. Retry the unfinished transition instead of advancing the schedule
+      // past an invisible draft.
+      return existing.status === PaymentRequestStatus.DRAFT
+        ? this.submitAsSystem(existing.id)
+        : existing;
     }
 
     const account = schedule.payeeAccount;
@@ -672,7 +689,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       request.currency,
     );
     const chain = this.enforceMinimumApproval(
-      await this.approvalRules.resolveChain(amountRial, request.category.id),
+      await this.approvalRules.resolveChain(amountRial, request.category?.id),
       request.currency,
       request.origin,
     );
@@ -751,6 +768,13 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
 
     const { categoryId, vendorId, payeeAccountId, dueDate } = dto;
 
+    if (categoryId) {
+      const category = await this.categories.getOrFail(categoryId);
+      if (!category.active) {
+        throw new BadRequestException('این دسته هزینه غیرفعال است');
+      }
+    }
+
     // Only the fields that are copied across verbatim. Everything to do with
     // the destination is rebuilt below instead, because a patch that changes
     // the kind has to rewrite both sides of it at once.
@@ -787,9 +811,11 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       { id },
       {
         ...plain,
-        ...(categoryId
+        ...(categoryId !== undefined
           ? {
-              category: this.em.getReference(ExpenseCategoryEntity, categoryId),
+              category: categoryId
+                ? this.em.getReference(ExpenseCategoryEntity, categoryId)
+                : null,
             }
           : {}),
         ...(vendorId !== undefined
@@ -839,7 +865,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       throw new ConflictException('این درخواست قبلاً ارسال شده است');
     }
 
-    if (request.category.requiresInvoice) {
+    if (request.category?.requiresInvoice) {
       const invoiceCount = await this.attachments.countForRequest(id, [
         AttachmentKind.INVOICE,
         AttachmentKind.QUOTE,
@@ -858,7 +884,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       request.currency,
     );
     const chain = this.enforceMinimumApproval(
-      await this.approvalRules.resolveChain(amountRial, request.category.id),
+      await this.approvalRules.resolveChain(amountRial, request.category?.id),
       request.currency,
       request.origin,
     );
@@ -1001,16 +1027,32 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
     comment: string,
   ): Promise<PaymentRequestEntity> {
     const request = await this.getDetailOrFail(id, user);
-    const step = this.assertCanDecide(request, user);
+    if (!this.permissionsFor(request, user).canReject) {
+      throw new ForbiddenException('شما اجازه رد این درخواست را ندارید');
+    }
+
+    const step = this.permissionsFor(request, user).canDecide
+      ? this.assertCanDecide(request, user)
+      : undefined;
+    const fromStatus = request.status;
 
     await this.withTransaction(async (em) => {
-      const target = await em.findOne(ApprovalStepEntity, { id: step.id });
-      em.assign(target, {
-        status: ApprovalStepStatus.REJECTED,
-        actor: em.getReference(UserEntity, user.id),
-        decidedAt: new Date(),
-        comment,
-      });
+      if (step) {
+        const target = await em.findOne(ApprovalStepEntity, { id: step.id });
+        em.assign(target, {
+          status: ApprovalStepStatus.REJECTED,
+          actor: em.getReference(UserEntity, user.id),
+          decidedAt: new Date(),
+          comment,
+        });
+        await em.persistAndFlush(target);
+      } else {
+        await em.nativeUpdate(
+          ApprovalStepEntity,
+          { request: id, status: ApprovalStepStatus.PENDING },
+          { status: ApprovalStepStatus.SKIPPED },
+        );
+      }
 
       const parent = await em.findOne(PaymentRequestEntity, { id });
       em.assign(parent, {
@@ -1024,7 +1066,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
         destinationCredentialEnc: null,
       });
 
-      await em.persistAndFlush([target, parent]);
+      await em.persistAndFlush(parent);
     });
 
     const updated = await this.loadFullOrFail(id);
@@ -1033,7 +1075,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       requestId: id,
       actorId: user.id,
       action: FinanceActivityAction.REJECTED,
-      fromStatus: PaymentRequestStatus.PENDING_APPROVAL,
+      fromStatus,
       toStatus: PaymentRequestStatus.REJECTED,
       comment,
     });
@@ -1179,11 +1221,13 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
       );
     }
 
-    const source = await this.em.findOne(PaymentSourceEntity, {
-      id: dto.paymentSourceId,
-    });
+    const source = dto.paymentSourceId
+      ? await this.em.findOne(PaymentSourceEntity, {
+          id: dto.paymentSourceId,
+        })
+      : undefined;
 
-    if (!source) {
+    if (dto.paymentSourceId && !source) {
       throw new NotFoundException('منبع پرداخت یافت نشد');
     }
 
@@ -1198,7 +1242,9 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
     await this.withTransaction(async (em) => {
       const payment = em.create(PaymentEntity, {
         request: em.getReference(PaymentRequestEntity, id),
-        paymentSource: em.getReference(PaymentSourceEntity, source.id),
+        paymentSource: source
+          ? em.getReference(PaymentSourceEntity, source.id)
+          : null,
         paidAt: new Date(dto.paidAt),
         settledAmountRial: dto.settledAmountRial,
         fxRateRialPerUnit: dto.fxRateRialPerUnit ?? null,

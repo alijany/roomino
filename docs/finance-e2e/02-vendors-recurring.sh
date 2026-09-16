@@ -4,6 +4,7 @@ EMP=$(cat /var/tmp/t_emp); APR=$(cat /var/tmp/t_apr); FIN=$(cat /var/tmp/t_fin);
 j(){ curl -s -X "$1" "$API$2" -H "Authorization: Bearer $3" -H "Content-Type: application/json" ${4:+-d "$4"}; }
 code(){ curl -s -o /dev/null -w "%{http_code}" -X "$1" "$API$2" -H "Authorization: Bearer $3" -H "Content-Type: application/json" ${4:+-d "$4"}; }
 g(){ python3 -c "import sys,json;d=json.load(sys.stdin);print(eval('d'+sys.argv[1]))" "$1"; }
+e(){ python3 -c "import sys,json;d=json.load(sys.stdin);print(eval(sys.argv[1]))" "$1"; }
 PASS=0; FAIL=0
 chk(){ if [ "$2" = "$3" ]; then echo "  ✓ $1"; PASS=$((PASS+1)); else echo "  ✗ $1 — got '$2', want '$3'"; FAIL=$((FAIL+1)); fi; }
 
@@ -31,10 +32,12 @@ chk "schedule created"               "$(echo "$S"|g "['cycle']")" "monthly"
 chk "reminder windows defaulted"     "$(echo "$S"|g "['reminderDays']")" "[30, 14, 7, 1]"
 chk "employee cannot see schedules"  "$(code GET /finance/recurring "$EMP")" "403"
 
-echo "4. materialising a cycle"
-GEN=$(j POST /finance/recurring/$SID/generate "$FIN" '{}')
-GID=$(echo "$GEN"|g "['id']")
-chk "request generated from schedule" "$(echo "$GEN"|g "['origin']")" "recurring"
+echo "4. automatic materialisation"
+RUN=$(j POST /finance/recurring/run-daily-cycle "$ADM" '{}')
+chk "daily cycle generates request" "$(echo "$RUN"|g "['generated']")" "1"
+GEN=$(j GET '/finance/requests?scope=all&limit=100' "$FIN")
+GID=$(echo "$GEN"|e "next(r['id'] for r in d['items'] if r.get('recurringSourceId') == $SID)")
+chk "request generated from schedule" "$(j GET /finance/requests/$GID "$FIN"|g "['origin']")" "recurring"
 D=$(j GET /finance/requests/$GID "$FIN")
 chk "  payee snapshot copied"        "$(echo "$D"|g "['payeeAccountDetails']")" "DE89370400440532013000"
 chk "  linked back to the schedule"  "$(echo "$D"|g "['recurringSourceId']")" "$SID"
@@ -48,15 +51,15 @@ print('yes' if n[:7] != '$NEXT'[:7] else 'no')" <<< "$AFTER")" "yes"
 
 echo "5. idempotency"
 psql -h 127.0.0.1 -U postgres -d roomino -q -c "update recurring_expense_entity set next_due_date = (select due_date from payment_request_entity where id=$GID) where id=$SID;" > /dev/null
-AGAIN=$(j POST /finance/recurring/$SID/generate "$FIN" '{}')
-chk "re-generating the same cycle returns the same request" "$(echo "$AGAIN"|g "['id']")" "$GID"
+AGAIN=$(j POST /finance/recurring/run-daily-cycle "$ADM" '{}')
+chk "re-running the same cycle keeps one request" "$(echo "$AGAIN"|g "['generated']")" "1"
 chk "  no duplicate created" "$(psql -h 127.0.0.1 -U postgres -d roomino -t -A -c "select count(*) from payment_request_entity where recurring_source_id=$SID;")" "1"
 
-echo "6. skip a cycle"
-BEFORE_SKIP=$(j GET /finance/recurring/$SID "$FIN"|g "['nextDueDate']")
-j POST /finance/recurring/$SID/skip "$FIN" '{}' > /dev/null
-AFTER_SKIP=$(j GET /finance/recurring/$SID "$FIN"|g "['nextDueDate']")
-chk "skip advances the due date" "$([ "$BEFORE_SKIP" != "$AFTER_SKIP" ] && echo yes || echo no)" "yes"
+echo "6. reject one request without stopping the schedule"
+chk "finance may reject this request" "$(j GET /finance/requests/$GID "$FIN"|g "['permissions']['canReject']")" "True"
+j POST /finance/requests/$GID/reject "$FIN" '{"comment":"این نوبت تمدید نشود"}' > /dev/null
+chk "request rejected" "$(j GET /finance/requests/$GID "$FIN"|g "['status']")" "rejected"
+chk "schedule remains active" "$(j GET /finance/recurring/$SID "$FIN"|g "['active']")" "True"
 
 echo "7. daily cycle job"
 RUN=$(j POST /finance/recurring/run-daily-cycle "$ADM" '{}')

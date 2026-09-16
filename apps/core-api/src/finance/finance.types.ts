@@ -121,6 +121,7 @@ export interface RequestPermissions {
   canEdit: boolean;
   canSubmit: boolean;
   canDecide: boolean;
+  canReject: boolean;
   canPay: boolean;
   canCancel: boolean;
   canAttach: boolean;
