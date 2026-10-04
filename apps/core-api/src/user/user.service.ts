@@ -8,6 +8,12 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import parsePhoneNumberFromString from 'libphonenumber-js';
+import { AttendanceRequestEntity } from 'src/attendance/entities/attendance-request.entity';
+import { AttendanceEntity } from 'src/attendance/entities/attendance.entity';
+import { EmployeeProfileEntity } from 'src/attendance/entities/employee-profile.entity';
+import { EmployeeShiftEntity } from 'src/attendance/entities/employee-shift.entity';
+import { JobGroupEntity } from 'src/attendance/entities/job-group.entity';
+import { LeaveBalanceEntity } from 'src/attendance/entities/leave-balance.entity';
 import { ApprovalStepEntity } from 'src/finance/entities/approval-step.entity';
 import { FinanceActivityEntity } from 'src/finance/entities/finance-activity.entity';
 import { PaymentRequestEntity } from 'src/finance/entities/payment-request.entity';
@@ -115,6 +121,9 @@ export class UserService extends BaseRepositoryService<UserEntity> {
    * made it would leave an unexplained gap. Such a user is refused here — the
    * right action is to strip their roles, not erase them.
    *
+   * Attendance follows the same rule: a profile with any recorded day or
+   * request blocks deletion; an untouched profile goes with the user.
+   *
    * NOTE: this list is hardcoded, so any new entity holding a `user` FK must be
    * added here or deletion starts failing on a foreign-key violation.
    */
@@ -131,6 +140,20 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       );
     }
 
+    // Attendance history is payroll evidence, kept on the same terms.
+    const profile = await this.em.findOne(EmployeeProfileEntity, { user: id });
+    if (profile) {
+      const [days, requests] = await Promise.all([
+        this.em.count(AttendanceEntity, { employee: profile.id }),
+        this.em.count(AttendanceRequestEntity, { employee: profile.id }),
+      ]);
+      if (days > 0 || requests > 0) {
+        throw new ConflictException(
+          'این کاربر سابقه حضور و غیاب دارد و قابل حذف نیست. به جای حذف، پروفایل پرسنلی او را غیرفعال کنید.',
+        );
+      }
+    }
+
     await this.withTransaction(async (em) => {
       // Nullable back-references from finance records the user only touched.
       await em.nativeUpdate(
@@ -144,6 +167,32 @@ export class UserService extends BaseRepositoryService<UserEntity> {
         { uploadedBy: id },
         { uploadedBy: null },
       );
+
+      // Attendance: rows the user only edited or reviewed, and approver seats.
+      await em.nativeUpdate(
+        AttendanceEntity,
+        { editedBy: id },
+        { editedBy: null },
+      );
+      await em.nativeUpdate(
+        AttendanceRequestEntity,
+        { reviewedBy: id },
+        { reviewedBy: null },
+      );
+      const groups = await em.find(
+        JobGroupEntity,
+        { approvers: id },
+        { populate: ['approvers'] },
+      );
+      groups.forEach((group) =>
+        group.approvers.remove(em.getReference(UserEntity, id)),
+      );
+      await em.flush();
+      if (profile) {
+        await em.nativeDelete(EmployeeShiftEntity, { employee: profile.id });
+        await em.nativeDelete(LeaveBalanceEntity, { employee: profile.id });
+        await em.nativeDelete(EmployeeProfileEntity, { id: profile.id });
+      }
 
       await em.nativeDelete(RolesEntity, { user: id });
       await em.nativeDelete(ReservationEntity, { user: id });
