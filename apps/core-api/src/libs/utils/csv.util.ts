@@ -41,3 +41,11 @@ export function toCsv(
 
   return BOM + [header, ...body].join('\r\n');
 }
+
+/** One CSV line from loose cells, for free-form blocks above a table. */
+export function csvRow(cells: unknown[]): string {
+  return cells.map(escapeCell).join(',');
+}
+
+/** The BOM `toCsv` prepends, for callers stitching several blocks together. */
+export const CSV_BOM = BOM;

@@ -17,7 +17,7 @@ import {
   RangeQueryDto,
 } from '../dtos/report.dto';
 import { FinanceReportService } from '../services/finance-report.service';
-import { toCsv } from '../utils/csv.util';
+import { toCsv } from '../../libs/utils/csv.util';
 
 /**
  * Reporting. Finance and admin only — these endpoints aggregate every payment

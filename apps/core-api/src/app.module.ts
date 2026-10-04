@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
 import { FinanceModule } from './finance/finance.module';
 import { postgresModuleFactory } from './libs/orm/orm.provider.base';
@@ -42,6 +43,7 @@ import { S3StorageModule } from './storage/s3-storage.module';
     NotificationModule,
     MeetingModule,
     FinanceModule,
+    AttendanceModule,
     AuthModule,
     RolesModule,
     S3StorageModule,
