@@ -27,12 +27,14 @@ export const BottomNavBar: React.FC = () => {
       ? RouteItems.financeQueue
       : RouteItems.financeMyRequests;
 
+  // Checking in happens on a phone, so attendance gets a slot; notifications
+  // give theirs up because the header's bell already reaches them.
   const bottomNavItems: RouteItem[] = [
     RouteItems.dashboard,
+    RouteItems.attendanceHome,
     financeSlot,
     RouteItems.users,
     RouteItems.profile,
-    RouteItems.notifications,
   ].filter(Boolean) as RouteItem[];
 
   // Filtered against every role the user holds, matching the sidebar and the

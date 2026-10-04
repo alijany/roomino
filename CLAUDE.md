@@ -5,12 +5,13 @@ A reusable monorepo boilerplate: NestJS backend + Next.js 15 frontend, with auth
 ## Monorepo Layout
 
 The product is **Roomino / لایفی‌نو** — a Persian, RTL, Jalali-calendar internal
-tool. Two business domains today:
+tool. Three business domains today:
 
 | Domain | Backend | Frontend |
 |---|---|---|
 | Meeting rooms | `src/meeting/` | `src/app/dashboard/{reservations,rooms,reports}/` |
 | Finance & external payments | `src/finance/` ([README](apps/core-api/src/finance/README.md)) | `src/app/dashboard/finance/` ([README](apps/pwa/src/app/dashboard/finance/README.md)) |
+| Attendance & leave | `src/attendance/` ([README](apps/core-api/src/attendance/README.md)) | `src/app/dashboard/attendance/` ([README](apps/pwa/src/app/dashboard/attendance/README.md)) |
 
 Everything else (`auth`, `user`, `roles`, `notification`, `sms`, `storage`) is
 platform infrastructure. All UI copy and backend error messages are Persian.
@@ -45,7 +46,8 @@ Tests (`pnpm test`, `pnpm test:e2e`) are currently unstable. Use `lint` (which a
 
 For anything with real behaviour, `lint` is not enough: boot the API against a
 Postgres and exercise it. The finance module's end-to-end scripts are described
-in `docs/finance-payments-module.md` §16.
+in `docs/finance-payments-module.md` §16; attendance's are in
+`docs/attendance-e2e/`.
 
 ## Dev Environment Setup
 
@@ -133,12 +135,17 @@ but its value stays rial. Never convert by hand; getting this backwards is a
 | `admin` | Full access; rooms, users, reports, finance settings |
 | `finance` | Processes and records payments; sole access to payment sources |
 | `approver` | Budget holder who approves payment requests |
-| `user` | Default; books rooms, raises payment requests |
+| `hr` | Rooms and users; runs attendance — setup, employees, all requests, reports |
+| `user` | Default; books rooms, raises payment requests, checks in and files leave |
 
 **Access is by exact role match, not by level.** `finance` and `approver` are
 peers with different jobs, not nested tiers — `RolesGuard` (backend) and
 `hasAnyRole` (frontend) both match exactly. `RoleHierarchy`/`hasPermission`
 exist only for ordering and display; don't gate on them.
+
+Attendance's **job-group approvers** («تیم من») are not a role at all — they
+are whoever an admin/HR assigns to a job group, checked server-side on every
+call. Don't confuse them with the finance `approver` role.
 
 A user may hold several roles. The active one is chosen from a sidebar dropdown;
 sidebar visibility is filtered against `selectedRole`, while route guards check

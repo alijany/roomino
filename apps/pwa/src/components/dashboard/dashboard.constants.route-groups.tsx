@@ -1,17 +1,25 @@
 'use client';
 
 import {
+  IconAdjustmentsHorizontal,
   IconBuildingBank,
   IconBuildingStore,
   IconCashBanknote,
   IconChartPie,
+  IconCalendarStats,
   IconChecklist,
+  IconClipboardList,
   IconDashboard,
   IconDoor,
+  IconFingerprint,
+  IconId,
+  IconLayoutDashboard,
+  IconMailbox,
   IconNotification,
   IconReceipt,
   IconReportAnalytics,
   IconReportMoney,
+  IconReportSearch,
   IconRepeat,
   IconSettings,
   IconUser,
@@ -120,6 +128,63 @@ export const RouteItems = {
     roles: [Role.FINANCE],
     icon: <IconBuildingBank className="size-5" />
   },
+  // --- Attendance & leave ------------------------------------------------------
+  attendanceHome: {
+    href: "/dashboard/attendance",
+    label: "ورود و خروج",
+    roles: false as const,
+    icon: <IconFingerprint className="size-5" />
+  },
+  attendanceMyReport: {
+    href: "/dashboard/attendance/my-report",
+    label: "کارکرد من",
+    roles: false as const,
+    icon: <IconCalendarStats className="size-5" />
+  },
+  attendanceMyRequests: {
+    href: "/dashboard/attendance/my-requests",
+    label: "درخواست‌های مرخصی و تردد",
+    roles: false as const,
+    icon: <IconMailbox className="size-5" />
+  },
+  // "My team" is not listed: it belongs to job-group approvers, which is an
+  // assignment rather than a role — the attendance home links to it instead.
+  attendanceTeam: {
+    href: "/dashboard/attendance/team",
+    label: "تیم من",
+    roles: false as const,
+  },
+  attendanceBoard: {
+    href: "/dashboard/attendance/board",
+    label: "وضعیت امروز پرسنل",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconLayoutDashboard className="size-5" />
+  },
+  attendanceRequests: {
+    href: "/dashboard/attendance/requests",
+    label: "بررسی درخواست‌ها",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconClipboardList className="size-5" />
+  },
+  attendancePerformance: {
+    href: "/dashboard/attendance/performance",
+    label: "گزارش کارکرد پرسنل",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconReportSearch className="size-5" />
+  },
+  attendanceEmployees: {
+    href: "/dashboard/attendance/employees",
+    label: "پرسنل",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconId className="size-5" />
+  },
+  attendanceSettings: {
+    href: "/dashboard/attendance/settings",
+    label: "تنظیمات حضور و غیاب",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconAdjustmentsHorizontal className="size-5" />
+  },
+
   financeSettings: {
     href: "/dashboard/finance/settings",
     label: "تنظیمات مالی",
@@ -139,6 +204,19 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.reports,
       RouteItems.profile,
       RouteItems.notifications,
+    ]
+  },
+  {
+    label: "حضور و غیاب",
+    routes: [
+      RouteItems.attendanceHome,
+      RouteItems.attendanceMyReport,
+      RouteItems.attendanceMyRequests,
+      RouteItems.attendanceBoard,
+      RouteItems.attendanceRequests,
+      RouteItems.attendancePerformance,
+      RouteItems.attendanceEmployees,
+      RouteItems.attendanceSettings,
     ]
   },
   {

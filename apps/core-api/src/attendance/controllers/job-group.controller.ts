@@ -20,7 +20,7 @@ import { Role } from '../../roles/roles.constants';
 import { PageQueryDto } from '../dtos/common.dto';
 import { SaveJobGroupDto } from '../dtos/setup.dto';
 import { JobGroupService } from '../services/job-group.service';
-import { toJobGroupView } from '../utils/attendance-view.util';
+import { toJobGroupView, toUserBrief } from '../utils/attendance-view.util';
 
 /** گروه‌های شغلی and their approvers — admin and HR. */
 @Controller('attendance/job-groups')
@@ -36,6 +36,13 @@ export class JobGroupController {
     return {
       items: rows.map(({ group, count }) => toJobGroupView(group, count)),
     };
+  }
+
+  @Get('approver-candidates')
+  @Roles(Role.ADMIN, Role.HR)
+  async approverCandidates(@Query() query: PageQueryDto) {
+    const users = await this.groups.searchUsers(query.text);
+    return { items: users.map(toUserBrief) };
   }
 
   @Post()
