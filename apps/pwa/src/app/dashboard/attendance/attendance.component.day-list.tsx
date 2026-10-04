@@ -1,13 +1,8 @@
 'use client';
 
 import { Button } from '@/ui/atoms';
-import {
-  IconChevronDown,
-  IconEye,
-  IconPencil,
-  IconPlus,
-} from '@tabler/icons-react';
-import { ReactNode, useState } from 'react';
+import { IconChevronDown, IconEye, IconPencil, IconPlus } from '@tabler/icons-react';
+import { ReactNode, useId, useState } from 'react';
 import { DayStatusBadge, RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceRequest, ReportDay } from './attendance.types';
 import { fa, hm, jalaliDateTime } from './attendance.util';
@@ -37,8 +32,17 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: s
  * One row per day: status, check-in/out and the minutes that matter, with
  * the day's requests and attendance audit on expand.
  */
-export function DayList({ days, actions = {} }: { days: ReportDay[]; actions?: DayActions }) {
+export function DayList({
+  days,
+  actions = {},
+  quickActions = false,
+}: {
+  days: ReportDay[];
+  actions?: DayActions;
+  quickActions?: boolean;
+}) {
   const [open, setOpen] = useState<string | null>(null);
+  const listId = useId();
 
   if (!days.length) {
     return <p className="py-10 text-center text-sm text-slate-400">روزی با این فیلتر وجود ندارد.</p>;
@@ -52,53 +56,69 @@ export function DayList({ days, actions = {} }: { days: ReportDay[]; actions?: D
 
         return (
           <li key={day.date} className={day.isToday ? 'bg-sky-50/40' : ''}>
-            <button
-              type="button"
-              className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-right lg:px-4"
-              onClick={() => setOpen(expanded ? null : day.date)}
-              aria-expanded={expanded}
-            >
-              <div className="w-28 shrink-0">
-                <div className="font-medium tabular-nums text-slate-800">{fa(day.jalali)}</div>
-                <div className="text-xs text-slate-400">
-                  {day.weekday}
-                  {day.isToday && ' · امروز'}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-3 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 lg:px-4"
+                onClick={() => setOpen(expanded ? null : day.date)}
+                aria-expanded={expanded}
+                aria-controls={`${listId}-${day.date}`}
+              >
+                <div className="w-28 shrink-0">
+                  <div className="font-medium tabular-nums text-slate-800">{fa(day.jalali)}</div>
+                  <div className="text-xs text-slate-400">
+                    {day.weekday}
+                    {day.isToday && ' · امروز'}
+                  </div>
                 </div>
-              </div>
 
-              <div className="w-36 shrink-0 text-sm tabular-nums text-slate-600">
-                {day.checkIn || day.checkOut ? (
-                  <span>
-                    {fa(day.checkIn ?? '--:--')} ← {fa(day.checkOut ?? '--:--')}
-                  </span>
-                ) : (
-                  <span className="text-slate-300">—</span>
-                )}
-              </div>
+                <div className="w-36 shrink-0 text-sm tabular-nums text-slate-600">
+                  {day.checkIn || day.checkOut ? (
+                    <span>
+                      {fa(day.checkIn ?? '--:--')} ← {fa(day.checkOut ?? '--:--')}
+                    </span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </div>
 
-              <div className="flex shrink-0 items-center gap-1">
-                <DayStatusBadge status={day.status} />
-                {day.hasPending && (
-                  <span className="text-[11px] text-amber-600">درخواست در انتظار</span>
-                )}
-              </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <DayStatusBadge status={day.status} />
+                  {day.hasPending && <span className="text-[11px] text-amber-600">درخواست در انتظار</span>}
+                </div>
 
-              <div className="flex grow flex-wrap items-center gap-x-3 gap-y-1">
-                <Metric label="کارکرد" value={day.worked} />
-                <Metric label="تاخیر" value={day.delay} tone="text-rose-500" />
-                <Metric label="تعجیل" value={day.early} tone="text-rose-500" />
-                <Metric label="اضافه‌کار" value={day.overtime} tone="text-emerald-600" />
-                <Metric label="مرخصی" value={day.leaveMinutes} tone="text-sky-600" />
-                <Metric label="دورکاری" value={day.remote} tone="text-sky-600" />
-              </div>
+                <div className="flex grow flex-wrap items-center gap-x-3 gap-y-1">
+                  <Metric label="کارکرد" value={day.worked} />
+                  <Metric label="تاخیر" value={day.delay} tone="text-rose-500" />
+                  <Metric label="تعجیل" value={day.early} tone="text-rose-500" />
+                  <Metric label="اضافه‌کار" value={day.overtime} tone="text-emerald-600" />
+                  <Metric label="مرخصی" value={day.leaveMinutes} tone="text-sky-600" />
+                  <Metric label="دورکاری" value={day.remote} tone="text-sky-600" />
+                </div>
 
-              <IconChevronDown
-                className={`size-4 shrink-0 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
-              />
-            </button>
+                <IconChevronDown
+                  className={`size-4 shrink-0 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {quickActions && actions.onCorrect && !day.isFuture && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-3 min-h-10 shrink-0 gap-1 lg:ml-4"
+                  onClick={() => actions.onCorrect?.(day)}
+                  aria-label={`اصلاح تردد ${fa(day.jalali)}`}
+                >
+                  <IconPencil className="size-4" />
+                  <span className="hidden sm:inline">اصلاح</span>
+                </Button>
+              )}
+            </div>
 
             {expanded && (
-              <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-sm lg:px-4">
+              <div
+                id={`${listId}-${day.date}`}
+                className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-sm lg:px-4"
+              >
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-slate-600">
                   <span>
                     شیفت:{' '}
@@ -132,10 +152,7 @@ export function DayList({ days, actions = {} }: { days: ReportDay[]; actions?: D
                 {day.requests.length > 0 && (
                   <ul className="space-y-2">
                     {day.requests.map((request) => (
-                      <li
-                        key={request.id}
-                        className="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2"
-                      >
+                      <li key={request.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2">
                         <span className="font-medium text-slate-700">{request.typeLabel}</span>
                         <span className="text-xs tabular-nums text-slate-500">{fa(request.periodLabel)}</span>
                         <RequestStatusBadge status={request.status} />
@@ -159,7 +176,7 @@ export function DayList({ days, actions = {} }: { days: ReportDay[]; actions?: D
                 )}
 
                 <div className="flex flex-wrap gap-2">
-                  {actions.onCorrect && !day.isFuture && (
+                  {actions.onCorrect && !day.isFuture && !quickActions && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onCorrect?.(day)}>
                       <IconPencil className="size-4" />
                       ثبت / اصلاح تردد

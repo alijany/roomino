@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { Role } from "../auth/auth.constants.roles";
 import { useAuth } from "../auth/auth.context.provider";
-import { RouteItem, RouteItems } from "./dashboard.constants.route-groups";
+import { RouteItem, RouteItems, routeGroups } from "./dashboard.constants.route-groups";
+import { getActiveRoute } from "./dashboard.util.navigation";
 
 /**
  * Mobile Bottom Navigation Bar Component
@@ -33,7 +34,7 @@ export const BottomNavBar: React.FC = () => {
     RouteItems.dashboard,
     RouteItems.attendanceHome,
     financeSlot,
-    RouteItems.users,
+    RouteItems.management,
     RouteItems.profile,
   ].filter(Boolean) as RouteItem[];
 
@@ -43,20 +44,33 @@ export const BottomNavBar: React.FC = () => {
   const visibleItems = bottomNavItems.filter(
     item => !item.roles || hasAnyRole(item.roles)
   );
+  const accessibleGroups = routeGroups.map(group => ({
+    ...group,
+    routes: group.routes.filter(route => !route.roles || hasAnyRole(route.roles)),
+  }));
+  const activeRoute = getActiveRoute(pathname, [
+    ...visibleItems,
+    ...accessibleGroups.flatMap(group => group.routes),
+  ]);
+  const isManagementPage = activeRoute?.href === RouteItems.management.href ||
+    accessibleGroups.some(group => group.workspace === "management" &&
+      group.routes.some(route => route.href === activeRoute?.href));
+  const activeBottomRoute = getActiveRoute(pathname, visibleItems);
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
       <div className="mx-auto px-2 py-2">
         <div className="flex justify-around items-center">
           {visibleItems.map((item) => {
-            // Match exact path or check if current path is a sub-path (except for dashboard root)
-            const isActive = pathname === item.href ||
-              (item.href !== RouteItems.dashboard.href && pathname.startsWith(item.href));
+            const isActive = isManagementPage
+              ? item.href === RouteItems.management.href
+              : item.href === activeBottomRoute?.href;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[4rem]",
                   isActive

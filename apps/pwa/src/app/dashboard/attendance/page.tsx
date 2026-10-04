@@ -5,20 +5,19 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Button } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
 import {
-  IconArrowLeft,
   IconBeach,
   IconCurrentLocation,
   IconFingerprint,
   IconHome,
   IconLogin,
   IconLogout,
-  IconUsersGroup,
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useCheckIn, useCheckOut, useHolidays, useMyToday } from './attendance.api';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
+import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { CheckResult, MyToday } from './attendance.types';
 import { errorMessage, fa, getPosition, hm, jalaliLabel } from './attendance.util';
@@ -41,43 +40,11 @@ export default function AttendanceHomePage() {
           />
 
           <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
-            {data && !data.hasProfile ? <NoProfile today={data} /> : data && <Today today={data} onChange={refresh} />}
+            {data && !data.hasProfile ? <AttendanceProfileUnavailable isApprover={data.isApprover} /> : data && <Today today={data} onChange={refresh} />}
           </DataView>
         </div>
       </DashbaordLayout>
     </ProtectedRoute>
-  );
-}
-
-function TeamLink() {
-  return (
-    <Link
-      href="/dashboard/attendance/team"
-      className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300"
-    >
-      <div className="flex size-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-        <IconUsersGroup className="size-5" />
-      </div>
-      <div className="grow">
-        <div className="font-semibold text-slate-800">تیم من</div>
-        <div className="text-xs text-slate-500">وضعیت امروز، درخواست‌ها و گزارش کارکرد اعضای گروه</div>
-      </div>
-      <IconArrowLeft className="size-4 text-slate-400" />
-    </Link>
-  );
-}
-
-function NoProfile({ today }: { today: MyToday }) {
-  return (
-    <div className="space-y-3">
-      <Panel className="items-center py-10 text-center">
-        <p className="font-semibold text-slate-700">
-          پروفایل حضور و غیاب برای شما تعریف نشده یا غیرفعال است.
-        </p>
-        <p className="mt-1 text-sm text-slate-500">برای ثبت ورود و خروج با منابع انسانی تماس بگیرید.</p>
-      </Panel>
-      {today.isApprover && <TeamLink />}
-    </div>
   );
 }
 
@@ -222,7 +189,7 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
       </Panel>
 
       <div className="space-y-3">
-        {today.isApprover && <TeamLink />}
+        {today.isApprover && <AttendanceTeamLink />}
 
         {month && (
           <Panel className="gap-3">
