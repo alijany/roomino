@@ -1,5 +1,6 @@
 import { EntityManager, FilterQuery, QueryOrder } from '@mikro-orm/core';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -8,6 +9,8 @@ import {
 import { UserEntity } from '../../user/user.entity';
 import {
   CreateEmployeeDto,
+  EmployeeAssignmentDto,
+  EmployeeIdentityDto,
   ListEmployeesDto,
   UpdateEmployeeDto,
   UpdateTeamMemberDto,
@@ -144,7 +147,7 @@ export class EmployeeService {
   }
 
   /** Users who don't have a profile yet — the picker on "new employee". */
-  async candidates(text?: string) {
+  async candidates(text?: string, limit = 20) {
     const taken = await this.em.find(
       EmployeeProfileEntity,
       {},
@@ -160,7 +163,7 @@ export class EmployeeService {
           ? { $or: [{ firstName: like }, { lastName: like }, { phone: like }] }
           : {}),
       } as FilterQuery<UserEntity>,
-      { orderBy: { lastName: QueryOrder.ASC }, limit: 20 },
+      { orderBy: { lastName: QueryOrder.ASC }, limit },
     );
   }
 
@@ -292,42 +295,102 @@ export class EmployeeService {
   }
 
   async create(dto: CreateEmployeeDto) {
-    const user = await this.em.findOne(UserEntity, { id: dto.userId });
-    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    const [id] = await this.createMany([dto], dto);
+    return this.getOrFail(id);
+  }
 
-    if (await this.em.count(EmployeeProfileEntity, { user: dto.userId })) {
-      throw new ConflictException('این کاربر قبلاً پروفایل پرسنلی دارد');
+  /**
+   * Profiles for several users with one shared assignment, all or nothing.
+   * Everything that can be checked up front is, so an error names every
+   * offending person or code at once instead of failing on the first.
+   */
+  async createMany(
+    people: EmployeeIdentityDto[],
+    shared: EmployeeAssignmentDto,
+  ): Promise<number[]> {
+    const userIds = people.map((p) => p.userId);
+    const codes = people.map((p) => p.personnelCode.trim());
+
+    const repeated = (values: Array<string | number>) => [
+      ...new Set(values.filter((v, i) => values.indexOf(v) !== i)),
+    ];
+    if (repeated(userIds).length) {
+      throw new BadRequestException('یک کاربر بیش از یک بار انتخاب شده است');
     }
-    await this.assertPersonnelCodeFree(dto.personnelCode);
+    const repeatedCodes = repeated(codes);
+    if (repeatedCodes.length) {
+      throw new BadRequestException(
+        `کد پرسنلی تکراری در فهرست: ${repeatedCodes.join('، ')}`,
+      );
+    }
 
-    const id = await this.em.transactional(async (em) => {
-      const relations = await this.relations(em, dto);
+    const users = await this.em.find(UserEntity, { id: { $in: userIds } });
+    if (users.length !== new Set(userIds).size) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+    const byId = new Map(users.map((u) => [u.id, u]));
+
+    const existing = await this.em.find(
+      EmployeeProfileEntity,
+      { user: { $in: userIds } },
+      { populate: ['user'] },
+    );
+    if (existing.length) {
+      const names = existing.map((p) => p.user.name ?? p.user.phone);
+      throw new ConflictException(
+        `این کاربر قبلاً پروفایل پرسنلی دارد: ${names.join('، ')}`,
+      );
+    }
+
+    const taken = await this.em.find(EmployeeProfileEntity, {
+      personnelCode: { $in: codes },
+    });
+    if (taken.length) {
+      throw new ConflictException(
+        `این کد پرسنلی قبلاً ثبت شده است: ${taken
+          .map((p) => p.personnelCode)
+          .join('، ')}`,
+      );
+    }
+
+    return this.em.transactional(async (em) => {
+      const relations = await this.relations(em, shared);
       const workPolicy =
-        dto.workPolicyId === undefined
+        shared.workPolicyId === undefined
           ? await em.findOne(WorkPolicyEntity, { isDefault: true })
           : relations.workPolicy;
+      const shift = await em.findOne(ShiftEntity, { id: shared.shiftId });
+      if (!shift) throw new NotFoundException('شیفت یافت نشد');
 
-      const profile = em.create(EmployeeProfileEntity, {
-        user,
-        personnelCode: dto.personnelCode,
-        jobTitle: dto.jobTitle,
-        workplace: relations.workplace,
-        jobGroup: relations.jobGroup ?? null,
-        workPolicy: workPolicy ?? null,
-        useGps: dto.useGps ?? true,
-        useWifi: dto.useWifi ?? false,
-        allowedDeviceType: dto.allowedDeviceType,
-        trackingEnabled: dto.trackingEnabled ?? false,
-        remoteDays: normalizeRemoteDays(dto.remoteDays),
-        active: dto.active ?? true,
+      const profiles = people.map((person, i) => {
+        const profile = em.create(EmployeeProfileEntity, {
+          user: byId.get(person.userId)!,
+          personnelCode: codes[i],
+          jobTitle: person.jobTitle?.trim() || undefined,
+          workplace: relations.workplace,
+          jobGroup: relations.jobGroup ?? null,
+          workPolicy: workPolicy ?? null,
+          useGps: shared.useGps ?? true,
+          useWifi: shared.useWifi ?? false,
+          allowedDeviceType: shared.allowedDeviceType,
+          trackingEnabled: shared.trackingEnabled ?? false,
+          remoteDays: normalizeRemoteDays(shared.remoteDays),
+          active: shared.active ?? true,
+        });
+        em.persist(profile);
+        // A new profile has no history, so its first period simply opens.
+        em.persist(
+          em.create(EmployeeShiftEntity, {
+            employee: profile,
+            shift,
+            startDate: shared.shiftStartDate,
+          }),
+        );
+        return profile;
       });
-      await em.persistAndFlush(profile);
-      await this.assignShift(em, profile, dto.shiftId, dto.shiftStartDate);
       await em.flush();
-      return profile.id;
+      return profiles.map((p) => p.id);
     });
-
-    return this.getOrFail(id);
   }
 
   async update(id: number, dto: UpdateEmployeeDto) {

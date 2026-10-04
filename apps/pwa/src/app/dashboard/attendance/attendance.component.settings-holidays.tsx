@@ -189,6 +189,7 @@ export function HolidaysSettings() {
         message={`«${deleting?.title ?? ''}» حذف شود؟`}
         confirmButtonText="حذف"
         cancelButtonText="بازگشت"
+        isLoading={remove.isLoading}
       />
     </div>
   );

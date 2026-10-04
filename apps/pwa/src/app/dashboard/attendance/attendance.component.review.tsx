@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Input } from '@/ui/atoms';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, useRejectRequest } from './attendance.api';
 import { FormModal, RequestStatusBadge, TimeField } from './attendance.component.layout';
@@ -51,12 +51,13 @@ export function ReviewActions({
   return (
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
       <Button size={size} disabled={approve.isLoading} onClick={handleApprove}>
-        تایید
+        {approve.isLoading ? 'در حال تایید...' : 'تایید'}
       </Button>
       <Button
         size={size}
         variant="outline"
         className="text-rose-600"
+        disabled={approve.isLoading}
         onClick={() => {
           setNote('');
           setRejecting(true);
@@ -80,10 +81,7 @@ export function ReviewActions({
           </>
         }
       >
-        <p className="text-sm text-slate-600">
-          {request.typeLabel} {request.employee?.name ? `${request.employee.name} — ` : ''}
-          {fa(request.periodLabel)}
-        </p>
+        <RequestSummary request={request} />
         <Input
           textarea
           label="دلیل رد (اختیاری)"
@@ -92,6 +90,18 @@ export function ReviewActions({
           rows={3}
         />
       </FormModal>
+    </div>
+  );
+}
+
+/** Who, what and when — the line a reviewer confirms before deciding. */
+function RequestSummary({ request }: { request: AttendanceRequest }) {
+  return (
+    <div className="space-y-1 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+      {request.employee?.name && <div className="font-medium text-slate-800">{request.employee.name}</div>}
+      <div className="text-slate-600">
+        {request.typeLabel} · {fa(request.periodLabel)}
+      </div>
     </div>
   );
 }
@@ -106,18 +116,24 @@ export function RequestDetailModal({
   onClose: () => void;
   actions?: React.ReactNode;
 }) {
-  const rows: Array<[string, React.ReactNode]> = request
+  // The caller clears `request` to close; keep showing the last one while
+  // the modal fades out instead of collapsing to an empty sheet.
+  const last = useRef({ request, actions });
+  if (request) last.current = { request, actions };
+  const shown = last.current.request;
+
+  const rows: Array<[string, React.ReactNode]> = shown
     ? [
-        ['نوع', request.typeLabel],
-        ['پرسنل', request.employee ? `${request.employee.name ?? ''} (${fa(request.employee.personnelCode)})` : null],
-        ['تاریخ', fa(request.periodLabel)],
-        ['مدت', durationLabel(request.durationMinutes)],
-        ['وضعیت', <RequestStatusBadge key="s" status={request.status} />],
-        ['ثبت', jalaliDateTime(request.createdAt)],
-        ['توضیحات', request.description],
-        ['بررسی‌کننده', request.reviewedBy?.name],
-        ['زمان بررسی', request.reviewedAt ? jalaliDateTime(request.reviewedAt) : null],
-        ['یادداشت بررسی', request.reviewNote],
+        ['نوع', shown.typeLabel],
+        ['پرسنل', shown.employee ? `${shown.employee.name ?? ''} (${fa(shown.employee.personnelCode)})` : null],
+        ['تاریخ', fa(shown.periodLabel)],
+        ['مدت', durationLabel(shown.durationMinutes)],
+        ['وضعیت', <RequestStatusBadge key="s" status={shown.status} />],
+        ['ثبت', jalaliDateTime(shown.createdAt)],
+        ['توضیحات', shown.description],
+        ['بررسی‌کننده', shown.reviewedBy?.name],
+        ['زمان بررسی', shown.reviewedAt ? jalaliDateTime(shown.reviewedAt) : null],
+        ['یادداشت بررسی', shown.reviewNote],
       ]
     : [];
 
@@ -126,7 +142,7 @@ export function RequestDetailModal({
       isOpen={request !== null}
       onClose={onClose}
       title="جزئیات درخواست"
-      footer={actions}
+      footer={last.current.actions}
     >
       <dl className="divide-y divide-slate-100 text-sm">
         {rows
@@ -178,7 +194,7 @@ export function CorrectionModal({
     <FormModal
       isOpen={target !== null}
       onClose={onClose}
-      title={`ثبت / اصلاح تردد — ${target ? jalaliLabel(target.date) : ''}`}
+      title="ثبت / اصلاح تردد"
       footer={
         <>
           <Button className="flex-1" disabled={!checkIn || !note.trim() || correct.isLoading} onClick={handleSave}>
@@ -190,6 +206,12 @@ export function CorrectionModal({
         </>
       }
     >
+      {target && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+          <span className="font-medium text-slate-800">{target.name ?? 'پرسنل'}</span>
+          <span className="text-slate-500">{jalaliLabel(target.date)}</span>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <TimeField label="ساعت ورود" value={checkIn} onChange={setCheckIn} />
         <TimeField label="ساعت خروج (اختیاری)" value={checkOut} onChange={setCheckOut} />

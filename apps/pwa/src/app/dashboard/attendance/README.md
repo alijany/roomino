@@ -13,7 +13,7 @@
 | `/board` | admin, hr | today's board for everyone, latest pending requests (refreshes every minute) |
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
-| `/employees` | admin, hr | attendance profiles — added to existing users |
+| `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift) |
 | `/settings` | admin, hr | tabs: workplaces (OSM preview, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
 
 «تیم من» is deliberately not in the sidebar: it belongs to whoever an admin

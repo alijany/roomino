@@ -126,6 +126,7 @@ export default function MyRequestsPage() {
           message={`درخواست «${cancelling?.typeLabel ?? ''}» لغو شود؟`}
           confirmButtonText="لغو درخواست"
           cancelButtonText="بازگشت"
+          isLoading={cancel.isLoading}
         />
       </DashbaordLayout>
     </ProtectedRoute>

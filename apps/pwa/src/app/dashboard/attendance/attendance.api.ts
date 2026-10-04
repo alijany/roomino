@@ -17,6 +17,7 @@ import {
   Employee,
   EmployeeDetail,
   EmployeeFilterDto,
+  EmployeeBatchInput,
   EmployeeInput,
   Holiday,
   HolidaySource,
@@ -216,10 +217,10 @@ export function useEmployee(id?: number) {
   return useSwrHelper(useSWR<EmployeeDetail>(id ? `/attendance/employees/${id}` : null, fetcher));
 }
 
-export function useEmployeeCandidates(text: string, enabled: boolean) {
+export function useEmployeeCandidates(text: string, enabled: boolean, limit?: number) {
   return useSwrHelper(
     useSWR<{ items: Array<UserBrief & { nationalId: string | null }> }>(
-      enabled ? q('/attendance/employees/candidates', { text: text || undefined }) : null,
+      enabled ? q('/attendance/employees/candidates', { text: text || undefined, limit }) : null,
       fetcher,
     ),
   );
@@ -232,6 +233,12 @@ export function useSaveEmployee() {
       id
         ? patchFetcher<EmployeeInput, Employee>(`/attendance/employees/${id}`, { arg: data })
         : postFetcher<EmployeeInput, Employee>('/attendance/employees', { arg: data }),
+  );
+}
+
+export function useBatchCreateEmployees() {
+  return useDynamicMutation('/attendance/employees/batch', (data: EmployeeBatchInput) =>
+    postFetcher<EmployeeBatchInput, { created: number; ids: number[] }>('/attendance/employees/batch', { arg: data }),
   );
 }
 

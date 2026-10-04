@@ -119,18 +119,21 @@ export function FormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className={`bg-white ${wide ? 'lg:min-w-[720px]' : 'lg:min-w-[480px]'}`}
+      className={`rounded-t-2xl bg-white ${wide ? 'lg:min-w-[720px]' : 'lg:min-w-[480px]'}`}
     >
       <div className="flex min-h-0 flex-col">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-5">
-          <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-          <Button variant="outline" className="!px-2" onClick={onClose} aria-label="بستن">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 p-5">
+          <h3 className="min-w-0 break-words font-bold text-lg text-slate-800">{title}</h3>
+          <Button variant="outline" className="shrink-0 !px-2" onClick={onClose} aria-label="بستن">
             <IconX className="size-5" />
           </Button>
         </div>
         <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">{children}</div>
         {footer && (
-          <div className="flex shrink-0 gap-3 border-t border-slate-100 p-5">{footer}</div>
+          // Bottom sheet on phones: keep the actions clear of the home indicator.
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-slate-100 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            {footer}
+          </div>
         )}
       </div>
     </Modal>

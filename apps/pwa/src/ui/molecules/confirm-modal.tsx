@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/ui/atoms/ui.button';
 import { Modal } from '@/ui/atoms/ui.modal';
 import { IconX } from '@tabler/icons-react';
@@ -14,6 +14,8 @@ export interface ConfirmModalProps {
     message?: string;
     confirmButtonText?: string;
     cancelButtonText?: string;
+    /** Disables both buttons while the confirmed action runs. */
+    isLoading?: boolean;
     className?: string;
 }
 
@@ -25,8 +27,14 @@ export function ConfirmModal({
     message = 'آیا از انجام این عملیات اطمینان دارید؟',
     confirmButtonText = 'تایید',
     cancelButtonText = 'بازگشت',
+    isLoading = false,
     className,
 }: ConfirmModalProps): React.ReactElement {
+    // Callers usually derive the message from the item being confirmed and
+    // clear it on close; keep the last one so the fade-out doesn't go blank.
+    const shown = useRef({ title, message });
+    if (isOpen) shown.current = { title, message };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -35,7 +43,7 @@ export function ConfirmModal({
         >
             <div className='flex justify-between items-center pb-4'>
                 <div className='font-bold text-lg lg:text-xl text-slate-700'>
-                    {title}
+                    {shown.current.title}
                 </div>
                 <Button variant='outline' className='!px-2' onClick={onClose}>
                     <IconX className='size-5' />
@@ -49,13 +57,13 @@ export function ConfirmModal({
                         <path d="M10.29 3.86L1.82 18A2 2 0 0 0 3.48 21h17.04a2 2 0 0 0 1.66-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </div>
-                <div className="text-center text-lg font-medium">{message}</div>
+                <div className="text-center text-lg font-medium">{shown.current.message}</div>
             </div>
             <div className="flex gap-4">
-                <Button className="flex-1 bg-red-500 text-white" onClick={onConfirm}>
-                    {confirmButtonText}
+                <Button className="flex-1 bg-red-500 text-white" disabled={isLoading} onClick={onConfirm}>
+                    {isLoading ? 'در حال انجام...' : confirmButtonText}
                 </Button>
-                <Button variant='ghost' className="flex-1 bg-slate-100" onClick={onClose}>
+                <Button variant='ghost' className="flex-1 bg-slate-100" disabled={isLoading} onClick={onClose}>
                     {cancelButtonText}
                 </Button>
             </div>

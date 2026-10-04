@@ -150,6 +150,7 @@ export default function RequestQueuePage() {
           message="درخواست برای همیشه حذف شود؟ اثر تایید قبلی (مانده مرخصی، تردد ثبت‌شده) برنمی‌گردد."
           confirmButtonText="حذف"
           cancelButtonText="بازگشت"
+          isLoading={remove.isLoading}
         />
       </DashbaordLayout>
     </RoleProtectedRoute>

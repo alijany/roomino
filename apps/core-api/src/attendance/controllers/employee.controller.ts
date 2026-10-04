@@ -18,6 +18,7 @@ import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { PageQueryDto } from '../dtos/common.dto';
 import {
+  BatchCreateEmployeesDto,
   CreateEmployeeDto,
   ListEmployeesDto,
   UpdateEmployeeDto,
@@ -57,7 +58,7 @@ export class EmployeeController {
   @Get('candidates')
   @Roles(Role.ADMIN, Role.HR)
   async candidates(@Query() query: PageQueryDto) {
-    const users = await this.employees.candidates(query.text);
+    const users = await this.employees.candidates(query.text, query.limit);
     return {
       items: users.map((u) => ({
         ...toUserBrief(u),
@@ -94,6 +95,15 @@ export class EmployeeController {
       profile,
       await this.employees.currentAssignment(profile.id),
     );
+  }
+
+  /** Several users at once with one shared assignment — all or nothing. */
+  @Post('batch')
+  @Roles(Role.ADMIN, Role.HR)
+  async createMany(@Body(NormalizeNumbersPipe) dto: BatchCreateEmployeesDto) {
+    const { items, ...shared } = dto;
+    const ids = await this.employees.createMany(items, shared);
+    return { created: ids.length, ids };
   }
 
   @Patch(':id')

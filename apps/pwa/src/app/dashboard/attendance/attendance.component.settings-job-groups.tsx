@@ -105,6 +105,7 @@ export function JobGroupsSettings() {
         message={`«${deleting?.name ?? ''}» حذف شود؟ اعضای آن بدون گروه می‌مانند.`}
         confirmButtonText="حذف"
         cancelButtonText="بازگشت"
+        isLoading={remove.isLoading}
       />
     </div>
   );
@@ -170,17 +171,26 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
         />
         {search.trim() && (
           <div className="mt-2 max-h-40 space-y-1 overflow-y-auto">
-            {candidates.data?.items.map((u) => (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => add(u)}
-                className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-slate-300"
-              >
-                <span>{u.name ?? 'بدون نام'}</span>
-                <span dir="ltr" className="text-xs text-slate-400">{fa(u.phone)}</span>
-              </button>
-            ))}
+            {candidates.data?.items
+              .filter((u) => !approvers.some((a) => a.id === u.id))
+              .map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => add(u)}
+                  className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <IconPlus className="size-4 text-slate-400" />
+                    {u.name ?? 'بدون نام'}
+                  </span>
+                  <span dir="ltr" className="text-xs text-slate-400">{fa(u.phone)}</span>
+                </button>
+              ))}
+            {candidates.isLoading && <p className="py-2 text-center text-xs text-slate-400">در حال جستجو...</p>}
+            {candidates.data && !candidates.data.items.some((u) => !approvers.some((a) => a.id === u.id)) && (
+              <p className="py-2 text-center text-xs text-slate-400">کاربر دیگری پیدا نشد.</p>
+            )}
           </div>
         )}
       </Field>

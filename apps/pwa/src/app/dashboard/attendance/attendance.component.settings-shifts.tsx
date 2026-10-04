@@ -10,7 +10,7 @@ import { useDeleteShift, useSaveShift, useShifts } from './attendance.api';
 import { FormModal } from './attendance.component.layout';
 import { WEEKDAY_LABELS } from './attendance.constants';
 import { Shift, ShiftDay } from './attendance.types';
-import { currentJalaliMonth, errorMessage, fa } from './attendance.util';
+import { currentJalaliMonth, errorMessage, fa, latin } from './attendance.util';
 
 type DayDraft = {
   isActive: boolean;
@@ -145,13 +145,19 @@ export function ShiftsSettings() {
         message={`شیفت «${deleting?.name ?? ''}» حذف شود؟ شیفتی که به پرسنل تخصیص داده شده قابل حذف نیست.`}
         confirmButtonText="حذف"
         cancelButtonText="بازگشت"
+        isLoading={remove.isLoading}
       />
     </div>
   );
 }
 
 const timeInput =
-  'w-36 rounded-lg border border-slate-200 px-2 py-1 text-left tabular-nums disabled:bg-slate-50 disabled:text-slate-300';
+  'w-32 rounded-lg border border-slate-200 px-2 py-1 text-left tabular-nums focus:border-slate-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-300';
+
+/** An active day needs both ends of each part it uses. */
+const dayComplete = (d: DayDraft) =>
+  !d.isActive ||
+  (Boolean(d.startTime && d.endTime) && (!d.hasSecondPart || Boolean(d.secondStartTime && d.secondEndTime)));
 
 function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: () => void; onSaved: () => void }) {
   const save = useSaveShift();
@@ -159,6 +165,11 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
   const [year, setYear] = useState(String(shift?.year ?? currentJalaliMonth().y));
   const [flex, setFlex] = useState(String(shift?.flexMinutes ?? 0));
   const [days, setDays] = useState<DayDraft[]>(shift ? fromShift(shift.days) : defaultDays());
+
+  const yearValid = /^\d{4}$/.test(year.trim());
+  const flexValid = flex.trim() === '' || /^\d+$/.test(flex.trim());
+  const incomplete = days.map((d, i) => (dayComplete(d) ? null : WEEKDAY_LABELS[i])).filter(Boolean);
+  const ready = name.trim() && yearValid && flexValid && !incomplete.length;
 
   const setDay = (index: number, patch: Partial<DayDraft>) =>
     setDays((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
@@ -205,7 +216,7 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
       title={shift ? 'ویرایش شیفت' : 'شیفت جدید'}
       footer={
         <>
-          <Button className="flex-1" disabled={!name.trim() || save.isLoading} onClick={handleSave}>
+          <Button className="flex-1" disabled={!ready || save.isLoading} onClick={handleSave}>
             {save.isLoading ? 'در حال ذخیره...' : 'ذخیره'}
           </Button>
           <Button variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>
@@ -216,13 +227,29 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
     >
       <div className="grid gap-4 sm:grid-cols-3">
         <Input label="نام شیفت" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input label="سال" dir="ltr" className="text-left" value={year} onChange={(e) => setYear(e.target.value)} />
-        <Input label="شناوری (دقیقه)" dir="ltr" className="text-left" value={flex} onChange={(e) => setFlex(e.target.value)} />
+        <Input
+          label="سال"
+          dir="ltr"
+          inputMode="numeric"
+          className="text-left"
+          value={year}
+          onChange={(e) => setYear(latin(e.target.value))}
+          error={yearValid ? undefined : 'سال شمسی چهاررقمی، مثلاً ۱۴۰۵'}
+        />
+        <Input
+          label="شناوری (دقیقه)"
+          dir="ltr"
+          inputMode="numeric"
+          className="text-left"
+          value={flex}
+          onChange={(e) => setFlex(latin(e.target.value))}
+          error={flexValid ? undefined : 'عدد صحیح وارد کنید'}
+        />
       </div>
 
       <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
         {days.map((day, i) => (
-          <div key={i} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+          <div key={i} className={`flex flex-wrap items-center gap-3 p-3 text-sm ${dayComplete(day) ? '' : 'bg-rose-50/60'}`}>
             <div className="w-24">
               <ToggleSwitch
                 size="sm"
@@ -234,21 +261,21 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
               />
             </div>
             <div className="flex items-center gap-1">
-              <input type="time" className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(e) => setDay(i, { startTime: e.target.value })} />
-              <span className="text-slate-400">–</span>
-              <input type="time" className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(e) => setDay(i, { endTime: e.target.value })} />
+              <input type="time" dir="ltr" aria-label={`شروع ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(e) => setDay(i, { startTime: e.target.value })} />
+              <span className="text-slate-400">تا</span>
+              <input type="time" dir="ltr" aria-label={`پایان ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(e) => setDay(i, { endTime: e.target.value })} />
             </div>
             {day.isActive && (
-              <label className="flex items-center gap-1 text-xs text-slate-500">
-                <input type="checkbox" checked={day.hasSecondPart} onChange={(e) => setDay(i, { hasSecondPart: e.target.checked })} />
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500">
+                <input type="checkbox" className="size-4 accent-slate-700" checked={day.hasSecondPart} onChange={(e) => setDay(i, { hasSecondPart: e.target.checked })} />
                 شیفت دوم
               </label>
             )}
             {day.isActive && day.hasSecondPart && (
               <div className="flex items-center gap-1">
-                <input type="time" className={timeInput} value={day.secondStartTime} onChange={(e) => setDay(i, { secondStartTime: e.target.value })} />
-                <span className="text-slate-400">–</span>
-                <input type="time" className={timeInput} value={day.secondEndTime} onChange={(e) => setDay(i, { secondEndTime: e.target.value })} />
+                <input type="time" dir="ltr" aria-label={`شروع پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondStartTime} onChange={(e) => setDay(i, { secondStartTime: e.target.value })} />
+                <span className="text-slate-400">تا</span>
+                <input type="time" dir="ltr" aria-label={`پایان پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondEndTime} onChange={(e) => setDay(i, { secondEndTime: e.target.value })} />
               </div>
             )}
             {day.isActive && (
@@ -260,6 +287,9 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
           </div>
         ))}
       </div>
+      {incomplete.length > 0 && (
+        <p className="text-xs text-rose-500">ساعت شروع و پایان را برای {incomplete.join('، ')} کامل کنید.</p>
+      )}
     </FormModal>
   );
 }

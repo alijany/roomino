@@ -59,8 +59,10 @@ export function RequestForm({
   const types = grantFor ? GRANT_TYPES : Object.values(RequestType);
   const busy = submit.isLoading || grant.isLoading;
 
+  const rangeInvalid = shape === 'range' && dateTo < dateFrom;
   const ready =
     Boolean(type) &&
+    !rangeInvalid &&
     (shape !== 'timed' || (timeFrom && timeTo)) &&
     (shape !== 'manual' || manualTime) &&
     (shape !== 'free' || description.trim());
@@ -121,7 +123,7 @@ export function RequestForm({
       </Field>
 
       {shape === 'range' && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DatePickerField
             label="از تاریخ"
             value={fromCivilDate(dateFrom)}
@@ -136,6 +138,7 @@ export function RequestForm({
             value={fromCivilDate(dateTo)}
             onSelect={(d) => setDateTo(toCivilDate(d))}
           />
+          {rangeInvalid && <p className="w-full text-xs text-rose-500">«تا تاریخ» نباید پیش از «از تاریخ» باشد.</p>}
         </div>
       )}
 

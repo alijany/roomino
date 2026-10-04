@@ -283,6 +283,12 @@ export interface EmployeeInput {
   active?: boolean;
 }
 
+/** Several profiles with one shared assignment — `POST /attendance/employees/batch`. */
+export interface EmployeeBatchInput
+  extends Omit<EmployeeInput, 'userId' | 'personnelCode' | 'jobTitle'> {
+  items: Array<{ userId: number; personnelCode: string; jobTitle?: string }>;
+}
+
 export interface EmployeeFilterDto {
   page?: number;
   limit?: number;

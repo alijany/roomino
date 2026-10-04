@@ -5,12 +5,12 @@ import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { IconCurrentLocation, IconMapPin, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useDeleteWorkplace, useSaveWorkplace, useWorkplaces } from './attendance.api';
 import { FormModal } from './attendance.component.layout';
 import { Workplace } from './attendance.types';
-import { errorMessage, fa, getPosition } from './attendance.util';
+import { errorMessage, fa, getPosition, latin } from './attendance.util';
 
 /** OpenStreetMap preview with a marker — no map library needed. */
 function MapPreview({ lat, lng }: { lat: number; lng: number }) {
@@ -111,6 +111,7 @@ export function WorkplacesSettings() {
         message={`«${deleting?.name ?? ''}» حذف شود؟ اگر پرسنل یا ترددی به آن متصل باشد فقط غیرفعال می‌شود.`}
         confirmButtonText="حذف"
         cancelButtonText="بازگشت"
+        isLoading={remove.isLoading}
       />
     </div>
   );
@@ -137,7 +138,17 @@ function WorkplaceForm({
 
   const latNum = Number(lat);
   const lngNum = Number(lng);
-  const ready = name.trim() && lat !== '' && lng !== '' && Number.isFinite(latNum) && Number.isFinite(lngNum);
+  const radiusNum = Number(radius);
+  const latValid = lat.trim() !== '' && Number.isFinite(latNum) && Math.abs(latNum) <= 90;
+  const lngValid = lng.trim() !== '' && Number.isFinite(lngNum) && Math.abs(lngNum) <= 180;
+  const radiusValid = Number.isInteger(radiusNum) && radiusNum > 0;
+  const ready = name.trim() && latValid && lngValid && radiusValid;
+  // Typing a coordinate shouldn't reload the map on every keystroke.
+  const [mapAt, setMapAt] = useState(workplace ? { lat: workplace.lat, lng: workplace.lng } : null);
+  useEffect(() => {
+    const timer = setTimeout(() => setMapAt(latValid && lngValid ? { lat: latNum, lng: lngNum } : null), 600);
+    return () => clearTimeout(timer);
+  }, [latNum, lngNum, latValid, lngValid]);
 
   const useMyLocation = async () => {
     setLocating(true);
@@ -162,7 +173,7 @@ function WorkplaceForm({
           address: address.trim() || undefined,
           lat: latNum,
           lng: lngNum,
-          radiusMeters: Number(radius) || 100,
+          radiusMeters: radiusNum,
           active,
         },
       });
@@ -193,18 +204,44 @@ function WorkplaceForm({
       <Input label="نام" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="شهر (اختیاری)" value={city} onChange={(e) => setCity(e.target.value)} />
-        <Input label="شعاع مجاز (متر)" dir="ltr" className="text-left" value={radius} onChange={(e) => setRadius(e.target.value)} />
+        <Input
+          label="شعاع مجاز (متر)"
+          dir="ltr"
+          inputMode="numeric"
+          className="text-left"
+          value={radius}
+          onChange={(e) => setRadius(latin(e.target.value))}
+          error={radiusValid ? undefined : 'عدد صحیح بزرگ‌تر از صفر'}
+        />
       </div>
       <Input label="نشانی (اختیاری)" value={address} onChange={(e) => setAddress(e.target.value)} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="عرض جغرافیایی" dir="ltr" className="text-left" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="35.6997" />
-        <Input label="طول جغرافیایی" dir="ltr" className="text-left" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="51.3380" />
+        <Input
+          label="عرض جغرافیایی"
+          dir="ltr"
+          inputMode="decimal"
+          className="text-left"
+          value={lat}
+          onChange={(e) => setLat(latin(e.target.value))}
+          placeholder="35.6997"
+          error={lat.trim() && !latValid ? 'بین ۹۰- و ۹۰' : undefined}
+        />
+        <Input
+          label="طول جغرافیایی"
+          dir="ltr"
+          inputMode="decimal"
+          className="text-left"
+          value={lng}
+          onChange={(e) => setLng(latin(e.target.value))}
+          placeholder="51.3380"
+          error={lng.trim() && !lngValid ? 'بین ۱۸۰- و ۱۸۰' : undefined}
+        />
       </div>
       <Button variant="outline" size="sm" className="gap-1" disabled={locating} onClick={useMyLocation}>
         <IconCurrentLocation className="size-4" />
         {locating ? 'در حال دریافت...' : 'استفاده از موقعیت فعلی من'}
       </Button>
-      {ready && <MapPreview lat={latNum} lng={lngNum} />}
+      {mapAt && <MapPreview lat={mapAt.lat} lng={mapAt.lng} />}
       <ToggleSwitch label="فعال" checked={active} onChange={setActive} />
     </FormModal>
   );

@@ -1,7 +1,7 @@
 import { cn } from "@/libs/style/style.util.helpers";
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { IconArrowDown } from "@tabler/icons-react";
-import { Fragment, ReactNode } from "react";
+import { ReactNode } from "react";
 
 export interface DropdownItem<T> {
     label: string;
@@ -75,43 +75,38 @@ export function Dropdown<T>({
                         </MenuButton>
                     )}
                 </div>
-                <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-100"
-                    enterFrom="transform opacity-0 scale-95"
-                    enterTo="transform opacity-100 scale-100"
-                    leave="transition ease-in duration-75"
-                    leaveFrom="transform opacity-100 scale-100"
-                    leaveTo="transform opacity-0 scale-95"
+                {/* Anchored, so the menu is portalled and positioned against the
+                    button: a modal's scrolling body would otherwise clip it. */}
+                <MenuItems
+                    anchor="bottom"
+                    transition
+                    className={cn(
+                        "z-[60] w-[var(--button-width)] max-h-72 overflow-y-auto [--anchor-gap:8px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none",
+                        "origin-top transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
+                        itemsClassName
+                    )}
                 >
-                    <MenuItems
-                        className={cn(
-                            "absolute right-0 z-10 mt-2 w-full origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none",
-                            itemsClassName
-                        )}
-                    >
-                        <div className="py-1">
-                            {items.map((item, index) => (
-                                <MenuItem key={getKey?.(item.value, index) ?? item.label} >
-                                    {({ focus }) => (
-                                        <button
-                                            type="button"
-                                            className={cn(
-                                                focus ? "bg-slate-100 text-slate-900" : "text-slate-700",
-                                                item.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                                                "block w-full px-4 py-2 text-right text-sm"
-                                            )}
-                                            onClick={() => onChange(item.value)}
-                                            disabled={item.disabled}
-                                        >
-                                            {item.label}
-                                        </button>
-                                    )}
-                                </MenuItem>
-                            ))}
-                        </div>
-                    </MenuItems>
-                </Transition>
+                    <div className="py-1">
+                        {items.map((item, index) => (
+                            <MenuItem key={getKey?.(item.value, index) ?? item.label} >
+                                {({ focus }) => (
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            focus ? "bg-slate-100 text-slate-900" : "text-slate-700",
+                                            item.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+                                            "block w-full px-4 py-2 text-right text-sm"
+                                        )}
+                                        onClick={() => onChange(item.value)}
+                                        disabled={item.disabled}
+                                    >
+                                        {item.label}
+                                    </button>
+                                )}
+                            </MenuItem>
+                        ))}
+                    </div>
+                </MenuItems>
             </Menu>
             {error && <p className="text-rose-500 text-xs mt-1">{error}</p>}
         </div>

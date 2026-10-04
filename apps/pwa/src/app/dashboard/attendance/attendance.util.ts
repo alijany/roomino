@@ -19,6 +19,16 @@ export function fa(value: string | number | null | undefined): string {
   return String(value).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
 }
 
+/**
+ * Persian/Arabic digits → Latin, for numeric inputs typed on a Persian
+ * keyboard — `Number('۱۴۰۵')` is `NaN`.
+ */
+export function latin(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}
+
 /** Minutes → `"۰۸:۳۰"`; negative values keep the minus sign. */
 export function hm(minutes: number | null | undefined): string {
   if (minutes === null || minutes === undefined) return '—';

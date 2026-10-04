@@ -1,6 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -12,24 +13,13 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { DeviceType } from '../attendance.constants';
 import { DATE_PATTERN, Digits, PageQueryDto } from './common.dto';
 
-export class CreateEmployeeDto {
-  /** The Roomino user this profile belongs to. */
-  @Type(() => Number)
-  @IsInt({ message: 'کاربر را انتخاب کنید' })
-  userId: number;
-
-  @Digits()
-  @IsString()
-  @IsNotEmpty({ message: 'کد پرسنلی را وارد کنید' })
-  @MaxLength(50)
-  personnelCode: string;
-
-  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
-
+/** Where and how someone works — shared by a single create and a batch. */
+export class EmployeeAssignmentDto {
   @Type(() => Number)
   @IsInt({ message: 'محل کار را انتخاب کنید' })
   workplaceId: number;
@@ -59,6 +49,49 @@ export class CreateEmployeeDto {
   remoteDays?: number[];
 
   @IsOptional() @IsBoolean() active?: boolean;
+}
+
+/** The per-person part of a profile. */
+export class EmployeeIdentityDto {
+  /** The Roomino user this profile belongs to. */
+  @Type(() => Number)
+  @IsInt({ message: 'کاربر را انتخاب کنید' })
+  userId: number;
+
+  @Digits()
+  @IsString()
+  @IsNotEmpty({ message: 'کد پرسنلی را وارد کنید' })
+  @MaxLength(50)
+  personnelCode: string;
+
+  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
+}
+
+export class CreateEmployeeDto extends EmployeeAssignmentDto {
+  @Type(() => Number)
+  @IsInt({ message: 'کاربر را انتخاب کنید' })
+  userId: number;
+
+  @Digits()
+  @IsString()
+  @IsNotEmpty({ message: 'کد پرسنلی را وارد کنید' })
+  @MaxLength(50)
+  personnelCode: string;
+
+  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
+}
+
+/**
+ * Several profiles at once: each person brings a user and a personnel code,
+ * everything else is shared. All or nothing.
+ */
+export class BatchCreateEmployeesDto extends EmployeeAssignmentDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'حداقل یک نفر را انتخاب کنید' })
+  @ArrayMaxSize(100, { message: 'در هر بار حداکثر ۱۰۰ نفر را می‌توان افزود' })
+  @ValidateNested({ each: true })
+  @Type(() => EmployeeIdentityDto)
+  items: EmployeeIdentityDto[];
 }
 
 export class UpdateEmployeeDto {

@@ -54,6 +54,13 @@ HolidayEntity
 - **Weekdays** are Iranian order everywhere: 0 = شنبه … 6 = جمعه.
 - **Shift history.** Changing someone's shift opens a new `EmployeeShiftEntity`
   period, so past days keep being measured against the old schedule.
+- **Adding people.** `POST /attendance/employees` adds one profile;
+  `POST /attendance/employees/batch` adds up to 100 with one shared
+  assignment (workplace, shift, group, policy, remote days) and a personnel
+  code each. Both go through `EmployeeService.createMany`: every clash —
+  repeated user or code in the list, existing profile, taken code — is
+  checked first and reported together, then all rows are written in one
+  transaction or none.
 - **Reports are derived, never stored.** `ReportService.buildDay` is a line-for-line
   port of Tesmino's `AttendanceReportService::buildDay`; it batch-loads a
   period's attendance, requests, holidays and shifts so a company-wide report

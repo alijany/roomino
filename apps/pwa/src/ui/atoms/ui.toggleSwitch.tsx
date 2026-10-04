@@ -75,7 +75,7 @@ export const ToggleSwitch = forwardRef<HTMLButtonElement, ToggleSwitchProps>(
             <div
                 id={id}
                 className={cn(
-                    'flex items-center',
+                    'flex items-center gap-2',
                     labelPosition === 'right' ? 'flex-row' : 'flex-row-reverse',
                     className,
                 )}
