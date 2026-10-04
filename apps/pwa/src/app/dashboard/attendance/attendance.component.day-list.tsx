@@ -146,6 +146,18 @@ export function DayList({
                   <span className="hidden sm:inline">اصلاح</span>
                 </Button>
               )}
+              {quickActions && actions.onRequestFix && day.needsFix && !day.isFuture && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-3 min-h-10 shrink-0 gap-1 border-amber-300 text-amber-800 lg:ml-4"
+                  onClick={() => actions.onRequestFix?.(day)}
+                  aria-label={`درخواست ثبت ${day.fixDirection === 'out' ? 'خروج' : 'ورود'} ${fa(day.jalali)}`}
+                >
+                  <IconPlus className="size-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">درخواست ثبت {day.fixDirection === 'out' ? 'خروج' : 'ورود'}</span>
+                </Button>
+              )}
             </div>
 
             {expanded && (
@@ -224,7 +236,7 @@ export function DayList({
                       ثبت مرخصی / دورکاری
                     </Button>
                   )}
-                  {actions.onRequestFix && day.needsFix && (
+                  {actions.onRequestFix && day.needsFix && !day.isFuture && !quickActions && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onRequestFix?.(day)}>
                       <IconPlus className="size-4" />
                       درخواست تردد دستی ({day.fixDirection === 'out' ? 'خروج' : 'ورود'})

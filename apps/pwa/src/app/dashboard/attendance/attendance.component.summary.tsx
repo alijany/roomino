@@ -6,7 +6,21 @@ import { ReportSummary } from './attendance.types';
 import { fa, hm } from './attendance.util';
 
 /** The period summary above a day list. */
-export function ReportSummaryTiles({ summary, compact = false }: { summary: ReportSummary; compact?: boolean }) {
+export function ReportSummaryTiles({
+  summary,
+  compact = false,
+  personal = false,
+}: {
+  summary: ReportSummary;
+  compact?: boolean;
+  personal?: boolean;
+}) {
+  const personalBalanceHint =
+    summary.balance < 0
+      ? 'کسری نسبت به موظفی سپری‌شده'
+      : summary.balance > 0
+      ? 'مازاد نسبت به موظفی سپری‌شده'
+      : 'مطابق موظفی سپری‌شده';
   const tiles: Array<ComponentProps<typeof StatTile> & { key: string }> = [
     {
       key: 'worked',
@@ -18,7 +32,7 @@ export function ReportSummaryTiles({ summary, compact = false }: { summary: Repo
       key: 'balance',
       label: compact ? 'تراز کارکرد' : 'اختلاف',
       value: <bdi dir="ltr">{hm(summary.balance)}</bdi>,
-      hint: compact ? 'اختلاف با موظفی سپری‌شده' : undefined,
+      hint: compact ? (personal ? personalBalanceHint : 'اختلاف با موظفی سپری‌شده') : undefined,
       tone: summary.balance < 0 ? 'danger' : 'success',
     },
     {
@@ -67,7 +81,7 @@ export function ReportSummaryTiles({ summary, compact = false }: { summary: Repo
     },
     { key: 'present', label: 'روز حضور', value: fa(summary.presentDays) },
   ];
-  const primaryKeys = ['worked', 'balance', 'absent', 'overtime'];
+  const primaryKeys = ['worked', 'balance', 'absent', personal ? 'leave' : 'overtime'];
   const renderTile = ({ key, ...props }: (typeof tiles)[number]) => <StatTile key={key} {...props} />;
 
   if (!compact) {
@@ -81,7 +95,7 @@ export function ReportSummaryTiles({ summary, compact = false }: { summary: Repo
       </div>
       <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
         <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
-          آمار بیشتر: تاخیر، مرخصی و دورکاری
+          {personal ? 'آمار بیشتر: تاخیر، دورکاری و اضافه کار' : 'آمار بیشتر: تاخیر، مرخصی و دورکاری'}
         </summary>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
           {tiles.filter((tile) => !primaryKeys.includes(tile.key)).map(renderTile)}
