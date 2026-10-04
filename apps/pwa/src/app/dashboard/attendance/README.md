@@ -14,7 +14,7 @@
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
 | `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift) |
-| `/settings` | admin, hr | tabs: workplaces (OSM preview, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
+| `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
 
 «تیم من» is deliberately not in the sidebar: it belongs to whoever an admin
 assigned as a job-group approver, which is not a role, so `RouteItem.roles`
@@ -35,6 +35,24 @@ can't express it. The attendance home links to it when `/attendance/me` says
 | `attendance.component.request-form.tsx` | type-aware request form; also the admin "grant" form |
 | `attendance.component.review.tsx` | approve/reject, request details, correction modal |
 | `attendance.component.settings-*.tsx` | the five settings tabs |
+| `attendance.component.map.tsx` | Leaflet map: workplace radius, points, location picker |
+
+## Maps
+
+Leaflet over OpenStreetMap tiles, as in Tesmino — three places:
+
+- **Home** — the workplace and its allowed radius; after a check-in or
+  check-out, «موقعیت شما» where GPS put the person.
+- **Report day** (expanded, any report) — check-in (green) and check-out
+  (red) pins against the day's workplace radius. Only days with a GPS point
+  get a map.
+- **Workplace form** — a picker: click or drag the pin; typed coordinates and
+  «استفاده از موقعیت فعلی من» move it; the circle follows the radius field.
+
+Leaflet is imported inside an effect (it needs `window`), and pins are
+`divIcon`s because Leaflet's default marker images don't survive bundling.
+Tiles come from `NEXT_PUBLIC_MAP_TILE_URL` (default OSM's public server,
+which is rate-limited — use a mirror or provider in production).
 
 ## Conventions specific to this domain
 

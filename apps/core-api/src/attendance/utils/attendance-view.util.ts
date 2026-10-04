@@ -45,6 +45,17 @@ export function toWorkplaceView(w: WorkplaceEntity) {
   };
 }
 
+/** Just what a map needs to draw a site and its allowed radius. */
+export function toWorkplacePin(w: WorkplaceEntity) {
+  return {
+    id: w.id,
+    name: w.name,
+    lat: w.lat,
+    lng: w.lng,
+    radiusMeters: w.radiusMeters,
+  };
+}
+
 export function toShiftView(shift: ShiftEntity) {
   return {
     id: shift.id,
@@ -162,6 +173,14 @@ export function toAttendanceView(a: AttendanceEntity) {
     checkOutSource: a.checkOutSource ?? null,
     checkInDistanceM: a.checkInDistanceM ?? null,
     checkOutDistanceM: a.checkOutDistanceM ?? null,
+    // Where check-in/out happened, and the site it was measured against —
+    // for the day map. Only reports expose these; a report is already
+    // limited to the person, their approver, admin and HR.
+    checkInLat: a.checkInLat ?? null,
+    checkInLng: a.checkInLng ?? null,
+    checkOutLat: a.checkOutLat ?? null,
+    checkOutLng: a.checkOutLng ?? null,
+    workplace: loaded(a.workplace) ? toWorkplacePin(a.workplace) : null,
     status: a.status,
     workMode: a.workMode,
     editedBy: editor ? toUserBrief(editor) : null,

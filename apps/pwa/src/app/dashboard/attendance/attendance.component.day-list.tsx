@@ -4,7 +4,8 @@ import { Button } from '@/ui/atoms';
 import { IconChevronDown, IconEye, IconPencil, IconPlus } from '@tabler/icons-react';
 import { ReactNode, useId, useState } from 'react';
 import { DayStatusBadge, RequestStatusBadge } from './attendance.component.layout';
-import { AttendanceRequest, ReportDay } from './attendance.types';
+import { AttendanceMap, MAP_COLORS, MapPoint } from './attendance.component.map';
+import { AttendanceRequest, ReportDay, WorkplacePin } from './attendance.types';
 import { fa, hm, jalaliDateTime } from './attendance.util';
 
 export interface DayActions {
@@ -28,18 +29,51 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: s
   );
 }
 
+/** Check-in (green) and check-out (red) as recorded by GPS. */
+function dayPoints(day: ReportDay): MapPoint[] {
+  const a = day.attendance;
+  if (!a) return [];
+  const points: MapPoint[] = [];
+  if (a.checkInLat != null && a.checkInLng != null) {
+    points.push({ lat: a.checkInLat, lng: a.checkInLng, label: `ورود ${fa(a.checkIn)}`, color: MAP_COLORS.checkIn, permanent: true, labelSide: 'top' });
+  }
+  if (a.checkOutLat != null && a.checkOutLng != null) {
+    points.push({ lat: a.checkOutLat, lng: a.checkOutLng, label: `خروج ${fa(a.checkOut)}`, color: MAP_COLORS.checkOut, permanent: true, labelSide: 'bottom' });
+  }
+  return points;
+}
+
+/** Where a day's check-in and check-out happened, against the workplace radius. */
+function DayMap({ day, workplace }: { day: ReportDay; workplace?: WorkplacePin | null }) {
+  const points = dayPoints(day);
+  if (!points.length) return null;
+  const site = day.attendance?.workplace ?? workplace;
+
+  return (
+    <AttendanceMap
+      label={`محل ورود و خروج ${fa(day.jalali)}`}
+      className="h-60"
+      circle={site ? { lat: site.lat, lng: site.lng, radius: site.radiusMeters, label: site.name } : null}
+      points={points}
+    />
+  );
+}
+
 /**
  * One row per day: status, check-in/out and the minutes that matter, with
- * the day's requests and attendance audit on expand.
+ * the day's requests, attendance audit and check-in map on expand.
  */
 export function DayList({
   days,
   actions = {},
   quickActions = false,
+  workplace,
 }: {
   days: ReportDay[];
   actions?: DayActions;
   quickActions?: boolean;
+  /** The person's workplace — the map's fallback when a day has none. */
+  workplace?: WorkplacePin | null;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const listId = useId();
@@ -141,6 +175,8 @@ export function DayList({
                   {day.attendance?.checkInSource === 'manual' && <span>ورود دستی</span>}
                   {day.attendance?.checkOutSource === 'manual' && <span>خروج دستی</span>}
                 </div>
+
+                <DayMap day={day} workplace={workplace} />
 
                 {audit && (
                   <p className="rounded-lg bg-white p-2 text-xs text-slate-500">

@@ -105,6 +105,7 @@ function MyReportContent() {
                 <Tabs tabs={[...DAY_FILTERS]} defaultTab="all" onTabChange={(id) => setFilter(id as DayFilter)} />
                 <DayList
                   days={days}
+                  workplace={data.workplace}
                   actions={{
                     onRequestFix: (day) =>
                       setPrefill({ type: RequestType.MANUAL_ATTENDANCE, date: day.date, direction: day.fixDirection }),

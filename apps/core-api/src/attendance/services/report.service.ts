@@ -29,7 +29,11 @@ import {
   tehranClock,
   tehranToday,
 } from '../utils/attendance-time.util';
-import { toAttendanceView, toRequestView } from '../utils/attendance-view.util';
+import {
+  toAttendanceView,
+  toRequestView,
+  toWorkplacePin,
+} from '../utils/attendance-view.util';
 import { EmployeeService } from './employee.service';
 import { HolidayService } from './holiday.service';
 import { RequestService } from './request.service';
@@ -171,7 +175,7 @@ export class ReportService {
           ? this.em.find(
               AttendanceEntity,
               { employee: { $in: ids }, date: { $gte: from, $lte: to } },
-              { populate: ['editedBy'] },
+              { populate: ['editedBy', 'workplace'] },
             )
           : Promise.resolve([] as AttendanceEntity[]),
         this.requests.inRange(ids, from, to, [
@@ -199,7 +203,11 @@ export class ReportService {
     const input = (await this.load([profile], period.from, period.to))(
       profile.id,
     );
-    return this.build(profile, period, input);
+    return {
+      ...this.build(profile, period, input),
+      // The day map falls back to this when a day's row has no workplace.
+      workplace: profile.workplace ? toWorkplacePin(profile.workplace) : null,
+    };
   }
 
   /** Summaries for many people over one period (performance list, export). */

@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useCheckIn, useCheckOut, useHolidays, useMyToday } from './attendance.api';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
+import { AttendanceMap, MAP_COLORS } from './attendance.component.map';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { CheckResult, MyToday } from './attendance.types';
@@ -54,6 +55,8 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
   const [locating, setLocating] = useState(false);
   const [offerRemote, setOfferRemote] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  /** Where GPS last put the person, drawn on the map as «موقعیت شما». */
+  const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
   const { data: holidays } = useHolidays({ upcoming: 3 });
 
   const att = today.attendance;
@@ -67,7 +70,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
   const locate = async () => {
     setLocating(true);
     try {
-      return await getPosition();
+      const position = await getPosition();
+      setMe(position);
+      return position;
     } catch (error) {
       toast.warning((error as Error).message);
       return {};
@@ -108,9 +113,12 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
 
   const done = Boolean(att?.checkIn && att?.checkOut);
 
+  const workplace = today.workplace;
+
   return (
     <div className="grid gap-3 lg:grid-cols-3">
-      <Panel className="gap-4 lg:col-span-2">
+      <div className="space-y-3 lg:col-span-2">
+      <Panel className="gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-sm text-slate-500">شیفت امروز</div>
@@ -187,6 +195,23 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           </Button>
         )}
       </Panel>
+
+      {workplace && (
+        <Panel className="gap-2">
+          <AttendanceMap
+            label={`نقشه ${workplace.name}`}
+            className="h-72 lg:h-[420px]"
+            circle={{ lat: workplace.lat, lng: workplace.lng, radius: workplace.radiusMeters, label: workplace.name }}
+            points={me ? [{ ...me, label: 'موقعیت شما', color: MAP_COLORS.me, permanent: true }] : []}
+          />
+          <p className="text-xs text-slate-400">
+            {me
+              ? '«موقعیت شما» جایی است که GPS هنگام آخرین ثبت نشان داد؛ ورود و خروج داخل دایره پذیرفته می‌شود.'
+              : 'ورود و خروج داخل دایره پذیرفته می‌شود؛ موقعیت شما هنگام ثبت روی نقشه نشان داده می‌شود.'}
+          </p>
+        </Panel>
+      )}
+      </div>
 
       <div className="space-y-3">
         {today.isApprover && <AttendanceTeamLink />}

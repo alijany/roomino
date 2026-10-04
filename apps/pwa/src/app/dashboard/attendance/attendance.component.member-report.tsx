@@ -244,6 +244,7 @@ export function MemberReport({
               )}
               <DayList
                 days={days}
+                workplace={data.workplace}
                 quickActions={managementView}
                 actions={{
                   onCorrect: setCorrecting,
