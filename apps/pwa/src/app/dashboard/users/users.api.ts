@@ -1,7 +1,7 @@
 import { deleteFetcher, fetcher, patchFetcher, postFetcher } from "@/libs/api/api.util.fetcher";
 import { useSwrHelper, useSwrMutationHelper } from "@/libs/api/api.hook.use-swr-helper";
 import useSWR from "swr";
-import { AddUserDto, AddUserRoleDto, GetUsersResponse, User, UserFilterDto, UserRole } from "./users.types";
+import { AddUserDto, AddUserRoleDto, GetUsersResponse, UpdateUserNameDto, User, UserFilterDto, UserRole } from "./users.types";
 import useSWRMutation from "swr/mutation";
 
 
@@ -59,6 +59,15 @@ export function useDeleteUser() {
     '/users',
     (_key: string, { arg }: { arg: number }) =>
       deleteFetcher<{ success: boolean }>(`/users/${arg}`)
+  );
+  return useSwrMutationHelper(swrMutation);
+}
+
+export function useUpdateUserName() {
+  const swrMutation = useSWRMutation(
+    '/users/name',
+    (_key: string, { arg }: { arg: { id: number; data: UpdateUserNameDto } }) =>
+      patchFetcher<UpdateUserNameDto, Pick<User, 'id' | 'name' | 'firstName' | 'lastName'>>(`/users/${arg.id}`, { arg: arg.data })
   );
   return useSwrMutationHelper(swrMutation);
 }

@@ -15,6 +15,8 @@ export interface UserRole {
 export interface User {
   id: number;
   name: string;
+  firstName: string | null;
+  lastName: string | null;
   phone: string;
   isApproved: boolean;
   roles: UserRole[];
@@ -47,4 +49,9 @@ export interface UserFilterDto {
 
 export interface AddUserRoleDto {
   role: Role;
+}
+
+export interface UpdateUserNameDto {
+  firstName: string;
+  lastName?: string;
 }

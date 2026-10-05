@@ -6,15 +6,16 @@ import { Avatar, Button } from '@/ui/atoms';
 import { Dropdown } from '@/ui/atoms/ui.dropdown';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { ResultModal } from '@/ui/molecules/result-modal';
-import { IconCheck, IconPlus, IconTrash, IconUser, IconX } from '@tabler/icons-react';
+import { IconCheck, IconPencil, IconPlus, IconTrash, IconUser, IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useApproveUser, useAddUserRole, useDeleteUser, useRemoveUserRole } from './users.api';
+import { EditUserNameModal } from './users.component.edit-name';
 import { User, UserRole } from './users.types';
 
 interface UserRowProps {
     user: User;
     onChanged?: () => void;
-    /** Role add/remove and delete are admin-only; HR can only confirm registrations. */
+    /** Renaming, role add/remove and delete are admin-only; HR can only confirm registrations. */
     canManageRoles?: boolean;
 }
 
@@ -43,6 +44,7 @@ export function UserRow({ user, onChanged, canManageRoles = false }: UserRowProp
     const deleteUser = useDeleteUser();
     const [result, setResult] = useState<{ status: 'success' | 'error'; message?: string } | null>(null);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [editingName, setEditingName] = useState(false);
 
     const handleApprove = async () => {
         try {
@@ -100,7 +102,20 @@ export function UserRow({ user, onChanged, canManageRoles = false }: UserRowProp
                             iconClassName="size-6 text-primary"
                         />
                         <div className="min-w-0">
-                            <h3 className="font-semibold text-slate-800 truncate">{user.name ?? 'بدون نام'}</h3>
+                            <div className="flex items-center gap-1">
+                                <h3 className="font-semibold text-slate-800 truncate">{user.name ?? 'بدون نام'}</h3>
+                                {canManageRoles && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingName(true)}
+                                        className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                        aria-label={`ویرایش نام ${user.name ?? user.phone}`}
+                                        title="ویرایش نام"
+                                    >
+                                        <IconPencil className="size-4" />
+                                    </button>
+                                )}
+                            </div>
                             <p className="text-xs text-slate-400 truncate" dir="ltr">{user.phone ?? 'بدون شماره'}</p>
                         </div>
                     </div>
@@ -174,6 +189,14 @@ export function UserRow({ user, onChanged, canManageRoles = false }: UserRowProp
                     )}
                 </div>
             </div>
+
+            {editingName && (
+                <EditUserNameModal
+                    user={user}
+                    onClose={() => setEditingName(false)}
+                    onSaved={() => onChanged?.()}
+                />
+            )}
 
             <ConfirmModal
                 isOpen={confirmDelete}

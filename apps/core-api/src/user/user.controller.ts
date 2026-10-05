@@ -25,7 +25,7 @@ import { S3StorageService } from 'src/storage/s3-storage.service';
 import { v4 as uuidv4 } from 'uuid';
 import { AddUserRoleDto } from './dtos/add-user-role.dto';
 import { InviteUserDto } from './dtos/invitation.dto';
-import { UpdateProfileDto } from './dtos/update-profile.dto';
+import { UpdateProfileDto, UpdateUserNameDto } from './dtos/update-profile.dto';
 import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
@@ -64,6 +64,8 @@ export class UserController {
     const items = users.map((user) => ({
       id: user.id,
       name: user.name,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
       phone: user.phone,
       isApproved: user.isApproved,
       roles: user.roles
@@ -183,5 +185,27 @@ export class UserController {
     );
 
     return { profilePicture: updatedUser.profilePicture };
+  }
+
+  /**
+   * An admin renaming a user. Declared after the `profile` routes: Express
+   * matches in order, and `:id` would otherwise catch `PATCH /users/profile`.
+   */
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  async updateUserName(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserNameDto,
+  ) {
+    const user = await this.userService.updateProfile(id, {
+      firstName: dto.firstName,
+      lastName: dto.lastName ?? '',
+    });
+    return {
+      id: user.id,
+      name: user.name,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+    };
   }
 }
