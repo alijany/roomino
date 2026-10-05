@@ -17,7 +17,7 @@ export const Navbar = () => {
 
     return (
         <div className="flex items-center justify-between gap-4">
-            <Button onClick={() => { setIsOpen(true) }} variant="secondary" className="!px-2 lg:hidden">
+            <Button onClick={() => { setIsOpen(true) }} variant="secondary" className="!px-2 lg:hidden" aria-label="باز کردن منوی پیشخوان">
                 <IconMenu4 size={20} />
             </Button>
 
@@ -54,8 +54,8 @@ export const Navbar = () => {
                         leaveFrom="translate-x-0"
                         leaveTo="translate-x-full"
                     >
-                        <DialogPanel className="fixed inset-y-0 right-0 w-[80%] max-w-sm bg-white shadow-xl p-6 h-screen flex flex-col">
-                            <div className="flex justify-between items-center mb-8">
+                        <DialogPanel className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-white shadow-xl p-4 h-dvh flex flex-col">
+                            <div className="flex shrink-0 justify-between items-center mb-5">
                                 <div className="flex items-center space-x-reverse space-x-2">
                                     <img src="/images/logo.svg" alt="Logo" className="h-5" />
                                     <h1 className="text-xl font-bold">{brand.name}</h1>
@@ -65,14 +65,14 @@ export const Navbar = () => {
                                     size="sm"
                                     className='p-2'
                                     onClick={() => setIsOpen(false)}
+                                    aria-label="بستن منوی پیشخوان"
                                 >
                                     <IconX className="size-4" />
                                 </Button>
                             </div>
 
                             <MenuItems
-                                className="flex flex-col space-y-4 grow overflow-hidden lg:overflow-auto"
-                                itemClassName="text-slate-600 hover:text-slate-800 text-lg"
+                                className="flex min-h-0 flex-col gap-4 grow overflow-hidden"
                                 onClose={() => setIsOpen(false)}
                             />
                         </DialogPanel>

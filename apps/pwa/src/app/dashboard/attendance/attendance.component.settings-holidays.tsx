@@ -80,7 +80,7 @@ export function HolidaysSettings() {
             variant="outline"
           />
         </div>
-        <div className="w-32">
+        <div>
           <Dropdown
             items={[{ label: 'همه ماه‌ها', value: null }, ...Array.from({ length: 12 }, (_, i) => ({ label: jalaliMonthName(i + 1), value: i + 1 }))]}
             value={month}

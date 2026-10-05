@@ -9,23 +9,9 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useDeleteWorkplace, useSaveWorkplace, useWorkplaces } from './attendance.api';
 import { FormModal } from './attendance.component.layout';
+import { AttendanceMap } from './attendance.component.map';
 import { Workplace } from './attendance.types';
 import { errorMessage, fa, getPosition, latin } from './attendance.util';
-
-/** OpenStreetMap preview with a marker — no map library needed. */
-function MapPreview({ lat, lng }: { lat: number; lng: number }) {
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const d = 0.005;
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d},${lat - d},${lng + d},${lat + d}&layer=mapnik&marker=${lat},${lng}`;
-  return (
-    <iframe
-      title="موقعیت محل کار"
-      src={src}
-      className="h-48 w-full rounded-xl border border-slate-200"
-      loading="lazy"
-    />
-  );
-}
 
 export function WorkplacesSettings() {
   const { data, error, isLoading, refresh } = useWorkplaces();
@@ -241,7 +227,24 @@ function WorkplaceForm({
         <IconCurrentLocation className="size-4" />
         {locating ? 'در حال دریافت...' : 'استفاده از موقعیت فعلی من'}
       </Button>
-      {mapAt && <MapPreview lat={mapAt.lat} lng={mapAt.lng} />}
+      <div className="space-y-1">
+        <AttendanceMap
+          label="انتخاب موقعیت محل کار"
+          className="h-72 lg:h-80"
+          circle={mapAt ? { ...mapAt, radius: radiusValid ? radiusNum : 0 } : null}
+          picker={{
+            value: mapAt,
+            onChange: (at) => {
+              setLat(String(at.lat));
+              setLng(String(at.lng));
+              setMapAt(at);
+            },
+          }}
+        />
+        <p className="text-xs text-slate-400">
+          روی نقشه کلیک کنید یا نشانگر را بکشید؛ دایره، شعاع مجاز ثبت تردد است.
+        </p>
+      </div>
       <ToggleSwitch label="فعال" checked={active} onChange={setActive} />
     </FormModal>
   );

@@ -253,7 +253,7 @@ function PolicyForm({ policy, onClose, onSaved }: { policy: WorkPolicy | null; o
         {rules.map((rule, i) => (
           <div key={i} className="space-y-3 rounded-xl border border-slate-200 p-3">
             <div className="flex flex-wrap items-end gap-3">
-              <div className="w-full sm:w-44">
+              <div className="w-full sm:w-auto">
                 <Field label="نوع">
                   <Dropdown
                     items={Object.values(PolicyRequestType).map((value) => ({ label: POLICY_TYPE_LABELS[value], value }))}
@@ -265,7 +265,7 @@ function PolicyForm({ policy, onClose, onSaved }: { policy: WorkPolicy | null; o
                   />
                 </Field>
               </div>
-              <div className="w-36">
+              <div>
                 <Field label="بازه">
                   <Dropdown
                     items={[

@@ -36,7 +36,11 @@ export interface RouteItem {
 }
 
 export interface RouteGroup {
+  id: string;
+  workspace: "personal" | "management";
   label: string;
+  description: string;
+  icon: React.ReactNode;
   routes: RouteItem[];
 }
 
@@ -76,6 +80,12 @@ export const RouteItems = {
     label: "پیشخوان",
     roles: false as const,
     icon: <IconDashboard className="size-5" />
+  },
+  management: {
+    href: "/dashboard/management",
+    label: "مرکز مدیریت",
+    roles: [Role.ADMIN, Role.HR, Role.FINANCE],
+    icon: <IconSettings className="size-5" />
   },
 
   // --- Finance & External Payments -----------------------------------------
@@ -196,22 +206,35 @@ export const RouteItems = {
 // Define routes with role requirements
 export const routeGroups: RouteGroup[] = [
   {
-    label: "پیشخوان",
-    routes: [
-      RouteItems.dashboard,
-      RouteItems.rooms,
-      RouteItems.users,
-      RouteItems.reports,
-      RouteItems.profile,
-      RouteItems.notifications,
-    ]
-  },
-  {
+    id: "attendance",
+    workspace: "personal",
     label: "حضور و غیاب",
+    description: "تردد، کارکرد و درخواست‌های من",
+    icon: <IconFingerprint className="size-5" />,
     routes: [
       RouteItems.attendanceHome,
       RouteItems.attendanceMyReport,
       RouteItems.attendanceMyRequests,
+    ]
+  },
+  {
+    id: "finance",
+    workspace: "personal",
+    label: "درخواست‌ها و تأییدها",
+    description: "درخواست‌های پرداخت من و کارهای در انتظار تأیید",
+    icon: <IconReceipt className="size-5" />,
+    routes: [
+      RouteItems.financeMyRequests,
+      RouteItems.financeApprovals,
+    ]
+  },
+  {
+    id: "attendance-management",
+    workspace: "management",
+    label: "مدیریت حضور و غیاب",
+    description: "وضعیت پرسنل، بررسی درخواست‌ها، گزارش کارکرد و تنظیمات",
+    icon: <IconFingerprint className="size-5" />,
+    routes: [
       RouteItems.attendanceBoard,
       RouteItems.attendanceRequests,
       RouteItems.attendancePerformance,
@@ -220,11 +243,13 @@ export const routeGroups: RouteGroup[] = [
     ]
   },
   {
-    label: "مالی",
+    id: "finance-management",
+    workspace: "management",
+    label: "مدیریت مالی",
+    description: "پرداخت‌ها، طرف‌حساب‌ها، هزینه‌های دوره‌ای و گزارش‌های مالی",
+    icon: <IconCashBanknote className="size-5" />,
     routes: [
       RouteItems.financeDashboard,
-      RouteItems.financeMyRequests,
-      RouteItems.financeApprovals,
       RouteItems.financeQueue,
       RouteItems.financeVendors,
       RouteItems.financeRecurring,
@@ -232,5 +257,17 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.financeSources,
       RouteItems.financeSettings,
     ]
-  }
+  },
+  {
+    id: "administration",
+    workspace: "management",
+    label: "مدیریت سازمان",
+    description: "کاربران، اتاق‌ها و گزارش استفاده از اتاق‌ها",
+    icon: <IconSettings className="size-5" />,
+    routes: [
+      RouteItems.rooms,
+      RouteItems.users,
+      RouteItems.reports,
+    ]
+  },
 ];

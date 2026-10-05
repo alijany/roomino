@@ -311,6 +311,12 @@ export interface AttendanceRecord {
   checkOutSource: 'gps' | 'wifi' | 'manual' | null;
   checkInDistanceM: number | null;
   checkOutDistanceM: number | null;
+  checkInLat: number | null;
+  checkInLng: number | null;
+  checkOutLat: number | null;
+  checkOutLng: number | null;
+  /** The site this day was measured against, for the day map. */
+  workplace: WorkplacePin | null;
   status: string;
   workMode: 'office' | 'remote';
   editedBy: UserBrief | null;
@@ -478,7 +484,11 @@ export interface Report {
   period: Period;
   days: ReportDay[];
   summary: ReportSummary;
+  /** The person's workplace — the day map's fallback when a day has none. */
+  workplace: WorkplacePin | null;
 }
+
+export type WorkplacePin = Pick<Workplace, 'id' | 'name' | 'lat' | 'lng' | 'radiusMeters'>;
 
 export interface BoardRow {
   employee: EmployeeBrief;
