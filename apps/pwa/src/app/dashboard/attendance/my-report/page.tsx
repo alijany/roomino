@@ -251,17 +251,9 @@ function MyReportContent() {
                   ))}
                 </div>
                 <p role="status" className="text-xs text-slate-500">
-                  نمایش {fa(days.length)} از {fa(scopedDays.length)} روز · جدیدترین روز اول. برای مشاهده جزئیات،
-                  درخواست‌ها و نقشه تردد، روی روز کلیک کنید.
+                  {fa(days.length)} از {fa(scopedDays.length)} روز · جدیدترین اول · برای جزئیات و نقشه تردد روی هر روز
+                  بزنید.
                   {!showFuture && futureDays > 0 && ` ${fa(futureDays)} روز آینده پنهان است.`}
-                </p>
-                {filter !== 'all' && (
-                  <Button variant="outline" size="sm" className="min-h-10 self-start" onClick={() => setFilter('all')}>
-                    نمایش همه روزها
-                  </Button>
-                )}
-                <p className="text-xs text-slate-500">
-                  خروجی CSV شامل همه روزهای سپری‌شده این دوره است و از فیلتر روزها پیروی نمی‌کند.
                 </p>
                 {!scopedDays.length && !showFuture ? (
                   <p className="py-8 text-center text-sm text-slate-500">

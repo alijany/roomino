@@ -3,9 +3,11 @@
 import { Button } from '@/ui/atoms';
 import { IconChevronDown, IconEye, IconPencil, IconPlus } from '@tabler/icons-react';
 import { ReactNode, useId, useState } from 'react';
+import { BadgeTone } from '@/ui/atoms/ui.badge';
 import { DayStatusBadge, RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceMap, MAP_COLORS, MapPoint } from './attendance.component.map';
-import { AttendanceRequest, ReportDay, WorkplacePin } from './attendance.types';
+import { DAY_STATUS_META } from './attendance.constants';
+import { AttendanceRequest, DayStatus, ReportDay, WorkplacePin } from './attendance.types';
 import { fa, hm, jalaliDateTime } from './attendance.util';
 
 export interface DayActions {
@@ -20,12 +22,41 @@ export interface DayActions {
   renderReview?: (request: AttendanceRequest) => ReactNode;
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone?: string }) {
+function Metric({ label, value, tone }: { label: string; value: number; tone: string }) {
   if (!value) return null;
   return (
-    <span className={`whitespace-nowrap text-xs ${tone ?? 'text-slate-500'}`}>
+    <span className={`whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] ${tone}`}>
       {label} <span className="font-semibold tabular-nums">{hm(value)}</span>
     </span>
+  );
+}
+
+/** Start-edge accent per status tone, so problem days stand out while scanning. */
+const ACCENT: Record<BadgeTone, string> = {
+  success: 'border-s-emerald-400',
+  danger: 'border-s-rose-400',
+  warning: 'border-s-amber-400',
+  info: 'border-s-sky-400',
+  neutral: 'border-s-transparent',
+  muted: 'border-s-transparent',
+};
+
+/** Days nobody had to be at work — shown quieter than working days. */
+const OFF_STATUSES = [DayStatus.HOLIDAY, DayStatus.NO_SHIFT, DayStatus.FUTURE];
+
+/** Check-in or check-out; "ثبت نشده" only where one was expected. */
+function TimeCell({ label, value, missing, className }: { label: string; value: string | null; missing: boolean; className: string }) {
+  return (
+    <div className={`flex items-baseline gap-1 text-sm tabular-nums md:row-start-1 ${className}`}>
+      <span className="text-xs text-slate-400 md:sr-only">{label}</span>
+      {value ? (
+        <span className="text-slate-700">{fa(value)}</span>
+      ) : missing ? (
+        <span className="text-xs font-medium text-rose-500">ثبت نشده</span>
+      ) : (
+        <span className="text-slate-300">—</span>
+      )}
+    </div>
   );
 }
 
@@ -83,93 +114,135 @@ export function DayList({
   }
 
   return (
-    <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+    <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 md:grid md:grid-cols-[minmax(7.5rem,auto)_4rem_4rem_4rem_auto_minmax(0,1fr)_1rem_auto] md:gap-x-4">
+      <li
+        aria-hidden="true"
+        className="hidden bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 md:col-span-full md:grid md:grid-cols-subgrid md:border-s-4 md:border-s-transparent"
+      >
+        <span>روز</span>
+        <span>ورود</span>
+        <span>خروج</span>
+        <span>کارکرد</span>
+        <span>وضعیت</span>
+        <span>جزئیات</span>
+      </li>
       {days.map((day) => {
         const expanded = open === day.date;
         const audit = day.attendance?.editedBy;
+        const tone = DAY_STATUS_META[day.status].tone;
+        const quiet = OFF_STATUSES.includes(day.status) && !day.requests.length && !day.attendance;
+        const expectPresence = [DayStatus.ABSENT, DayStatus.INCOMPLETE].includes(day.status);
+        const showCorrect = quickActions && actions.onCorrect && !day.isFuture;
+        const showRequestFix = quickActions && actions.onRequestFix && day.needsFix && !day.isFuture;
 
         return (
-          <li key={day.date} className={day.isToday ? 'bg-sky-50/40' : ''}>
-            <div className="flex items-center gap-2">
+          <li
+            key={day.date}
+            className={`border-s-4 md:col-span-full md:grid md:grid-cols-subgrid ${ACCENT[tone]} ${
+              day.isToday ? 'bg-sky-50/50' : quiet ? 'bg-slate-50/60' : 'bg-white'
+            }`}
+          >
+            <div className="flex items-center gap-2 md:col-span-full md:grid md:grid-cols-subgrid">
               <button
                 type="button"
-                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-3 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 lg:px-4"
+                className={`flex min-w-0 flex-1 flex-col gap-2 rounded-lg px-3 text-right hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 md:col-span-7 md:grid md:grid-cols-subgrid md:items-center md:gap-y-0 md:px-4 ${
+                  quiet ? 'py-2 text-slate-400' : 'py-3'
+                }`}
                 onClick={() => setOpen(expanded ? null : day.date)}
                 aria-expanded={expanded}
                 aria-controls={`${listId}-${day.date}`}
               >
-                <div className="w-28 shrink-0">
-                  <div className="font-medium tabular-nums text-slate-800">{fa(day.jalali)}</div>
-                  <div className="text-xs text-slate-400">
-                    {day.weekday}
-                    {day.isToday && ' · امروز'}
+                <div className="flex items-center gap-2 md:contents">
+                  <div className="min-w-0 md:col-start-1 md:row-start-1">
+                    <div className={`flex items-center gap-1.5 font-medium tabular-nums ${quiet ? 'text-slate-500' : 'text-slate-800'}`}>
+                      {fa(day.jalali)}
+                      {day.isToday && (
+                        <span className="rounded-full bg-sky-100 px-1.5 py-px text-[10px] font-semibold text-sky-700">امروز</span>
+                      )}
+                    </div>
+                    <div className="truncate text-xs text-slate-400">
+                      {day.weekday}
+                      {day.holiday && ` · ${day.holiday}`}
+                    </div>
                   </div>
+                  <div className="ms-auto flex items-center gap-1 md:col-start-5 md:row-start-1 md:ms-0">
+                    <DayStatusBadge status={day.status} />
+                  </div>
+                  <IconChevronDown
+                    className={`size-4 shrink-0 text-slate-400 transition-transform md:col-start-7 md:row-start-1 ${expanded ? 'rotate-180' : ''}`}
+                  />
                 </div>
 
-                <div className="w-36 shrink-0 text-sm tabular-nums text-slate-600">
-                  {day.checkIn || day.checkOut ? (
-                    <span>
-                      {fa(day.checkIn ?? '--:--')} ← {fa(day.checkOut ?? '--:--')}
-                    </span>
-                  ) : (
-                    <span className="text-slate-300">—</span>
+                {!quiet && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 md:contents">
+                    <TimeCell label="ورود" value={day.checkIn} missing={expectPresence} className="md:col-start-2" />
+                    <TimeCell
+                      label="خروج"
+                      value={day.checkOut}
+                      missing={expectPresence && !day.isToday}
+                      className="md:col-start-3"
+                    />
+                    <div className="flex items-baseline gap-1 text-sm tabular-nums md:col-start-4 md:row-start-1">
+                      <span className="text-xs text-slate-400 md:sr-only">کارکرد</span>
+                      <span className={day.worked ? 'font-semibold text-slate-700' : 'text-slate-300'}>
+                        {day.worked ? hm(day.worked) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 md:col-start-6 md:row-start-1">
+                      <Metric label="تاخیر" value={day.delay} tone="bg-rose-50 text-rose-600" />
+                      <Metric label="تعجیل" value={day.early} tone="bg-rose-50 text-rose-600" />
+                      <Metric label="اضافه‌کار" value={day.overtime} tone="bg-emerald-50 text-emerald-700" />
+                      <Metric label="مرخصی" value={day.leaveMinutes} tone="bg-sky-50 text-sky-700" />
+                      <Metric label="دورکاری" value={day.remote} tone="bg-sky-50 text-sky-700" />
+                      {day.hasPending && (
+                        <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
+                          درخواست در انتظار
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </button>
+              {(showCorrect || showRequestFix) && (
+                <div className="flex shrink-0 items-center gap-2 pe-3 md:col-start-8 md:row-start-1 md:pe-4">
+                  {showCorrect && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-10 gap-1"
+                      onClick={() => actions.onCorrect?.(day)}
+                      aria-label={`اصلاح تردد ${fa(day.jalali)}`}
+                    >
+                      <IconPencil className="size-4" />
+                      <span className="hidden sm:inline">اصلاح</span>
+                    </Button>
+                  )}
+                  {showRequestFix && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-10 gap-1 border-amber-300 text-amber-800"
+                      onClick={() => actions.onRequestFix?.(day)}
+                      aria-label={`درخواست ثبت ${day.fixDirection === 'out' ? 'خروج' : 'ورود'} ${fa(day.jalali)}`}
+                    >
+                      <IconPlus className="size-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">ثبت {day.fixDirection === 'out' ? 'خروج' : 'ورود'}</span>
+                    </Button>
                   )}
                 </div>
-
-                <div className="flex shrink-0 items-center gap-1">
-                  <DayStatusBadge status={day.status} />
-                  {day.hasPending && <span className="text-[11px] text-amber-600">درخواست در انتظار</span>}
-                </div>
-
-                <div className="flex grow flex-wrap items-center gap-x-3 gap-y-1">
-                  <Metric label="کارکرد" value={day.worked} />
-                  <Metric label="تاخیر" value={day.delay} tone="text-rose-500" />
-                  <Metric label="تعجیل" value={day.early} tone="text-rose-500" />
-                  <Metric label="اضافه‌کار" value={day.overtime} tone="text-emerald-600" />
-                  <Metric label="مرخصی" value={day.leaveMinutes} tone="text-sky-600" />
-                  <Metric label="دورکاری" value={day.remote} tone="text-sky-600" />
-                </div>
-
-                <IconChevronDown
-                  className={`size-4 shrink-0 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {quickActions && actions.onCorrect && !day.isFuture && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-3 min-h-10 shrink-0 gap-1 lg:ml-4"
-                  onClick={() => actions.onCorrect?.(day)}
-                  aria-label={`اصلاح تردد ${fa(day.jalali)}`}
-                >
-                  <IconPencil className="size-4" />
-                  <span className="hidden sm:inline">اصلاح</span>
-                </Button>
-              )}
-              {quickActions && actions.onRequestFix && day.needsFix && !day.isFuture && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-3 min-h-10 shrink-0 gap-1 border-amber-300 text-amber-800 lg:ml-4"
-                  onClick={() => actions.onRequestFix?.(day)}
-                  aria-label={`درخواست ثبت ${day.fixDirection === 'out' ? 'خروج' : 'ورود'} ${fa(day.jalali)}`}
-                >
-                  <IconPlus className="size-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">درخواست ثبت {day.fixDirection === 'out' ? 'خروج' : 'ورود'}</span>
-                </Button>
               )}
             </div>
 
             {expanded && (
               <div
                 id={`${listId}-${day.date}`}
-                className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-sm lg:px-4"
+                className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-sm md:col-span-full md:px-4"
               >
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-slate-600">
                   <span>
                     شیفت:{' '}
                     {day.holiday ? (
-                      <span className="text-slate-500">تعطیل — {day.holiday}</span>
+                      <span className="text-slate-500">تعطیل رسمی — {day.holiday}</span>
                     ) : day.shiftStart ? (
                       <span className="tabular-nums">
                         {fa(day.shiftStart)} تا {fa(day.shiftEnd)}

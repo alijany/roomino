@@ -75,6 +75,7 @@ export const DAY_STATUS_META: Record<DayStatus, { label: string; tone: BadgeTone
   [DayStatus.REMOTE]: { label: 'دورکاری', tone: 'success' },
   [DayStatus.REMOTE_PENDING]: { label: 'دورکاری (در انتظار تایید)', tone: 'warning' },
   [DayStatus.HOLIDAY]: { label: 'تعطیل', tone: 'muted' },
+  [DayStatus.NO_SHIFT]: { label: 'بدون شیفت', tone: 'muted' },
   [DayStatus.FUTURE]: { label: '—', tone: 'neutral' },
 };
 

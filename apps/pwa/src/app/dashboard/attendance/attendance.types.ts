@@ -45,6 +45,7 @@ export enum DayStatus {
   REMOTE = 'remote',
   REMOTE_PENDING = 'remote_pending',
   HOLIDAY = 'holiday',
+  NO_SHIFT = 'no_shift',
   FUTURE = 'future',
 }
 

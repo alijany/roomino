@@ -172,6 +172,8 @@ export enum DayStatus {
   REMOTE = 'remote',
   REMOTE_PENDING = 'remote_pending',
   HOLIDAY = 'holiday',
+  /** No shift assignment in force — e.g. days before the person was onboarded. */
+  NO_SHIFT = 'no_shift',
   FUTURE = 'future',
 }
 
@@ -185,6 +187,7 @@ export const DayStatusLabels: Record<DayStatus, string> = {
   [DayStatus.REMOTE]: 'دورکاری',
   [DayStatus.REMOTE_PENDING]: 'دورکاری (در انتظار تایید)',
   [DayStatus.HOLIDAY]: 'تعطیل',
+  [DayStatus.NO_SHIFT]: 'بدون شیفت',
   [DayStatus.FUTURE]: '—',
 };
 

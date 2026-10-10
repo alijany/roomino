@@ -16,7 +16,11 @@ import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeShiftEntity } from '../entities/employee-shift.entity';
 import { HolidayEntity } from '../entities/holiday.entity';
 import { categoryOf, isHourly } from '../utils/attendance-request.util';
-import { isFixedRemoteDay, scheduleFor } from '../utils/attendance-shift.util';
+import {
+  isFixedRemoteDay,
+  scheduleFor,
+  shiftOn,
+} from '../utils/attendance-shift.util';
 import {
   currentJalali,
   daysInclusive,
@@ -312,9 +316,14 @@ export class ReportService {
     else if (checkIn && checkOut) status = DayStatus.PRESENT;
     else if (checkIn && isToday) status = DayStatus.IN_PROGRESS;
     else if (checkIn || checkOut) status = DayStatus.INCOMPLETE;
-    else if (isFuture || isToday)
-      status = scheduled > 0 ? DayStatus.FUTURE : DayStatus.HOLIDAY;
-    else if (scheduled === 0) status = DayStatus.HOLIDAY;
+    else if (scheduled === 0)
+      // An official holiday or the shift's day off — unless no shift was in
+      // force at all, which isn't a holiday (e.g. before onboarding).
+      status =
+        holiday || shiftOn(input.assignments, date)
+          ? DayStatus.HOLIDAY
+          : DayStatus.NO_SHIFT;
+    else if (isFuture || isToday) status = DayStatus.FUTURE;
     else if (remoteHourly > 0) status = DayStatus.REMOTE;
     else status = DayStatus.ABSENT;
 
