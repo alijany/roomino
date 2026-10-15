@@ -7,6 +7,9 @@
     @apply bg-background text-slate-800;
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
+    /* react-toastify brings its own sans-serif; toasts use the app font,
+       whose digits are Persian. */
+    --toastify-font-family: var(--font-yekan), sans-serif;
   }
 
   ::selection {

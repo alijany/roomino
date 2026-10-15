@@ -1,10 +1,10 @@
 import { AuthProvider } from "@/components/auth/auth.context.provider";
 import { ClarityAnalytics } from "@/components/clarity/clarity.component.analytics";
+import { Toaster } from "@/components/layout/layout.component.toaster";
 import { brand } from "@/config/brand.config";
 import { noIndexRobots } from "@/libs/seo/seo.constants.robots";
 import type { Metadata, Viewport } from "next";
 import localFont from 'next/font/local';
-import { ToastContainer } from "react-toastify";
 import "./globals.css";
 
 const yekan = localFont({
@@ -78,7 +78,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <ToastContainer position="bottom-center" />
+          <Toaster />
           <ClarityAnalytics />
         </AuthProvider>
       </body>
