@@ -74,13 +74,13 @@ export default function PaymentQueuePage() {
     <RoleProtectedRoute allowedRoles={RouteItems.financeQueue.roles}>
       <DashbaordLayout>
         <div className="flex grow flex-col space-y-3 overflow-hidden">
-          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
+          <div className="ui-page-header">
+            <div className="ui-page-icon">
               <IconCashBanknote className="size-6" />
             </div>
-            <div className="grow">
-              <h1 className="font-bold text-slate-800">صف پرداخت</h1>
-              <p className="text-sm text-slate-500">
+            <div className="min-w-0 flex-1 basis-48">
+              <h1>صف پرداخت</h1>
+              <p>
                 {tab === 'payable' && data?.meta
                   ? `${data.meta.total.toLocaleString('fa-IR')} درخواست${
                       overdueCount > 0
@@ -109,7 +109,7 @@ export default function PaymentQueuePage() {
             </div>
           )}
 
-          <div className="flex grow flex-col overflow-hidden rounded-2xl bg-white p-2">
+          <div className="flex grow flex-col overflow-hidden ui-surface p-2">
             <div className="flex flex-wrap items-center gap-3 px-2 pt-1">
               <div className="grow">
                 <Tabs

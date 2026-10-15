@@ -2,26 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-background text-slate-800;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
+  }
+
+  /* One visible focus style for keyboard users, everywhere. Components that
+     draw their own ring keep it; this covers the ones that didn't. */
+  :focus-visible {
+    outline: 2px solid theme("colors.brand.500");
+    outline-offset: 2px;
+  }
 }
 
-/* Custom Scrollbar Styles */
+@layer components {
+  /* A resting surface — cards, panels, list containers. */
+  .ui-surface {
+    @apply rounded-2xl border border-slate-200/70 bg-white shadow-card;
+  }
+
+  /* The header every dashboard page opens with: compact on a phone, so the
+     content starts on the first screen. */
+  .ui-page-header {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-3 rounded-2xl border border-slate-200/70 bg-white px-4 py-3 shadow-card lg:gap-4 lg:px-5 lg:py-4;
+  }
+  .ui-page-header h1 {
+    @apply text-base font-bold leading-7 text-slate-900 lg:text-lg;
+  }
+  .ui-page-header h1 + p,
+  .ui-page-header h1 + div {
+    @apply text-xs leading-5 text-slate-500 lg:text-sm;
+  }
+
+  /* The icon tile beside a page title. */
+  .ui-page-icon {
+    @apply flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 lg:size-11 [&>svg]:size-5 lg:[&>svg]:size-6;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Slim scrollbars that stay out of the way. */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+  background-clip: padding-box;
 }

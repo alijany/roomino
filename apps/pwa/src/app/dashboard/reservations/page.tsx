@@ -29,7 +29,7 @@ export default function ReservationsPage() {
     <RoleProtectedRoute allowedRoles={RouteItems.dashboard.roles}>
       <DashbaordLayout>
         <div className="space-y-3 grow flex flex-col overflow-auto">
-          <div className="p-4 rounded-2xl bg-white flex items-center gap-4 justify-between">
+          <div className="p-4 ui-surface flex items-center gap-4 justify-between">
             <div className="font-bold grow">رزرو اتاق جلسات</div>
             <div className="text-sm text-slate-500">
               {format(selectedDate, 'EEEE d MMMM yyyy')}
@@ -38,10 +38,10 @@ export default function ReservationsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-3">
             {/* Mobile: week strip. Desktop: full month calendar. */}
-            <div className="p-4 rounded-2xl bg-white h-fit lg:hidden">
+            <div className="p-4 ui-surface h-fit lg:hidden">
               <WeekPicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
-            <div className="p-4 rounded-2xl bg-white h-fit hidden lg:block lg:sticky top-0">
+            <div className="p-4 ui-surface h-fit hidden lg:block lg:sticky top-0">
               <ReservationDatePicker selected={selectedDate} onSelect={setSelectedDate} />
             </div>
 

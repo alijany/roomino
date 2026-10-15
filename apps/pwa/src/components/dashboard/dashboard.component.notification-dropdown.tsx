@@ -64,12 +64,14 @@ export function NotificationDropdown() {
         <div className="relative" ref={dropdownRef}>
             <Button
                 onClick={() => setIsOpen(!isOpen)}
-                variant="white"
-                className="relative !px-2"
+                variant="outline"
+                className="relative !min-h-10 !px-2.5"
+                aria-label={unreadCount > 0 ? `اعلان‌ها، ${unreadCount} خوانده‌نشده` : 'اعلان‌ها'}
+                aria-expanded={isOpen}
             >
                 <IconBell size={20} />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white ring-2 ring-white">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -77,12 +79,12 @@ export function NotificationDropdown() {
 
             {isOpen && (
                 <div className="absolute left-0 mt-2 w-80 sm:w-96 z-50">
-                    <Card className="bg-white rounded-lg shadow-lg border max-h-[500px] overflow-hidden flex flex-col">
-                        <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
+                    <Card className="flex max-h-[min(500px,calc(100dvh-6rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-pop">
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 p-4">
                             <h3 className="font-semibold">اعلان‌ها</h3>
                             <Link
                                 href="/dashboard/notifications"
-                                className="text-sm text-blue-600 hover:text-blue-700"
+                                className="text-sm text-brand-700 hover:text-brand-800"
                                 onClick={() => setIsOpen(false)}
                             >
                                 مشاهده همه
@@ -91,13 +93,13 @@ export function NotificationDropdown() {
 
                         <CardContent className="overflow-y-auto flex-1 p-0">
                             {notificationsData?.items && notificationsData.items.length > 0 ? (
-                                <div className="divide-y">
+                                <div className="divide-y divide-slate-100">
                                     {notificationsData.items.map((notification: NotificationResponse) => (
                                         <Link
                                             key={notification.id}
                                             href={notification.link || '/dashboard/notifications'}
                                             onClick={() => handleNotificationClick(notification.id, notification.isRead)}
-                                            className="block p-4 hover:bg-gray-50 transition-colors"
+                                            className="block p-4 transition-colors hover:bg-slate-50"
                                         >
                                             <div className="flex gap-3">
                                                 <div className="text-2xl flex-shrink-0">

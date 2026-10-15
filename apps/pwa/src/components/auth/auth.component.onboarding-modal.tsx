@@ -104,7 +104,7 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
                         type='button'
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isBusy}
-                        className='absolute bottom-0 right-0 p-2.5 rounded-2xl bg-white shadow-lg border border-slate-200 hover:bg-slate-50 transition-all group-hover:scale-110'
+                        className='absolute bottom-0 right-0 p-2.5 ui-surface shadow-lg border border-slate-200 hover:bg-slate-50 transition-all group-hover:scale-110'
                     >
                         <IconCamera className='size-4 text-primary' />
                     </button>

@@ -1,6 +1,6 @@
 import { cn } from "@/libs/style/style.util.helpers";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { IconArrowDown } from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { ReactNode } from "react";
 
 export interface DropdownItem<T> {
@@ -55,15 +55,15 @@ export function Dropdown<T>({
                     ) : (
                         <MenuButton
                             className={cn(
-                                "inline-flex w-full text-slate-700 items-center justify-between rounded-xl font-medium transition-colors",
+                                "group inline-flex w-full items-center justify-between gap-2 rounded-xl text-sm font-medium text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100",
                                 {
                                     "bg-rose-500 text-white hover:bg-rose-500/90": variant === "primary",
                                     "bg-slate-500 text-primary hover:bg-slate-500/90": variant === "secondary",
-                                    "border border-input bg-transparent hover:bg-accent": variant === "outline",
+                                    "border border-slate-200 bg-white shadow-card hover:border-slate-300 data-[open]:border-brand-500 data-[open]:ring-4 data-[open]:ring-brand-100": variant === "outline",
                                     "border-rose-500 bg-rose-50": error,
-                                    "px-3 py-1.5 lg:px-3.5 lg:py-1.5": size === "sm",
-                                    "px-4 py-2 lg:px-6 lg:py-2": size === "md",
-                                    "px-5 py-2.5 lg:px-8 lg:py-3": size === "lg",
+                                    "min-h-10 px-3 lg:min-h-9": size === "sm",
+                                    "min-h-11 px-3.5 lg:min-h-10": size === "md",
+                                    "min-h-12 px-4": size === "lg",
                                     "opacity-50 cursor-not-allowed": disabled,
                                 },
                                 buttonClassName
@@ -71,7 +71,7 @@ export function Dropdown<T>({
                             disabled={disabled}
                         >
                             {buttonLabel}
-                            <IconArrowDown className="mr-2 -ml-1 h-5 w-5" aria-hidden="true" />
+                            <IconChevronDown className="size-4 shrink-0 text-slate-400 transition-transform group-data-[open]:rotate-180" aria-hidden="true" />
                         </MenuButton>
                     )}
                 </div>
@@ -81,12 +81,12 @@ export function Dropdown<T>({
                     anchor="bottom"
                     transition
                     className={cn(
-                        "z-[60] w-[var(--button-width)] max-h-72 overflow-y-auto [--anchor-gap:8px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none",
+                        "z-[60] w-[var(--button-width)] min-w-40 max-h-72 overflow-y-auto [--anchor-gap:6px] rounded-xl border border-slate-200/80 bg-white p-1 shadow-pop focus:outline-none",
                         "origin-top transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
                         itemsClassName
                     )}
                 >
-                    <div className="py-1">
+                    <div className="space-y-0.5">
                         {items.map((item, index) => (
                             <MenuItem key={getKey?.(item.value, index) ?? item.label} >
                                 {({ focus }) => (
@@ -94,8 +94,9 @@ export function Dropdown<T>({
                                         type="button"
                                         className={cn(
                                             focus ? "bg-slate-100 text-slate-900" : "text-slate-700",
+                                            item.value === value && "font-semibold text-brand-700",
                                             item.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                                            "block w-full px-4 py-2 text-right text-sm"
+                                            "block min-h-10 w-full rounded-lg px-3 py-2 text-right text-sm"
                                         )}
                                         onClick={() => onChange(item.value)}
                                         disabled={item.disabled}

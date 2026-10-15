@@ -145,7 +145,7 @@ export function DayList({
             <div className="flex items-center gap-2 md:col-span-full md:grid md:grid-cols-subgrid">
               <button
                 type="button"
-                className={`flex min-w-0 flex-1 flex-col gap-2 rounded-lg px-3 text-right hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 md:col-span-7 md:grid md:grid-cols-subgrid md:items-center md:gap-y-0 md:px-4 ${
+                className={`flex min-w-0 flex-1 flex-col gap-2 rounded-lg px-3 text-right hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 md:col-span-7 md:grid md:grid-cols-subgrid md:items-center md:gap-y-0 md:px-4 ${
                   quiet ? 'py-2 text-slate-400' : 'py-3'
                 }`}
                 onClick={() => setOpen(expanded ? null : day.date)}

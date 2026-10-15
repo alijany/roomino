@@ -21,8 +21,8 @@ export default function ManagementPage() {
     <RoleProtectedRoute allowedRoles={RouteItems.management.roles}>
       <DashbaordLayout>
         <div className="flex min-h-0 grow flex-col gap-4 overflow-y-auto pb-6">
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white">
+          <div className="ui-page-header">
+            <div className="ui-page-icon">
               <IconSettings className="size-6" aria-hidden="true" />
             </div>
             <div>
@@ -37,7 +37,7 @@ export default function ManagementPage() {
             {groups.map(group => (
               <section key={group.id} aria-labelledby={`management-${group.id}`} className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-3 flex items-center gap-3">
-                  <span className="rounded-xl bg-orange-50 p-2.5 text-orange-600" aria-hidden="true">{group.icon}</span>
+                  <span className="rounded-xl bg-brand-50 p-2.5 text-brand-700" aria-hidden="true">{group.icon}</span>
                   <h2 id={`management-${group.id}`} className="font-semibold text-slate-800">{group.label}</h2>
                 </div>
                 <p className="mb-4 text-sm leading-6 text-slate-500">{group.description}</p>
@@ -46,7 +46,7 @@ export default function ManagementPage() {
                     <li key={route.href}>
                       <Link
                         href={route.href}
-                        className="flex min-h-11 items-center gap-3 rounded-xl px-2 py-2 text-sm text-slate-700 transition-colors hover:bg-orange-50 hover:text-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                        className="flex min-h-11 items-center gap-3 rounded-xl px-2 py-2 text-sm text-slate-700 transition-colors hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                       >
                         <span className="shrink-0 text-slate-400" aria-hidden="true">{route.icon}</span>
                         <span className="grow">{route.label}</span>

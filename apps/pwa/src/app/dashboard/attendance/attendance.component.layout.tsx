@@ -24,15 +24,19 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
+    <div className="ui-page-header">
+      <div className="ui-page-icon">
         {icon}
       </div>
-      <div className="min-w-0 grow">
-        <h1 className="font-bold text-slate-800">{title}</h1>
-        {subtitle && <div className="text-sm text-slate-500">{subtitle}</div>}
+      <div className="min-w-0 flex-1 basis-48">
+        <h1>{title}</h1>
+        {subtitle && <div>{subtitle}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto [&>*]:grow sm:[&>*]:grow-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
@@ -40,7 +44,7 @@ export function PageHeader({
 /** White panel under the header. */
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`flex flex-col rounded-2xl bg-white p-3 lg:p-4 ${className}`}>{children}</div>
+    <div className={`ui-surface flex flex-col p-3 lg:p-4 ${className}`}>{children}</div>
   );
 }
 
@@ -64,9 +68,9 @@ export function StatTile({
   }[tone];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className={`mt-1 text-xl font-bold tabular-nums ${accent}`}>{value}</div>
+    <div className="ui-surface p-3 lg:p-4">
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className={`mt-1.5 text-lg font-bold tabular-nums tracking-tight lg:text-xl ${accent}`}>{value}</div>
       {hint && <div className="mt-1 text-xs text-slate-400">{hint}</div>}
     </div>
   );

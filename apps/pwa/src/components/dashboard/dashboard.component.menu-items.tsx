@@ -93,9 +93,9 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
         aria-current={isActive ? "page" : undefined}
         className={cn(
           itemClassName,
-          "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400",
+          "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
           isActive
-            ? "bg-orange-50 text-orange-600 font-semibold"
+            ? "bg-brand-50 text-brand-700 font-semibold"
             : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
         )}
       >
@@ -117,7 +117,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
             <button
               type="button"
               aria-label={`انتخاب نقش، ${getRoleName(selectedRole.role)}`}
-              className="flex w-full items-center gap-3 rounded-2xl border border-neutral-100 p-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+              className="flex w-full items-center gap-3 rounded-2xl border border-neutral-100 p-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <span className="rounded-xl bg-slate-50 p-2.5" aria-hidden="true">
                 <IconUserFilled className="size-5 text-slate-700" />
@@ -150,8 +150,8 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
               onClick={onClose}
               aria-current={workspace === item.id ? "true" : undefined}
               className={cn(
-                "flex min-h-10 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400",
-                workspace === item.id ? "bg-white text-orange-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                "flex min-h-10 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                workspace === item.id ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-800"
               )}
             >
               <span aria-hidden="true">{item.id === "personal" ? <IconUserFilled className="size-4" /> : item.route.icon}</span>
@@ -177,7 +177,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
             type="button"
             onClick={() => setSearch("")}
             aria-label="پاک کردن جستجو"
-            className="absolute inset-y-0 left-1 flex w-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+            className="absolute inset-y-0 left-1 flex w-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <IconX className="size-4" aria-hidden="true" />
           </button>
@@ -216,8 +216,8 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
                     id: isExpanded ? null : group.id,
                   })}
                   className={cn(
-                    "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-right text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400",
-                    isActiveGroup ? "text-orange-600 bg-orange-50/50" : "text-slate-700 hover:bg-slate-50"
+                    "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-right text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                    isActiveGroup ? "text-brand-700 bg-brand-50/60" : "text-slate-700 hover:bg-slate-50"
                   )}
                 >
                   <span className="shrink-0" aria-hidden="true">{group.icon}</span>

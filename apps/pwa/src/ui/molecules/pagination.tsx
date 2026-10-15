@@ -132,7 +132,7 @@ function PageButton({ page, currentPage, onNavigate }: PageButtonProps) {
                 disabled={isActive}
                 className={cn(
                     "rounded-lg",
-                    isActive && "bg-orange-600 text-white"
+                    isActive && "bg-brand-600 text-white"
                 )}
             >
                 {page}

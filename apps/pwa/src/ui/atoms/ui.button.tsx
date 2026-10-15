@@ -6,6 +6,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "lg";
 }
 
+/**
+ * Heights are fixed per size so buttons line up beside inputs and each other.
+ * On a phone `md` and `lg` are at least 44px — the touch-target floor — and
+ * `sm` is 40px; desktop is a step tighter.
+ */
 export function Button({
   variant = "primary",
   size = "md",
@@ -15,17 +20,20 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-xl font-medium transition-colors",
+        "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium",
+        "transition-[background-color,border-color,color,box-shadow,transform] duration-150",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        "active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
         {
-          "bg-primary text-slate-900 hover:bg-primary/90 text-white": variant === "primary",
-          "bg-slate-200 text-slate-900 hover:bg-slate-300": variant === "secondary",
-          "border border-input bg-transparent hover:bg-accent": variant === "outline",
-          "bg-white/20 text-slate-900 hover:bg-white/30": variant === "ghost",
-          "bg-white border border-white text-slate-700 hover:bg-white/80": variant === "white",
-          "px-3 py-1.5 lg:px-3.5 lg:py-1.5": size === "sm",
-          "px-4 py-2 lg:px-6 lg:py-2": size === "md",
-          "px-5 py-2.5 lg:px-8 lg:py-3": size === "lg",
-          "opacity-50 cursor-not-allowed": props.disabled,
+          "bg-brand-600 text-white shadow-brand hover:bg-brand-700": variant === "primary",
+          "bg-slate-100 text-slate-800 hover:bg-slate-200": variant === "secondary",
+          "border border-slate-200 bg-white text-slate-700 shadow-card hover:border-slate-300 hover:bg-slate-50": variant === "outline",
+          "bg-transparent text-slate-700 hover:bg-slate-100": variant === "ghost",
+          "border border-white bg-white text-slate-700 hover:bg-white/80": variant === "white",
+          "min-h-10 px-3 text-sm lg:min-h-9": size === "sm",
+          "min-h-11 px-4 text-sm lg:min-h-10 lg:px-5": size === "md",
+          "min-h-12 px-6 text-base lg:min-h-12 lg:px-8": size === "lg",
+          "cursor-not-allowed opacity-50 shadow-none active:scale-100": props.disabled,
         },
         className
       )}

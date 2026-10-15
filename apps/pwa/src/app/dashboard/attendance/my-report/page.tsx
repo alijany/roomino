@@ -91,7 +91,7 @@ function MyReportContent() {
             <>
               <Link
                 href="/dashboard/attendance/my-requests"
-                className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               >
                 درخواست‌های من
               </Link>
@@ -103,38 +103,40 @@ function MyReportContent() {
           }
         />
 
-        <Panel className="gap-3 border border-slate-200">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
+        <Panel className="gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
               <h2 className="font-semibold text-slate-800">دوره گزارش</h2>
               <p className="mt-1 text-xs text-slate-500">
                 {data ? fa(data.period.label) : 'انتخاب ماه یا بازه دلخواه'} · مدت‌ها: ساعت:دقیقه
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <PeriodPicker key={period.from ? 'range' : 'month'} value={period} onChange={setPeriod} allowRange />
-              {!isCurrentMonth && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="min-h-10"
-                  onClick={() => setPeriod(currentJalaliMonth())}
-                >
-                  ماه جاری
-                </Button>
-              )}
-            </div>
+            {/* Icon-only on a phone, so it shares the heading row. */}
             <Button
               variant="outline"
               size="sm"
-              className="min-h-10 gap-1"
+              className="shrink-0 gap-1 !px-2.5 sm:!px-3"
               disabled={exportDisabled}
               onClick={handleExport}
               title="خروجی همه روزهای سپری‌شده دوره، مستقل از فیلتر روزها"
+              aria-label={downloading ? 'در حال دریافت خروجی CSV' : 'خروجی CSV'}
             >
               <IconDownload className="size-4" />
-              {downloading ? 'در حال دریافت…' : 'خروجی CSV'}
+              <span className="hidden sm:inline">{downloading ? 'در حال دریافت…' : 'خروجی CSV'}</span>
             </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodPicker key={period.from ? 'range' : 'month'} value={period} onChange={setPeriod} allowRange />
+            {!isCurrentMonth && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={() => setPeriod(currentJalaliMonth())}
+              >
+                ماه جاری
+              </Button>
+            )}
           </div>
         </Panel>
 
@@ -181,7 +183,7 @@ function MyReportContent() {
               )}
 
               <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <summary className="cursor-pointer rounded text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+                <summary className="cursor-pointer rounded text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                   مانده فعلی مرخصی
                 </summary>
                 <p className="my-3 text-xs text-slate-500">
@@ -227,7 +229,7 @@ function MyReportContent() {
                       type="checkbox"
                       checked={showFuture}
                       onChange={(event) => setShowFuture(event.target.checked)}
-                      className="size-4 accent-orange-500"
+                      className="size-4 accent-brand-600"
                     />
                     نمایش روزهای آینده
                   </label>
@@ -239,9 +241,9 @@ function MyReportContent() {
                       type="button"
                       aria-pressed={filter === item.id}
                       onClick={() => setFilter(item.id)}
-                      className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 ${
+                      className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                         filter === item.id
-                          ? 'border-orange-200 bg-orange-50 font-semibold text-orange-700'
+                          ? 'border-brand-200 bg-brand-50 font-semibold text-brand-800'
                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >

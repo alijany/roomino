@@ -86,13 +86,13 @@ export default function PaymentSourcesPage() {
     <RoleProtectedRoute allowedRoles={RouteItems.financeSources.roles}>
       <DashbaordLayout>
         <div className="flex grow flex-col space-y-3 overflow-hidden">
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
+          <div className="ui-page-header">
+            <div className="ui-page-icon">
               <IconBuildingBank className="size-6" />
             </div>
-            <div className="grow">
-              <h1 className="font-bold text-slate-800">منابع پرداخت</h1>
-              <p className="text-sm text-slate-500">
+            <div className="min-w-0 flex-1 basis-48">
+              <h1>منابع پرداخت</h1>
+              <p>
                 حساب‌هایی که پرداخت‌های شرکت از آن‌ها انجام می‌شود.
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function PaymentSourcesPage() {
             </Button>
           </div>
 
-          <div className="flex grow flex-col overflow-hidden rounded-2xl bg-white p-2">
+          <div className="flex grow flex-col overflow-hidden ui-surface p-2">
             <div className="overflow-auto p-2 lg:p-3">
               <DataView
                 data={data}

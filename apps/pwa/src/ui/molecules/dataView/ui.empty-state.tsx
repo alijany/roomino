@@ -2,7 +2,7 @@ import { cn } from "@/libs/style/style.util.helpers";
 import { HTMLAttributes } from "react";
 import { Button } from "../../atoms/ui.button";
 import { Card, CardContent } from "../../atoms/ui.card";
-import { IconMoodSad } from "@tabler/icons-react";
+import { IconInbox } from "@tabler/icons-react";
 
 interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
@@ -27,14 +27,14 @@ export function EmptyState({
 }: EmptyStateProps) {
   // const router = useRouter();
 
-  const defaultIcon = (
-    <IconMoodSad />
-  );
+  const defaultIcon = <IconInbox className="size-6" />;
 
   const content = (
     <div className="flex flex-col items-center justify-center text-center">
-      {icon || defaultIcon}
-      <p className="mb-4 mt-3 text-muted-foreground">{message}</p>
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 [&>svg]:size-6" aria-hidden="true">
+        {icon || defaultIcon}
+      </span>
+      <p className="mb-4 mt-3 max-w-sm text-sm leading-6 text-slate-500">{message}</p>
 
       <div className="flex gap-2">
         {showBackButton && (
@@ -66,7 +66,7 @@ export function EmptyState({
   }
 
   return (
-    <Card className={cn("bg-white", className)} {...props}>
+    <Card className={cn("ui-surface", className)} {...props}>
       <CardContent className="flex min-h-[200px] flex-col items-center justify-center p-6">
         {content}
       </CardContent>

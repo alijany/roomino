@@ -66,7 +66,7 @@ export function Error({
     }
 
     return (
-        <Card className={cn("bg-white", className)} {...props}>
+        <Card className={cn("ui-surface", className)} {...props}>
             <CardContent className="flex min-h-[200px] items-center justify-center p-6">
                 {content}
             </CardContent>

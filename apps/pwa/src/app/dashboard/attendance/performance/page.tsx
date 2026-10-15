@@ -209,9 +209,9 @@ function PerformanceContent() {
                     type="button"
                     aria-pressed={filter === item.id}
                     onClick={() => setFilter(item.id)}
-                    className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 ${
+                    className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                       filter === item.id
-                        ? 'border-orange-200 bg-orange-50 font-semibold text-orange-700'
+                        ? 'border-brand-200 bg-brand-50 font-semibold text-brand-800'
                         : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -253,7 +253,7 @@ function PerformanceContent() {
               />
             </div>
             <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <summary className="cursor-pointer rounded text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+              <summary className="cursor-pointer rounded text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 آمار بیشتر: تراز، تاخیر و اضافه کار
               </summary>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -274,7 +274,7 @@ function PerformanceContent() {
                     type="checkbox"
                     checked={detailed}
                     onChange={(event) => setDetailed(event.target.checked)}
-                    className="size-4 accent-orange-500"
+                    className="size-4 accent-brand-600"
                   />
                   نمایش ستون‌های بیشتر
                 </label>

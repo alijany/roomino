@@ -71,7 +71,7 @@ export default function NotificationPreferencesPage() {
         <ProtectedRoute>
             <DashbaordLayout>
                 <div className='space-y-3 grow flex flex-col overflow-hidden'>
-                    <div className='p-4 rounded-2xl bg-white flex items-center gap-4 justify-between'>
+                    <div className='p-4 ui-surface flex items-center gap-4 justify-between'>
                         <div>
                             <h1 className='font-bold text-lg'>تنظیمات اعلان‌ها</h1>
                             <p className='text-sm text-gray-500 mt-1'>
@@ -83,7 +83,7 @@ export default function NotificationPreferencesPage() {
                         data={data}
                         error={error}
                         isLoading={isLoading}
-                        className='p-4 rounded-2xl bg-white grow flex flex-col gap-4 overflow-auto'
+                        className='p-4 ui-surface grow flex flex-col gap-4 overflow-auto'
                         isEmpty={(data) => !data || data.length === 0}
                         emptyMessage='هیچ تنظیماتی برای اعلان‌ها وجود ندارد.'
                         variant='inline'

@@ -11,15 +11,24 @@ interface RootLayoutProps {
     showSidebar?: boolean;
 }
 
+/**
+ * The authenticated shell. Desktop: a full-height sidebar (with the brand)
+ * beside a slim top bar and the page. Phone: a sticky top bar, the page, and
+ * the bottom navigation — the page area reserves room for it and for the
+ * iPhone home indicator.
+ *
+ * Pages own their scrolling: `main` is a flex column that never scrolls
+ * itself, as before.
+ */
 export function DashbaordLayout({ children, showSidebar = true }: RootLayoutProps) {
     const { needsOnboarding } = useAuth();
 
     return (
-        <div className="bg-slate-100 p-4 gap-6 h-screen flex flex-col mx-auto overflow-hidden relative">
-            <Navbar />
-            <div className="grow gap-6 flex flex-col lg:flex-row overflow-hidden pb-20 lg:pb-0">
-                {showSidebar && <Sidebar className="hidden lg:flex col-span-1" />}
-                <main className="col-span-4 flex flex-col grow overflow-hidden">
+        <div className="relative flex h-dvh overflow-hidden bg-background">
+            {showSidebar && <Sidebar className="hidden lg:flex" />}
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <Navbar />
+                <main className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col overflow-hidden px-3 pt-3 pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:px-6 lg:pb-6 lg:pt-1">
                     {children}
                 </main>
             </div>

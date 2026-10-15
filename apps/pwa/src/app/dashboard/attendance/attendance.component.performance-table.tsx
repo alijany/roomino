@@ -29,7 +29,7 @@ export function PerformanceTable({
         <div className="min-w-36 text-right">
           <Link
             href={performanceHref(query, row.employee.id, view)}
-            className="rounded font-semibold text-slate-800 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+            className="rounded font-semibold text-slate-800 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             {row.employee.name ?? 'بدون نام'}
           </Link>
@@ -118,7 +118,7 @@ export function PerformanceTable({
       <Link
         href={performanceHref(query, row.employee.id, view)}
         aria-label={`گزارش کارکرد ${row.employee.name ?? row.employee.personnelCode}`}
-        className="inline-flex min-h-10 items-center gap-1 whitespace-nowrap rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+        className="inline-flex min-h-10 items-center gap-1 whitespace-nowrap rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
       >
         مشاهده گزارش <IconArrowLeft className="size-4" aria-hidden="true" />
       </Link>

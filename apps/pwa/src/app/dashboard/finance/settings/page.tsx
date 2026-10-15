@@ -80,13 +80,13 @@ export default function FinanceSettingsPage() {
     <RoleProtectedRoute allowedRoles={RouteItems.financeSettings.roles}>
       <DashbaordLayout>
         <div className="flex grow flex-col space-y-3 overflow-auto">
-          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
+          <div className="ui-page-header">
+            <div className="ui-page-icon">
               <IconSettings className="size-6" />
             </div>
-            <div className="grow">
-              <h1 className="font-bold text-slate-800">تنظیمات مالی</h1>
-              <p className="text-sm text-slate-500">
+            <div className="min-w-0 flex-1 basis-48">
+              <h1>تنظیمات مالی</h1>
+              <p>
                 تعیین کنید هر مبلغ چه مسیر تأییدی را طی کند.
               </p>
             </div>
@@ -97,7 +97,7 @@ export default function FinanceSettingsPage() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-white p-5">
+          <div className="ui-surface p-5">
             <DataView
               data={data}
               error={error}
@@ -200,7 +200,7 @@ export default function FinanceSettingsPage() {
             </DataView>
           </div>
 
-          <div className="rounded-2xl bg-white p-5">
+          <div className="ui-surface p-5">
             <h2 className="mb-3 font-bold text-slate-800">دسته‌های هزینه</h2>
             <div className="flex flex-wrap gap-2">
               {categoriesData?.items.map((category) => (

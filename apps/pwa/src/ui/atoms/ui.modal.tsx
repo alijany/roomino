@@ -25,7 +25,7 @@ export function Modal({ isOpen, onClose, children, className = '', fullScreen = 
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 backdrop-blur bg-black/30" />
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
                 </TransitionChild>}
 
                 <div className="fixed inset-0">
@@ -42,11 +42,15 @@ export function Modal({ isOpen, onClose, children, className = '', fullScreen = 
                             {/* A flex column so panel content can split into a fixed
                                 header, a scrolling body and a footer that stays visible
                                 however short the viewport is. */}
-                            <DialogPanel className={`w-full transform transition-all flex flex-col
-                                    ${fullScreen ? 'h-screen' : 'lg:w-auto lg:max-w-2xl lg:rounded-2xl max-h-[calc(100dvh-2rem)] lg:max-h-[calc(100dvh-8rem)]'}
-                                    bg-slate-50 shadow-xl shadow-black/5
+                            <DialogPanel className={`w-full transform transition-all flex flex-col motion-reduce:transition-none
+                                    ${fullScreen ? 'h-screen' : 'rounded-t-3xl pb-[env(safe-area-inset-bottom)] lg:w-auto lg:max-w-2xl lg:rounded-2xl lg:pb-0 max-h-[calc(100dvh-1.5rem)] lg:max-h-[calc(100dvh-8rem)]'}
+                                    bg-slate-50 shadow-pop ring-1 ring-slate-900/5
                                     overflow-hidden
                                     ${className}`}>
+                                {/* Grab handle: on a phone this is a bottom sheet. */}
+                                {!fullScreen && (
+                                    <div aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-slate-300 lg:hidden" />
+                                )}
                                 {children}
                             </DialogPanel>
                         </TransitionChild>

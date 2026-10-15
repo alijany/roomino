@@ -79,7 +79,7 @@ function EmployeeReportContent() {
               undefined,
               performanceViewFromSearch(searchParams),
             )}
-            className="flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+            className="flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <IconArrowRight className="size-4" />
             همه پرسنل
@@ -91,7 +91,7 @@ function EmployeeReportContent() {
         {e && (
           <div className="space-y-3">
             <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+              <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 اطلاعات کاری و مانده مرخصی
               </summary>
               <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm text-slate-800 sm:grid-cols-2 xl:grid-cols-3">

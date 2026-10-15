@@ -39,9 +39,11 @@ export function PeriodPicker({
   const go = (delta: number) => onChange(shiftJalaliMonth(y, m, delta));
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    // On a phone the two controls take a full-width row each; from `sm` up
+    // they sit side by side.
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
       {allowRange && (
-        <div className="flex rounded-xl bg-slate-100 p-1 text-sm">
+        <div className="flex w-full rounded-xl bg-slate-100 p-1 text-sm sm:w-auto" role="group" aria-label="نوع دوره">
           {(['month', 'range'] as const).map((item) => (
             <button
               key={item}
@@ -51,7 +53,8 @@ export function PeriodPicker({
                 if (item === 'range') onChange(jalaliMonthRange(y, m));
                 else onChange({ y, m });
               }}
-              className={`rounded-lg px-3 py-1 ${mode === item ? 'bg-white font-semibold text-slate-800 shadow-sm' : 'text-slate-500'}`}
+              aria-pressed={mode === item}
+              className={`min-h-9 flex-1 rounded-lg px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:flex-none ${mode === item ? 'bg-white font-semibold text-slate-900 shadow-card' : 'text-slate-500 hover:text-slate-800'}`}
             >
               {item === 'month' ? 'ماهانه' : 'بازه دلخواه'}
             </button>
@@ -60,17 +63,17 @@ export function PeriodPicker({
       )}
 
       {mode === 'month' ? (
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" className="!px-2" onClick={() => go(-1)} aria-label="ماه قبل">
+        <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-start">
+          <Button variant="outline" size="sm" className="!px-2.5" onClick={() => go(-1)} aria-label="ماه قبل">
             <IconChevronRight className="size-4" />
           </Button>
-          <span className="min-w-28 text-center font-semibold text-slate-700">
+          <span className="min-w-28 text-center font-semibold text-slate-800" aria-live="polite">
             {jalaliMonthName(m)} {fa(y)}
           </span>
           <Button
             variant="outline"
             size="sm"
-            className="!px-2"
+            className="!px-2.5"
             disabled={isCurrent && !allowFuture}
             onClick={() => go(1)}
             aria-label="ماه بعد"

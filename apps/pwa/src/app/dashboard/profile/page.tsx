@@ -138,7 +138,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingImage}
-                  className="absolute bottom-0 right-0 p-3 rounded-2xl bg-white shadow-lg border border-slate-200 hover:bg-slate-50 transition-all group-hover:scale-110"
+                  className="absolute bottom-0 right-0 p-3 ui-surface shadow-lg border border-slate-200 hover:bg-slate-50 transition-all group-hover:scale-110"
                 >
                   <IconCamera className="size-5 text-primary" />
                 </button>

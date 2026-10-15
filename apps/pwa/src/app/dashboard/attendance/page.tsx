@@ -148,7 +148,7 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-slate-50 p-4 text-center">
+          <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">ورود</div>
             <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(att?.checkIn) || '--:--'}</div>
             {att?.workMode === 'remote' && att.checkIn && <div className="text-xs text-sky-600">دورکاری</div>}
@@ -156,7 +156,7 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
               <div className="text-xs text-slate-400">{fa(att.checkInDistanceM)} متر از محل کار</div>
             )}
           </div>
-          <div className="rounded-2xl bg-slate-50 p-4 text-center">
+          <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">خروج</div>
             <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(att?.checkOut) || '--:--'}</div>
           </div>
@@ -184,12 +184,12 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             ورود و خروج امروز ثبت شده است.
           </p>
         ) : !att?.checkIn ? (
-          <Button size="lg" className="gap-2" disabled={busy} onClick={() => doCheckIn()}>
+          <Button size="lg" className="w-full gap-2 text-base" disabled={busy} onClick={() => doCheckIn()}>
             {locating ? <IconCurrentLocation className="size-5 animate-pulse" /> : <IconLogin className="size-5" />}
             {locating ? 'در حال دریافت موقعیت...' : 'ثبت ورود'}
           </Button>
         ) : (
-          <Button size="lg" variant="secondary" className="gap-2" disabled={busy} onClick={doCheckOut}>
+          <Button size="lg" className="w-full gap-2 bg-slate-900 text-base shadow-none hover:bg-slate-800" disabled={busy} onClick={doCheckOut}>
             {locating ? <IconCurrentLocation className="size-5 animate-pulse" /> : <IconLogout className="size-5" />}
             {locating ? 'در حال دریافت موقعیت...' : 'ثبت خروج'}
           </Button>
@@ -200,7 +200,7 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
         <Panel className="gap-2">
           <AttendanceMap
             label={`نقشه ${workplace.name}`}
-            className="h-72 lg:h-[420px]"
+            className="h-56 sm:h-72 lg:h-[420px]"
             circle={{ lat: workplace.lat, lng: workplace.lng, radius: workplace.radiusMeters, label: workplace.name }}
             points={me ? [{ ...me, label: 'موقعیت شما', color: MAP_COLORS.me, permanent: true }] : []}
           />

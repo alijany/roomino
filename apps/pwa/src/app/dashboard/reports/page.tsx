@@ -53,13 +53,13 @@ export default function ReportsPage() {
       <DashbaordLayout>
         <div className="space-y-3 grow flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
+          <div className="ui-page-header">
+            <div className="ui-page-icon">
               <IconReportAnalytics className="size-6" />
             </div>
-            <div className="grow">
-              <h1 className="font-bold text-slate-800">گزارش استفاده از اتاق‌ها</h1>
-              <p className="text-sm text-slate-500">
+            <div className="min-w-0 flex-1 basis-48">
+              <h1>گزارش استفاده از اتاق‌ها</h1>
+              <p>
                 {data ? `${data.totalReservations} رزرو` : 'نقشه حرارتی رزروها'} در بازه زمانی
                 انتخاب‌شده، بر اساس ساعت روز
               </p>
@@ -67,7 +67,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Filters + heatmap */}
-          <div className="p-2 rounded-2xl bg-white grow flex flex-col overflow-hidden">
+          <div className="p-2 ui-surface grow flex flex-col overflow-hidden">
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-2 py-3 lg:px-3">
               <div className="flex flex-wrap items-center gap-1.5">
                 {PRESETS.map((preset) => (

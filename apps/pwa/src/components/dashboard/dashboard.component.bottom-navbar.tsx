@@ -10,6 +10,20 @@ import { RouteItem, RouteItems, routeGroups } from "./dashboard.constants.route-
 import { getActiveRoute } from "./dashboard.util.navigation";
 
 /**
+ * One-word labels for the bottom bar — the full names wrap to two lines at
+ * phone width. The full label stays as the accessible name.
+ */
+const SHORT_LABELS: Record<string, string> = {
+  [RouteItems.dashboard.href]: "پیشخوان",
+  [RouteItems.attendanceHome.href]: "حضور",
+  [RouteItems.financeMyRequests.href]: "پرداخت‌ها",
+  [RouteItems.financeApprovals.href]: "تأییدها",
+  [RouteItems.financeQueue.href]: "صف پرداخت",
+  [RouteItems.management.href]: "مدیریت",
+  [RouteItems.profile.href]: "حساب من",
+};
+
+/**
  * Mobile Bottom Navigation Bar Component
  * Displays key navigation items at the bottom of the screen on mobile devices
  * Hidden on desktop (lg+ screens)
@@ -58,42 +72,45 @@ export const BottomNavBar: React.FC = () => {
   const activeBottomRoute = getActiveRoute(pathname, visibleItems);
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
-      <div className="mx-auto px-2 py-2">
-        <div className="flex justify-around items-center">
-          {visibleItems.map((item) => {
-            const isActive = isManagementPage
-              ? item.href === RouteItems.management.href
-              : item.href === activeBottomRoute?.href;
+    <nav
+      aria-label="ناوبری اصلی"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/70 bg-white/90 pb-safe shadow-pop backdrop-blur-md supports-[backdrop-filter]:bg-white/75 lg:hidden"
+    >
+      <div className="mx-auto flex max-w-lg items-stretch px-1 pt-1.5">
+        {visibleItems.map((item) => {
+          const isActive = isManagementPage
+            ? item.href === RouteItems.management.href
+            : item.href === activeBottomRoute?.href;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
+              className="group flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
+            >
+              <span
+                aria-hidden="true"
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[4rem]",
-                  isActive
-                    ? "bg-orange-50 text-orange-500"
-                    : "text-slate-600 hover:bg-slate-50"
+                  "flex h-8 w-14 items-center justify-center rounded-full transition-colors motion-reduce:transition-none",
+                  isActive ? "bg-brand-50 text-brand-700" : "text-slate-500 group-active:bg-slate-100"
                 )}
               >
-                <div className={cn(
-                  "transition-transform",
-                  isActive && "scale-110"
-                )}>
-                  {item.icon}
-                </div>
-                <span className={cn(
-                  "text-xs font-medium",
-                  isActive && "font-semibold"
-                )}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                {item.icon}
+              </span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "max-w-full truncate text-[11px] leading-4",
+                  isActive ? "font-semibold text-brand-700" : "font-medium text-slate-500"
+                )}
+              >
+                {SHORT_LABELS[item.href] ?? item.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

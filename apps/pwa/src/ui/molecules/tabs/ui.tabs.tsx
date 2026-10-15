@@ -37,7 +37,15 @@ export function Tabs({
 
     return (
         <div className={cn("w-full", className)}>
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <div
+                role="tablist"
+                className={cn(
+                    "no-scrollbar flex items-center overflow-x-auto",
+                    variant === "pills"
+                        ? "gap-1 rounded-xl bg-slate-100 p-1"
+                        : "gap-1 border-b border-slate-200"
+                )}
+            >
                 {tabs.map((tab) => (
                     <TabButton
                         key={tab.id}
@@ -72,19 +80,23 @@ function TabButton({
     if (variant === "pills") {
         return (
             <button
+                type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={onClick}
                 className={cn(
-                    "flex w-full justify-center items-center font-semibold gap-2 rounded-xl px-4 py-2 transition-all whitespace-nowrap",
-                    isActive && "bg-slate-50 text-orange-600"
+                    "flex min-h-10 flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none lg:min-h-9",
+                    isActive
+                        ? "bg-white text-slate-900 shadow-card"
+                        : "text-slate-500 hover:text-slate-800"
                 )}
             >
                 <span>{children}</span>
                 {typeof count !== "undefined" && (
                     <span
                         className={cn(
-                            "rounded-full px-2 py-0.5 bg-slate-100 text-sm ",
-                            isActive && "text-rose-500"
-
+                            "min-w-5 rounded-full px-1.5 text-center text-xs leading-5 tabular-nums",
+                            isActive ? "bg-brand-50 text-brand-700" : "bg-slate-200/70 text-slate-500"
                         )}
                     >
                         {count}
@@ -96,9 +108,12 @@ function TabButton({
 
     return (
         <button
+            type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={onClick}
             className={cn(
-                "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all whitespace-nowrap",
+                "-mb-px flex min-h-11 items-center gap-2 whitespace-nowrap border-b-2 px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500",
                 isActive
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"

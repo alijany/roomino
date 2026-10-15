@@ -50,7 +50,7 @@ export function ConfirmModal({
                 </Button>
             </div>
             <div className="flex flex-col items-center space-y-4">
-                <div className="bg-orange-200/60 text-orange-500 rounded-full p-5">
+                <div className="bg-brand-100 text-brand-600 rounded-full p-5">
                     {/* You can use a warning icon here if desired */}
                     <svg width="48" height="48" fill="none" viewBox="0 0 24 24">
                         <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

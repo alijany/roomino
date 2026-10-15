@@ -94,7 +94,7 @@ export function ReportSummaryTiles({
         {tiles.filter((tile) => primaryKeys.includes(tile.key)).map(renderTile)}
       </div>
       <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-        <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+        <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
           {personal ? 'آمار بیشتر: تاخیر، دورکاری و اضافه کار' : 'آمار بیشتر: تاخیر، مرخصی و دورکاری'}
         </summary>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">

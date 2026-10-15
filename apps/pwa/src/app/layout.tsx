@@ -2,7 +2,7 @@ import { AuthProvider } from "@/components/auth/auth.context.provider";
 import { ClarityAnalytics } from "@/components/clarity/clarity.component.analytics";
 import { brand } from "@/config/brand.config";
 import { noIndexRobots } from "@/libs/seo/seo.constants.robots";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from 'next/font/local';
 import { ToastContainer } from "react-toastify";
 import "./globals.css";
@@ -48,6 +48,15 @@ const yekan = localFont({
   variable: '--font-yekan',
 });
 
+/** `viewportFit: cover` makes iOS report safe-area insets, which the mobile
+ * bars pad against so they clear the home indicator. */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#F8FAFC',
+};
+
 export const metadata: Metadata = {
   title: brand.meta.title,
   description: brand.meta.description,
@@ -65,7 +74,7 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
       </head>
       <body
-        className={`${yekan.variable} font-yekan text-xs lg:text-base antialiased bg-slate-50`}
+        className={`${yekan.variable} font-yekan text-sm lg:text-base antialiased bg-background`}
       >
         <AuthProvider>
           {children}
