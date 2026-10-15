@@ -1,4 +1,7 @@
-import { EntityManager } from '@mikro-orm/core';
+import {
+  EntityManager,
+  UniqueConstraintViolationException,
+} from '@mikro-orm/core';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserEntity } from '../../user/user.entity';
 import {
@@ -134,50 +137,62 @@ export class AttendanceService {
 
     let autoRequest: AttendanceRequestEntity | null = null;
 
-    const attendance = await this.em.transactional(async (em) => {
-      const row =
-        (existing &&
-          (await em.findOne(AttendanceEntity, { id: existing.id }))) ??
-        em.create(AttendanceEntity, {
-          employee: profile,
-          date: today,
+    let attendance: AttendanceEntity;
+    try {
+      attendance = await this.em.transactional(async (em) => {
+        const row =
+          (existing &&
+            (await em.findOne(AttendanceEntity, { id: existing.id }))) ??
+          em.create(AttendanceEntity, {
+            employee: profile,
+            date: today,
+            status: AttendanceStatus.PRESENT,
+            workMode: mode,
+          });
+
+        em.assign(row, {
+          workplace: workplace ?? null,
+          checkInAt: new Date(),
+          checkInLat: dto.lat ?? null,
+          checkInLng: dto.lng ?? null,
+          checkInDistanceM: distance !== null ? Math.round(distance) : null,
+          checkInSource: dto.lat !== undefined ? AttendanceSource.GPS : null,
           status: AttendanceStatus.PRESENT,
           workMode: mode,
         });
+        em.persist(row);
 
-      em.assign(row, {
-        workplace: workplace ?? null,
-        checkInAt: new Date(),
-        checkInLat: dto.lat ?? null,
-        checkInLng: dto.lng ?? null,
-        checkInDistanceM: distance !== null ? Math.round(distance) : null,
-        checkInSource: dto.lat !== undefined ? AttendanceSource.GPS : null,
-        status: AttendanceStatus.PRESENT,
-        workMode: mode,
+        // Remote work without permission: file today's remote request.
+        if (mode === WorkMode.REMOTE && remoteStatus === null) {
+          autoRequest = em.create(AttendanceRequestEntity, {
+            employee: profile,
+            type: RequestType.REMOTE_DAILY,
+            dateFrom: today,
+            dateTo: today,
+            status: RequestStatus.PENDING,
+            durationMinutes: MINUTES_PER_WORKDAY,
+            description:
+              'ثبت خودکار: ورود دورکاری' +
+              (distance !== null
+                ? ` (فاصله از محل کار: ${Math.round(distance)} متر)`
+                : ' (بدون موقعیت مکانی)'),
+          });
+          em.persist(autoRequest);
+        }
+
+        await em.flush();
+        return row;
       });
-      em.persist(row);
-
-      // Remote work without permission: file today's remote request.
-      if (mode === WorkMode.REMOTE && remoteStatus === null) {
-        autoRequest = em.create(AttendanceRequestEntity, {
-          employee: profile,
-          type: RequestType.REMOTE_DAILY,
-          dateFrom: today,
-          dateTo: today,
-          status: RequestStatus.PENDING,
-          durationMinutes: MINUTES_PER_WORKDAY,
-          description:
-            'ثبت خودکار: ورود دورکاری' +
-            (distance !== null
-              ? ` (فاصله از محل کار: ${Math.round(distance)} متر)`
-              : ' (بدون موقعیت مکانی)'),
-        });
-        em.persist(autoRequest);
+    } catch (error) {
+      // A double tap: the other request created today's row first.
+      if (error instanceof UniqueConstraintViolationException) {
+        return {
+          success: false,
+          message: 'شما قبلاً برای امروز ورود خود را ثبت کرده‌اید.',
+        };
       }
-
-      await em.flush();
-      return row;
-    });
+      throw error;
+    }
 
     if (autoRequest) {
       await this.notifications.requestSubmitted(autoRequest, profile);

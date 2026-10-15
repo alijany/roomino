@@ -76,8 +76,19 @@ HolidayEntity
 - **Requests** — daily types use `dateFrom..dateTo`, hourly types and
   overtime `date + timeFrom..timeTo`, manual attendance `date + manualTime +
   manualDirection`. Fields a type doesn't use are dropped.
+- **Overlap** — a request is refused (409) when a pending or approved one of
+  the same category covers the same time: same dates for daily types,
+  intersecting hours for timed ones on one day, the same direction for manual
+  attendance. Back-to-back hours are fine.
 - **Approval effects** — leave draws down `LeaveBalanceEntity`, full-day leave
   marks its days `on_leave`, manual attendance writes the check-in/out.
+- **Concurrency** — submissions and grants lock the person's profile row, so
+  the cap and overlap checks can't both pass for two at once. A review claims
+  the request with one conditional `UPDATE … WHERE status = 'pending'`; the
+  loser gets 409. Leave is added in SQL (`used_minutes + n`), and an approval
+  that loses the race to create a shared row (attendance day, first ledger of
+  the year) is retried once. A double-tapped check-in answers «already checked
+  in», not 500.
 - **Holidays** — `POST /attendance/holidays/sync` (and a cron on the 1st of
   each month) pulls the official calendar from `ATTENDANCE_HOLIDAYS_API_URL`
   (default `https://pnldev.com/api/calender`); if it's unreachable the fixed
@@ -102,6 +113,8 @@ Deliberate — each fixes something that was wrong or unenforced there.
 5. **Requesters can withdraw** a request that is still pending.
 6. **Notifications** — submitted requests notify the group's approvers (else
    HR, else admins); decisions notify the requester.
+7. **Overlapping requests are refused** (see Flows). Tesmino accepted the same
+   leave twice and, approved, drew it twice.
 
 Stored but, as in Tesmino, not enforced: `allowedDeviceType`, `useWifi`,
 `trackingEnabled`, `flexMinutes`, `dailyOvertimeCapMinutes`,
@@ -109,5 +122,7 @@ Stored but, as in Tesmino, not enforced: `allowedDeviceType`, `useWifi`,
 
 ## Verifying
 
-`lint` type-checks; `docs/attendance-e2e/` is the behavioural suite (86
-checks, curl + psql against a real Postgres).
+`lint` type-checks; `docs/attendance-e2e/` holds the behavioural suites
+against a real Postgres: `01-attendance.sh` (89 checks — flows and access)
+and `02-calculations.mjs` (74 — the arithmetic of a planted month, and
+races).

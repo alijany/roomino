@@ -1,4 +1,11 @@
-import { EntityManager, FilterQuery, QueryOrder } from '@mikro-orm/core';
+import {
+  EntityManager,
+  FilterQuery,
+  LockMode,
+  QueryOrder,
+  raw,
+  UniqueConstraintViolationException,
+} from '@mikro-orm/core';
 import {
   BadRequestException,
   ConflictException,
@@ -18,6 +25,7 @@ import {
   RequestCategory,
   RequestStatus,
   RequestType,
+  RequestTypeLabels,
   WorkMode,
 } from '../attendance.constants';
 import { CreateRequestDto, ListRequestsDto } from '../dtos/request.dto';
@@ -43,6 +51,7 @@ import {
   eachDate,
   jalaliMonthRange,
 } from '../utils/attendance-time.util';
+import { periodLabel } from '../utils/attendance-view.util';
 import { AttendanceNotificationService } from './attendance-notification.service';
 import { WorkPolicyService } from './work-policy.service';
 
@@ -394,25 +403,91 @@ export class RequestService {
 
   // --- writes ----------------------------------------------------------------------------
 
+  /**
+   * Refuse a request that covers the same time as a pending or approved one
+   * of the same kind — approving both would count the leave (or mission,
+   * overtime, …) twice. Two timed requests on one day only clash when their
+   * hours overlap; two manual punches only when they're the same direction.
+   */
+  private async assertNoOverlap(profileId: number, fields: RequestFields) {
+    const category = categoryOf(fields.type);
+    if (category === RequestCategory.OTHER) return;
+
+    const from = fields.dateFrom ?? fields.date;
+    const to = fields.dateTo ?? fields.date;
+    if (!from || !to) return;
+
+    const types = Object.values(RequestType).filter(
+      (t) => categoryOf(t) === category,
+    );
+    const candidates = await this.em.find(AttendanceRequestEntity, {
+      employee: profileId,
+      type: { $in: types },
+      status: { $in: [RequestStatus.PENDING, RequestStatus.APPROVED] },
+      $or: [
+        { date: { $gte: from, $lte: to } },
+        {
+          dateFrom: { $lte: to },
+          $or: [{ dateTo: null }, { dateTo: { $gte: from } }],
+        },
+      ],
+    });
+
+    const clash = candidates.find((other) => {
+      if (fields.manualDirection && other.manualDirection) {
+        return fields.manualDirection === other.manualDirection;
+      }
+      if (fields.timeFrom && fields.timeTo && other.timeFrom && other.timeTo) {
+        return fields.timeFrom < other.timeTo && other.timeFrom < fields.timeTo;
+      }
+      return true;
+    });
+
+    if (clash) {
+      throw new ConflictException(
+        `برای این زمان قبلاً درخواست ${
+          RequestTypeLabels[clash.type]
+        } (${periodLabel(clash)}) ثبت شده است.`,
+      );
+    }
+  }
+
+  /**
+   * Hold a person's profile row for the rest of the transaction. The cap and
+   * overlap checks read what's already filed, then insert; without this two
+   * submissions at the same moment (a double tap) both pass them.
+   */
+  private lockPerson(em: EntityManager, profileId: number) {
+    return em.findOneOrFail(EmployeeProfileEntity, profileId, {
+      lockMode: LockMode.PESSIMISTIC_WRITE,
+    });
+  }
+
   /** A person's own request — validated, capped, then sent for review. */
   async submit(profile: EmployeeProfileEntity, dto: CreateRequestDto) {
     const fields = this.normalize(dto);
     const duration = this.durationOf(fields);
 
-    const capError = await this.checkPolicyCap(profile, fields, duration);
-    if (capError) throw new BadRequestException(capError);
+    const request = await this.em.transactional(async (em) => {
+      await this.lockPerson(em, profile.id);
 
-    const request = this.em.create(AttendanceRequestEntity, {
-      ...fields,
-      employee: profile,
-      workplace:
-        fields.type === RequestType.MANUAL_ATTENDANCE
-          ? profile.workplace ?? null
-          : null,
-      status: RequestStatus.PENDING,
-      durationMinutes: duration,
+      const capError = await this.checkPolicyCap(profile, fields, duration);
+      if (capError) throw new BadRequestException(capError);
+      await this.assertNoOverlap(profile.id, fields);
+
+      const created = em.create(AttendanceRequestEntity, {
+        ...fields,
+        employee: profile,
+        workplace:
+          fields.type === RequestType.MANUAL_ATTENDANCE
+            ? profile.workplace ?? null
+            : null,
+        status: RequestStatus.PENDING,
+        durationMinutes: duration,
+      });
+      await em.persistAndFlush(created);
+      return created;
     });
-    await this.em.persistAndFlush(request);
 
     await this.notifications.requestSubmitted(request, profile);
     return request;
@@ -446,25 +521,73 @@ export class RequestService {
     }
   }
 
+  /**
+   * Move a request out of pending in one conditional UPDATE. Two reviewers
+   * deciding at the same moment both pass `assertReviewable`; only one of
+   * them can win this, so a request is never applied twice.
+   */
+  private async claim(
+    em: EntityManager,
+    id: number,
+    decision: Partial<AttendanceRequestEntity>,
+  ) {
+    const won = await em.nativeUpdate(
+      AttendanceRequestEntity,
+      { id, status: RequestStatus.PENDING },
+      decision,
+    );
+    if (!won) {
+      throw new ConflictException('این درخواست قبلاً بررسی شده است');
+    }
+  }
+
+  /** The request as stored now — not a copy cached before a native update. */
+  private reload(id: number) {
+    return this.em.findOneOrFail(
+      AttendanceRequestEntity,
+      { id },
+      { populate: REQUEST_POPULATE, refresh: true },
+    );
+  }
+
+  /**
+   * Run an approval's transaction, once more if it lost a race to create a
+   * shared row (an attendance day, a leave ledger). The retry starts
+   * clean: the failed attempt rolled back, its claim included.
+   */
+  private async withRetry<T>(work: (em: EntityManager) => Promise<T>) {
+    try {
+      return await this.em.transactional(work);
+    } catch (error) {
+      if (!(error instanceof UniqueConstraintViolationException)) throw error;
+      return this.em.transactional(work);
+    }
+  }
+
   async approve(id: number, reviewer: UserEntity) {
     const request = await this.getOrFail(id);
     this.assertReviewable(request, reviewer);
 
-    await this.em.transactional(async (em) => {
+    await this.withRetry(async (em) => {
+      await this.claim(em, id, {
+        status: RequestStatus.APPROVED,
+        durationMinutes: this.durationOf(request),
+        reviewedAt: new Date(),
+        reviewedBy: em.getReference(UserEntity, reviewer.id),
+      });
       const target = await em.findOneOrFail(
         AttendanceRequestEntity,
         { id },
-        { populate: ['employee.workplace', 'employee.workPolicy'] },
+        {
+          populate: ['employee.workplace', 'employee.workPolicy'],
+          refresh: true,
+        },
       );
-      target.durationMinutes = this.durationOf(target);
-      target.status = RequestStatus.APPROVED;
-      target.reviewedAt = new Date();
-      target.reviewedBy = em.getReference(UserEntity, reviewer.id);
       await this.applyApproval(em, target);
       await em.flush();
     });
 
-    const approved = await this.getOrFail(id);
+    const approved = await this.reload(id);
     await this.notifications.requestDecided(
       approved,
       approved.employee.user.id,
@@ -476,14 +599,19 @@ export class RequestService {
     const request = await this.getOrFail(id);
     this.assertReviewable(request, reviewer);
 
-    request.status = RequestStatus.REJECTED;
-    request.reviewNote = note?.trim() || null;
-    request.reviewedAt = new Date();
-    request.reviewedBy = this.em.getReference(UserEntity, reviewer.id);
-    await this.em.flush();
+    await this.claim(this.em, id, {
+      status: RequestStatus.REJECTED,
+      reviewNote: note?.trim() || null,
+      reviewedAt: new Date(),
+      reviewedBy: this.em.getReference(UserEntity, reviewer.id),
+    });
 
-    await this.notifications.requestDecided(request, request.employee.user.id);
-    return request;
+    const rejected = await this.reload(id);
+    await this.notifications.requestDecided(
+      rejected,
+      rejected.employee.user.id,
+    );
+    return rejected;
   }
 
   /**
@@ -507,7 +635,10 @@ export class RequestService {
     }
 
     const fields = this.normalize(dto);
-    const id = await this.em.transactional(async (em) => {
+    const id = await this.withRetry(async (em) => {
+      await this.lockPerson(em, profile.id);
+      await this.assertNoOverlap(profile.id, fields);
+
       const request = em.create(AttendanceRequestEntity, {
         ...fields,
         employee: em.getReference(EmployeeProfileEntity, profile.id),
@@ -523,7 +654,7 @@ export class RequestService {
       return request.id;
     });
 
-    const granted = await this.getOrFail(id);
+    const granted = await this.reload(id);
     await this.notifications.requestDecided(granted, profile.user.id);
     return granted;
   }
@@ -550,8 +681,13 @@ export class RequestService {
     if (leaveType) {
       const reference = this.referenceDate(request);
       const { year } = dateToJalali(reference);
-      const balance = await this.ensureBalance(em, profile, leaveType, year);
-      balance.usedMinutes += request.durationMinutes ?? 0;
+      await this.drawLeave(
+        em,
+        profile,
+        leaveType,
+        year,
+        request.durationMinutes ?? 0,
+      );
 
       if (!isHourly(request.type) && request.dateFrom) {
         for (const date of eachDate(
@@ -608,22 +744,19 @@ export class RequestService {
   }
 
   /**
-   * A person's leave ledger for a year, created on first use with the
-   * policy's yearly cap as the entitlement.
+   * Add approved leave to a person's ledger for a year, creating the ledger
+   * on first use with the policy's yearly cap as the entitlement.
+   *
+   * The addition happens in SQL: reading the balance, adding in memory and
+   * writing it back lost one of two approvals made at the same moment.
    */
-  async ensureBalance(
+  private async drawLeave(
     em: EntityManager,
     profile: EmployeeProfileEntity,
     leaveType: LeaveType,
     year: number,
+    minutes: number,
   ) {
-    const existing = await em.findOne(LeaveBalanceEntity, {
-      employee: profile.id,
-      leaveType,
-      year,
-    });
-    if (existing) return existing;
-
     const policyId = profile.workPolicy?.id;
     const rule = policyId
       ? await this.policies.ruleFor(
@@ -633,17 +766,25 @@ export class RequestService {
           year,
         )
       : null;
+    const now = new Date();
+    const key = { employee: profile.id, leaveType, year };
 
-    const balance = em.create(LeaveBalanceEntity, {
-      employee: profile,
-      leaveType,
-      year,
-      accruedMinutes: rule?.yearlyCapMinutes ?? 0,
-      usedMinutes: 0,
-      carriedOverMinutes: 0,
+    const drawn = await em.nativeUpdate(LeaveBalanceEntity, key, {
+      usedMinutes: raw('used_minutes + ?', [minutes]),
+      updated_at: now,
     });
-    em.persist(balance);
-    return balance;
+    if (drawn) return;
+
+    // First leave of the year. If another approval creates the ledger at the
+    // same moment this insert fails, and `withRetry` runs the approval again.
+    await em.insert(LeaveBalanceEntity, {
+      ...key,
+      accruedMinutes: rule?.yearlyCapMinutes ?? 0,
+      usedMinutes: minutes,
+      carriedOverMinutes: 0,
+      created_at: now,
+      updated_at: now,
+    });
   }
 
   balances(profileId: number) {

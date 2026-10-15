@@ -17,6 +17,7 @@ GUEST=$(cat "$TOK/at_6")   # no profile
 TODAY=$(TZ=Asia/Tehran date +%F)
 YESTERDAY=$(TZ=Asia/Tehran date -d yesterday +%F)
 TOMORROW=$(TZ=Asia/Tehran date -d tomorrow +%F)
+IN_TWO_DAYS=$(TZ=Asia/Tehran date -d '+2 days' +%F)
 # Iranian weekday of today: 0 = Saturday … 6 = Friday
 WEEKDAY=$(( ($(TZ=Asia/Tehran date +%w) + 1) % 7 ))
 JYEAR=$(node -e "const {format}=require(require.resolve('date-fns-jalali',{paths:['$(dirname "$0")/../../apps/core-api']}));console.log(format(new Date(),'yyyy'))")
@@ -132,11 +133,19 @@ echo "== requests & policy caps"
 call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_daily\",\"dateFrom\":\"$TOMORROW\",\"dateTo\":\"$TOMORROW\"}"
 expect "one day of entitled leave (480 min) is accepted" 201 '.durationMinutes == 480 and .status == "pending"'
 LEAVE1=$(echo "$BODY" | jq .id)
-call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_daily\",\"dateFrom\":\"$TOMORROW\",\"dateTo\":\"$(TZ=Asia/Tehran date -d '+2 days' +%F)\"}"
+call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_daily\",\"dateFrom\":\"$TOMORROW\",\"dateTo\":\"$IN_TWO_DAYS\"}"
 expect "two more days would pass the 960-min cap (pending counts)" 400 '.message | test("سقف سالانه")'
-call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_hourly\",\"date\":\"$TOMORROW\",\"timeFrom\":\"۱۰:۰۰\",\"timeTo\":\"12:00\"}"
+call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_hourly\",\"date\":\"$TOMORROW\",\"timeFrom\":\"10:00\",\"timeTo\":\"12:00\"}"
+expect "hourly leave inside a day already on leave is refused" 409 '.message | test("قبلاً درخواست")'
+call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_hourly\",\"date\":\"$IN_TWO_DAYS\",\"timeFrom\":\"۱۰:۰۰\",\"timeTo\":\"12:00\"}"
 expect "hourly leave with Persian digits is normalised (120 min)" 201 '.durationMinutes == 120 and .timeFrom == "10:00"'
 LEAVE2=$(echo "$BODY" | jq .id)
+call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_hourly\",\"date\":\"$IN_TWO_DAYS\",\"timeFrom\":\"11:00\",\"timeTo\":\"13:00\"}"
+expect "overlapping hours on the same day are refused" 409
+call "$EMP" POST /attendance/me/requests "{\"type\":\"leave_entitled_hourly\",\"date\":\"$IN_TWO_DAYS\",\"timeFrom\":\"12:00\",\"timeTo\":\"13:00\"}"
+expect "back-to-back hours are fine" 201
+LEAVE3=$(echo "$BODY" | jq .id)
+call "$EMP" DELETE "/attendance/me/requests/$LEAVE3"
 call "$EMP" POST /attendance/me/requests "{\"type\":\"mission_hourly\",\"date\":\"$TOMORROW\",\"timeFrom\":\"12:00\",\"timeTo\":\"10:00\"}"
 expect "a timed request ending before it starts is refused" 400
 call "$EMP" POST /attendance/me/requests '{"type":"other"}'
