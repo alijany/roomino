@@ -14,8 +14,9 @@ export function ScheduleModeNotice({ note, className }: { note?: string | null; 
     <div className={cn('flex gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-xs leading-5 text-emerald-800', className)}>
       <IconCalendarCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <div>
-        <p>حضور شما طبق شیفت حساب می‌شود و ثبت ورود و خروج لازم نیست. فقط تأخیر، خروج زودتر، مرخصی یا اضافه‌کار را ثبت کنید.</p>
-        {note && <p className="mt-1 font-medium">{fa(note)}</p>}
+        <p className="lg:inline">حضور شما طبق شیفت حساب می‌شود و ثبت ورود و خروج لازم نیست. فقط تأخیر، خروج زودتر، مرخصی یا اضافه‌کار را ثبت کنید.</p>
+        {/* Its own line on a phone; on desktop it fits beside the explanation. */}
+        {note && <p className="mt-1 font-medium lg:ms-1 lg:mt-0 lg:inline">{fa(note)}</p>}
       </div>
     </div>
   );
@@ -44,10 +45,13 @@ export function ScheduleModeAction({
   today,
   punches,
   onChange,
+  compact,
 }: {
   today: MyToday;
   punches: { in: Punch; out: Punch };
   onChange: () => void;
+  /** In a desktop row: a regular-height button, the hint as its tooltip. */
+  compact?: boolean;
 }) {
   const [prefill, setPrefill] = useState<RequestPrefill | null>(null);
   const rejected = punches.in.rejected ?? punches.out.rejected;
@@ -75,11 +79,17 @@ export function ScheduleModeAction({
           {rejected.reviewNote ? `: ${fa(rejected.reviewNote)}.` : '.'}
         </p>
       )}
-      <Button size="lg" variant="outline" className="w-full gap-2" onClick={open}>
+      <Button
+        size="lg"
+        variant="outline"
+        className={cn('w-full gap-2', compact && 'lg:min-h-10 lg:px-4 lg:text-sm')}
+        title={compact ? 'برای مرخصی یا اضافه‌کار، نوع درخواست را در همین فرم عوض کنید.' : undefined}
+        onClick={open}
+      >
         <IconClockEdit className="size-5" aria-hidden="true" />
         ثبت تأخیر یا خروج زودتر
       </Button>
-      <p className="text-center text-[11px] leading-5 text-slate-400">
+      <p className={cn('text-center text-[11px] leading-5 text-slate-400', compact && 'lg:hidden')}>
         برای مرخصی یا اضافه‌کار، نوع درخواست را در همین فرم عوض کنید.
       </p>
 

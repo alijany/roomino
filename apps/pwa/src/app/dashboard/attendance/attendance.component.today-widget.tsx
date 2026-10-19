@@ -33,7 +33,9 @@ export function AttendanceTodayWidget() {
   if (data && !data.hasProfile) return null;
 
   return (
-    <section aria-labelledby="attendance-widget-title" className="ui-surface p-4 lg:p-5">
+    // `shrink-0`: it sits in the dashboard's scrolling flex column, where
+    // `overflow-hidden` (for the progress hairline) would let it be squashed.
+    <section aria-labelledby="attendance-widget-title" className="ui-surface relative shrink-0 overflow-hidden p-4 lg:px-5 lg:py-4">
       <DataView
         data={data}
         error={error}
@@ -118,9 +120,21 @@ function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void 
       ? `شیفت ${fa(today.shiftStart)} تا ${fa(today.shiftEnd)}`
       : 'بدون شیفت';
 
+  const showProgress = shiftMinutes > 0 && checkedIn;
+  const progressBarClass = cn(
+    'h-full transition-[width] duration-500 motion-reduce:transition-none',
+    state === 'done' ? 'bg-brand-500' : 'bg-emerald-500',
+  );
+  // Desktop button: a regular-height action in a row, not a thumb target.
+  const desktopAction = 'lg:min-h-10 lg:px-4 lg:text-sm';
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
+    // Phones stack top to bottom. Wide screens put identity, times, action
+    // and shortcuts on one row (RTL, so identity on the right); a narrower
+    // desktop, beside the sidebar, uses two rows — identity and shortcuts,
+    // then times and action. Any notice or error spans a row below.
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-center lg:gap-x-4 lg:gap-y-3 xl:grid-cols-[auto_minmax(0,1fr)_13rem_auto]">
+      <div className="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700" aria-hidden="true">
           <IconFingerprint className="size-5" />
         </span>
@@ -144,82 +158,85 @@ function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void 
         </span>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_minmax(15rem,auto)] lg:items-center">
-        <div className="space-y-3">
-          <dl className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/70 rounded-2xl bg-slate-50 py-3 text-center ring-1 ring-inset ring-slate-200/60">
-            <TimeCell
-              label="ورود"
-              value={fa(inTime) || '--:--'}
-              hint={<PunchHint punch={punches.in} presumed={presumed} remote={att?.workMode === 'remote' && Boolean(att.checkIn)} />}
-            />
-            <TimeCell label="خروج" value={fa(outTime) || '--:--'} hint={<PunchHint punch={punches.out} presumed={presumed} />} />
-            <TimeCell label="مدت حضور" value={checkedIn ? hm(worked) : '--:--'} accent={live} />
-          </dl>
+      <dl className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/70 rounded-2xl bg-slate-50 py-3 text-center ring-1 ring-inset ring-slate-200/60 lg:col-start-1 lg:row-start-2 lg:py-2 xl:col-start-2 xl:row-start-1">
+        <TimeCell
+          label="ورود"
+          value={fa(inTime) || '--:--'}
+          hint={<PunchHint punch={punches.in} presumed={presumed} remote={att?.workMode === 'remote' && Boolean(att.checkIn)} />}
+        />
+        <TimeCell label="خروج" value={fa(outTime) || '--:--'} hint={<PunchHint punch={punches.out} presumed={presumed} />} />
+        <TimeCell label="مدت حضور" value={checkedIn ? hm(worked) : '--:--'} accent={live} />
+      </dl>
 
-          {shiftMinutes > 0 && checkedIn && (
-            <div className="space-y-1">
-              <div
-                className="h-1.5 overflow-hidden rounded-full bg-slate-100"
-                role="progressbar"
-                aria-label="پیشرفت شیفت امروز"
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div
-                  className={cn('h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none', state === 'done' ? 'bg-brand-500' : 'bg-emerald-500')}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-xs text-slate-400">
-                {fa(progress)}٪ از {durationLabel(shiftMinutes)} شیفت امروز
-              </p>
+      {showProgress && (
+        <>
+          <div className="space-y-1 lg:hidden">
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-label="پیشرفت شیفت امروز"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div className={cn(progressBarClass, 'rounded-full')} style={{ width: `${progress}%` }} />
             </div>
-          )}
-
-          {scheduleMode ? (
-            <ScheduleModeNotice note={today.scheduleModeNote} />
-          ) : today.remoteStatus && (
-            <p className="flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-700">
-              <IconHome className="size-4 shrink-0" aria-hidden="true" />
-              {REMOTE_STATUS_LABELS[today.remoteStatus]}
+            <p className="text-xs text-slate-400">
+              {fa(progress)}٪ از {durationLabel(shiftMinutes)} شیفت امروز
             </p>
-          )}
-        </div>
+          </div>
+          {/* Desktop: a hairline along the card's bottom edge, no room taken. */}
+          <div
+            className="absolute inset-x-0 bottom-0 hidden h-1 bg-slate-100 lg:block"
+            title={`${fa(progress)}٪ از ${durationLabel(shiftMinutes)} شیفت امروز`}
+            aria-hidden="true"
+          >
+            <div className={progressBarClass} style={{ width: `${progress}%` }} />
+          </div>
+        </>
+      )}
 
-        <div className="space-y-2">
-          {presumed ? (
-            <ScheduleModeAction today={today} punches={punches} onChange={onChange} />
-          ) : checkedOut || scheduleMode ? (
-            <Link
-              href="/dashboard/attendance/my-report"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              <IconCalendarStats className="size-5" aria-hidden="true" />
-              مشاهده کارکرد من
-            </Link>
-          ) : (
-            <Button
-              size="lg"
-              variant={!checkedIn && state === 'off' ? 'outline' : 'primary'}
-              className={cn('w-full gap-2', checkedIn && 'bg-slate-900 shadow-none hover:bg-slate-800')}
-              disabled={busy}
-              aria-busy={busy}
-              onClick={() => (checkedIn ? doCheckOut() : doCheckIn())}
-            >
-              {locating
-                ? <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
-                : checkedIn
-                  ? <IconLogout className="size-5" aria-hidden="true" />
-                  : <IconLogin className="size-5" aria-hidden="true" />}
-              {locating ? 'در حال دریافت موقعیت...' : checkedIn ? 'ثبت خروج' : 'ثبت ورود'}
-            </Button>
-          )}
-        </div>
+      {scheduleMode ? (
+        <ScheduleModeNotice note={today.scheduleModeNote} className="lg:col-span-full lg:row-start-3 xl:row-start-2" />
+      ) : today.remoteStatus && (
+        <p className="flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-700 lg:col-span-full lg:row-start-3 xl:row-start-2">
+          <IconHome className="size-4 shrink-0" aria-hidden="true" />
+          {REMOTE_STATUS_LABELS[today.remoteStatus]}
+        </p>
+      )}
+
+      <div className="lg:col-start-2 lg:row-start-2 xl:col-start-3 xl:row-start-1">
+        {presumed ? (
+          <ScheduleModeAction today={today} punches={punches} onChange={onChange} compact />
+        ) : checkedOut || scheduleMode ? (
+          <Link
+            href="/dashboard/attendance/my-report"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 lg:min-h-10"
+          >
+            <IconCalendarStats className="size-5" aria-hidden="true" />
+            مشاهده کارکرد من
+          </Link>
+        ) : (
+          <Button
+            size="lg"
+            variant={!checkedIn && state === 'off' ? 'outline' : 'primary'}
+            className={cn('w-full gap-2', desktopAction, checkedIn && 'bg-slate-900 shadow-none hover:bg-slate-800')}
+            disabled={busy}
+            aria-busy={busy}
+            onClick={() => (checkedIn ? doCheckOut() : doCheckIn())}
+          >
+            {locating
+              ? <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
+              : checkedIn
+                ? <IconLogout className="size-5" aria-hidden="true" />
+                : <IconLogin className="size-5" aria-hidden="true" />}
+            {locating ? 'در حال دریافت موقعیت...' : checkedIn ? 'ثبت خروج' : 'ثبت ورود'}
+          </Button>
+        )}
       </div>
 
       {lastError && !scheduleMode && (
-        <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+        <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 lg:col-span-full lg:row-start-4 xl:row-start-3" role="alert">
           <p>{fa(lastError)}</p>
           {offerRemote && !checkedIn && (
             <Button size="sm" className="mt-3 w-full gap-1 sm:w-auto" disabled={busy} onClick={() => doCheckIn(true)}>
@@ -230,14 +247,12 @@ function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void 
         </div>
       )}
 
-      <nav aria-label="میانبرهای حضور و غیاب" className="-mx-1 flex flex-wrap gap-2 border-t border-slate-100 px-1 pt-3">
-        <Shortcut href="/dashboard/attendance/my-requests" icon={<IconMailbox className="size-4" />}>
+      <nav
+        aria-label="میانبرهای حضور و غیاب"
+        className="-mx-1 flex flex-wrap gap-2 border-t border-slate-100 px-1 pt-3 lg:col-start-2 lg:row-start-1 lg:mx-0 lg:flex-nowrap lg:justify-end lg:gap-1 lg:border-0 lg:p-0 xl:col-start-4"
+      >
+        <Shortcut href="/dashboard/attendance/my-requests" icon={<IconMailbox className="size-4" />} badge={today.pendingRequests}>
           درخواست مرخصی و تردد
-          {Boolean(today.pendingRequests) && (
-            <span className="rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-700">
-              {fa(today.pendingRequests)} در انتظار
-            </span>
-          )}
         </Shortcut>
         <Shortcut href="/dashboard/attendance" icon={<IconArrowLeft className="size-4" />} trailing>
           جزئیات و نقشه
@@ -251,7 +266,7 @@ function TimeCell({ label, value, hint, accent }: { label: string; value: string
   return (
     <div className="min-w-0 px-2">
       <dt className="text-[11px] text-slate-500">{label}</dt>
-      <dd className={cn('mt-0.5 text-lg font-bold tabular-nums lg:text-xl', accent ? 'text-emerald-600' : 'text-slate-800')}>
+      <dd className={cn('mt-0.5 text-lg font-bold tabular-nums', accent ? 'text-emerald-600' : 'text-slate-800')}>
         {value}
       </dd>
       {hint && <dd className="text-[11px]">{hint}</dd>}
@@ -259,27 +274,47 @@ function TimeCell({ label, value, hint, accent }: { label: string; value: string
   );
 }
 
+/**
+ * A link under the card on phones; on desktop an icon button at the end of
+ * the row, its label kept for screen readers and as a tooltip.
+ */
 function Shortcut({
   href,
   icon,
   trailing,
+  badge,
   children,
 }: {
   href: string;
   icon: React.ReactNode;
   trailing?: boolean;
-  children: React.ReactNode;
+  /** A count awaiting attention — pending requests. */
+  badge?: number;
+  children: string;
 }) {
   return (
     <Link
       href={href}
+      title={children}
       className={cn(
-        'inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
-        trailing ? 'ms-auto flex-row-reverse text-brand-700 hover:text-brand-800' : 'bg-slate-50',
+        'relative inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+        'lg:size-10 lg:justify-center lg:px-0',
+        trailing ? 'ms-auto flex-row-reverse text-brand-700 hover:text-brand-800 lg:ms-0' : 'bg-slate-50',
       )}
     >
       <span className="shrink-0" aria-hidden="true">{icon}</span>
-      {children}
+      <span className="lg:sr-only">{children}</span>
+      {Boolean(badge) && (
+        <>
+          <span className="rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-700 lg:hidden">
+            {fa(badge)} در انتظار
+          </span>
+          <span className="absolute -end-1 -top-1 hidden min-w-4 rounded-full bg-amber-500 px-1 text-center text-[10px] font-semibold leading-4 text-white lg:block">
+            {fa(badge)}
+            <span className="sr-only"> در انتظار</span>
+          </span>
+        </>
+      )}
     </Link>
   );
 }
