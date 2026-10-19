@@ -171,6 +171,8 @@ export enum DayStatus {
   MISSION = 'mission',
   REMOTE = 'remote',
   REMOTE_PENDING = 'remote_pending',
+  /** Schedule mode: no record, so the shift counts as worked. */
+  BY_SCHEDULE = 'by_schedule',
   HOLIDAY = 'holiday',
   /** No shift assignment in force — e.g. days before the person was onboarded. */
   NO_SHIFT = 'no_shift',
@@ -186,6 +188,7 @@ export const DayStatusLabels: Record<DayStatus, string> = {
   [DayStatus.MISSION]: 'ماموریت',
   [DayStatus.REMOTE]: 'دورکاری',
   [DayStatus.REMOTE_PENDING]: 'دورکاری (در انتظار تایید)',
+  [DayStatus.BY_SCHEDULE]: 'طبق شیفت',
   [DayStatus.HOLIDAY]: 'تعطیل',
   [DayStatus.NO_SHIFT]: 'بدون شیفت',
   [DayStatus.FUTURE]: '—',
@@ -198,6 +201,8 @@ export enum BoardStatus {
   REMOTE_DONE = 'remote_done',
   DONE = 'done',
   WORKING = 'working',
+  /** Schedule mode: on shift without checking in. */
+  BY_SCHEDULE = 'by_schedule',
   OFF = 'off',
   NOT_YET = 'not_yet',
   MISSING = 'missing',
@@ -224,3 +229,6 @@ export enum ResetScope {
 
 /** What the admin types to confirm a reset, compared without spaces or ZWNJ. */
 export const RESET_CONFIRMATION = 'پاکسازی';
+
+export const SCHEDULE_MODE_MESSAGE =
+  'ثبت ورود و خروج غیرفعال است؛ حضور شما طبق شیفت حساب می‌شود. برای تأخیر، خروج زودتر یا مرخصی درخواست ثبت کنید.';

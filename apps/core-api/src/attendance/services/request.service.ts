@@ -401,6 +401,24 @@ export class RequestService {
     return counts;
   }
 
+  /**
+   * A person's manual check-in/out requests for one day that haven't taken
+   * effect: pending, or rejected so they know to file again. Approved ones
+   * are already in the day's attendance.
+   */
+  manualOn(profileId: number, date: string) {
+    return this.em.find(
+      AttendanceRequestEntity,
+      {
+        employee: profileId,
+        type: RequestType.MANUAL_ATTENDANCE,
+        date,
+        status: { $in: [RequestStatus.PENDING, RequestStatus.REJECTED] },
+      },
+      { orderBy: { id: 'asc' } },
+    );
+  }
+
   // --- writes ----------------------------------------------------------------------------
 
   /**

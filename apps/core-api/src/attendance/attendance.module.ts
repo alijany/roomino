@@ -19,6 +19,7 @@ import { EmployeeShiftEntity } from './entities/employee-shift.entity';
 import { HolidayEntity } from './entities/holiday.entity';
 import { JobGroupEntity } from './entities/job-group.entity';
 import { LeaveBalanceEntity } from './entities/leave-balance.entity';
+import { ScheduleModePeriodEntity } from './entities/schedule-mode-period.entity';
 import { ShiftDayEntity } from './entities/shift-day.entity';
 import { ShiftEntity } from './entities/shift.entity';
 import { WorkPolicyRuleEntity } from './entities/work-policy-rule.entity';
@@ -34,6 +35,7 @@ import { HolidayService } from './services/holiday.service';
 import { JobGroupService } from './services/job-group.service';
 import { ReportService } from './services/report.service';
 import { RequestService } from './services/request.service';
+import { ScheduleModeService } from './services/schedule-mode.service';
 import { ShiftService } from './services/shift.service';
 import { WorkPolicyService } from './services/work-policy.service';
 import { WorkplaceService } from './services/workplace.service';
@@ -62,6 +64,7 @@ import { WorkplaceService } from './services/workplace.service';
       AttendanceRequestEntity,
       HolidayEntity,
       LeaveBalanceEntity,
+      ScheduleModePeriodEntity,
     ]),
     NotificationModule,
   ],
@@ -79,6 +82,7 @@ import { WorkplaceService } from './services/workplace.service';
     AttendanceExportService,
     AttendanceScheduleService,
     AttendanceMaintenanceService,
+    ScheduleModeService,
   ],
   controllers: [
     WorkplaceController,

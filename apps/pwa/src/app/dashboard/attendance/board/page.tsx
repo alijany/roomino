@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useBoard } from '../attendance.api';
 import { BoardTable } from '../attendance.component.board';
+import { ScheduleModeBoardNotice } from '../attendance.component.schedule-mode';
 import { PageHeader, Panel, RequestStatusBadge, StatTile } from '../attendance.component.layout';
 import { fa, jalaliLabel } from '../attendance.util';
 
@@ -30,6 +31,7 @@ export default function BoardPage() {
           <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
             {data && (
               <div className="space-y-3">
+                {data.scheduleMode && <ScheduleModeBoardNotice />}
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <StatTile label="پرسنل فعال" value={fa(data.stats.employees)} />
                   <StatTile label="حاضر" value={fa(data.stats.present)} tone="success" />

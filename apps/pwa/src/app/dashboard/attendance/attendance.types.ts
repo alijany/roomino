@@ -44,6 +44,8 @@ export enum DayStatus {
   MISSION = 'mission',
   REMOTE = 'remote',
   REMOTE_PENDING = 'remote_pending',
+  /** Schedule mode: nothing recorded, so the shift counts. */
+  BY_SCHEDULE = 'by_schedule',
   HOLIDAY = 'holiday',
   NO_SHIFT = 'no_shift',
   FUTURE = 'future',
@@ -55,6 +57,7 @@ export enum BoardStatus {
   REMOTE_DONE = 'remote_done',
   DONE = 'done',
   WORKING = 'working',
+  BY_SCHEDULE = 'by_schedule',
   OFF = 'off',
   NOT_YET = 'not_yet',
   MISSING = 'missing',
@@ -378,7 +381,9 @@ export interface RequestListResponse {
 
 export interface CorrectionInput {
   date: string;
-  checkIn: string;
+  /** Wasn't at work: times are cleared and the day is absent. */
+  absent?: boolean;
+  checkIn?: string;
   checkOut?: string;
   note: string;
 }
@@ -411,6 +416,21 @@ export interface MyToday {
     balance: number;
   };
   pendingRequests?: number;
+  /** Schedule mode: no check-in/out; the shift counts unless an exception is filed. */
+  scheduleMode?: boolean;
+  scheduleModeNote?: string | null;
+  /** Today as the report sees it — `by_schedule` in schedule mode. */
+  todayStatus?: DayStatus | null;
+  /** Today's manual check-in/out requests that aren't in `attendance` yet. */
+  manualRequests?: ManualRequestBrief[];
+}
+
+export interface ManualRequestBrief {
+  id: number;
+  direction: 'in' | 'out' | null;
+  time: string | null;
+  status: 'pending' | 'rejected';
+  reviewNote: string | null;
 }
 
 // --- reports ---------------------------------------------------------------------------
@@ -479,6 +499,8 @@ export interface ReportSummary {
   remotePendingDays: number;
   remoteMinutes: number;
   presentDays: number;
+  /** Of `presentDays`, counted from the shift in schedule mode. */
+  byScheduleDays?: number;
 }
 
 export interface Report {
@@ -506,6 +528,8 @@ export interface Board {
   date: string;
   jalali: string;
   holiday: string | null;
+  /** Schedule mode covers today: nobody checks in. */
+  scheduleMode?: boolean;
   rows: BoardRow[];
   stats: {
     employees: number;
@@ -548,10 +572,31 @@ export type AttendanceTable =
   | 'employees' | 'employeeShifts' | 'jobGroups' | 'workPolicies' | 'workPolicyRules'
   | 'shifts' | 'shiftDays' | 'workplaces' | 'holidays';
 
+export interface ScheduleModePeriod {
+  id: number;
+  startDate: string;
+  startJalali: string;
+  /** Null while it's on. */
+  endDate: string | null;
+  endJalali: string | null;
+  note: string | null;
+  startedBy: UserBrief | null;
+  endedBy: UserBrief | null;
+}
+
+export interface ScheduleMode {
+  enabled: boolean;
+  /** Still true on the day it's switched off — that takes effect tomorrow. */
+  coversToday: boolean;
+  current: ScheduleModePeriod | null;
+  history: ScheduleModePeriod[];
+}
+
 export interface MaintenanceSummary {
   counts: Record<AttendanceTable, number>;
   /** The phrase the admin types to confirm. */
   confirmation: string;
+  scheduleMode: ScheduleMode;
 }
 
 export interface ResetResult {

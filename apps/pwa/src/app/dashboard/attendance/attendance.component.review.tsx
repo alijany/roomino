@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input } from '@/ui/atoms';
+import { Button, Input, ToggleSwitch } from '@/ui/atoms';
 import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, useRejectRequest } from './attendance.api';
@@ -173,6 +173,9 @@ export function CorrectionModal({
   const correct = useCorrectAttendance(base);
   const [checkIn, setCheckIn] = useState(target?.checkIn ?? '');
   const [checkOut, setCheckOut] = useState(target?.checkOut ?? '');
+  // The way to record an absence — in schedule mode a day with nothing
+  // recorded counts as worked.
+  const [absent, setAbsent] = useState(false);
   const [note, setNote] = useState('');
 
   const handleSave = async () => {
@@ -180,9 +183,11 @@ export function CorrectionModal({
     try {
       await correct.submit({
         id: target.employeeId,
-        data: { date: target.date, checkIn, checkOut: checkOut || undefined, note: note.trim() },
+        data: absent
+          ? { date: target.date, absent: true, note: note.trim() }
+          : { date: target.date, checkIn, checkOut: checkOut || undefined, note: note.trim() },
       });
-      toast.success(`تردد ${target.name ?? ''} ثبت شد`);
+      toast.success(absent ? `غیبت ${target.name ?? ''} ثبت شد` : `تردد ${target.name ?? ''} ثبت شد`);
       onDone();
       onClose();
     } catch (error) {
@@ -197,7 +202,7 @@ export function CorrectionModal({
       title="ثبت / اصلاح تردد"
       footer={
         <>
-          <Button className="flex-1" disabled={!checkIn || !note.trim() || correct.isLoading} onClick={handleSave}>
+          <Button className="flex-1" disabled={(!absent && !checkIn) || !note.trim() || correct.isLoading} onClick={handleSave}>
             {correct.isLoading ? 'در حال ذخیره...' : 'ذخیره'}
           </Button>
           <Button variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>
@@ -212,17 +217,24 @@ export function CorrectionModal({
           <span className="text-slate-500">{jalaliLabel(target.date)}</span>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
-        <TimeField label="ساعت ورود" value={checkIn} onChange={setCheckIn} />
-        <TimeField label="ساعت خروج (اختیاری)" value={checkOut} onChange={setCheckOut} />
-      </div>
+      <ToggleSwitch label="غایب بود" checked={absent} onChange={setAbsent} />
+      {absent ? (
+        <p className="rounded-xl bg-rose-50 p-3 text-xs leading-5 text-rose-700">
+          ورود و خروج این روز پاک و روز غیبت ثبت می‌شود — حتی در حالت «حضور طبق شیفت».
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <TimeField label="ساعت ورود" value={checkIn} onChange={setCheckIn} />
+          <TimeField label="ساعت خروج (اختیاری)" value={checkOut} onChange={setCheckOut} />
+        </div>
+      )}
       <Input
         textarea
         label="دلیل اصلاح"
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={2}
-        placeholder="مثلاً فراموشی ثبت خروج"
+        placeholder={absent ? 'مثلاً غیبت بدون اطلاع' : 'مثلاً فراموشی ثبت خروج'}
       />
       <p className="text-xs text-slate-400">نام شما و دلیل اصلاح کنار این روز ثبت می‌شود.</p>
     </FormModal>

@@ -17,10 +17,11 @@ import { useHolidays, useMyToday } from './attendance.api';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
 import { AttendanceMap, MAP_COLORS } from './attendance.component.map';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
+import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { useCheckInFlow } from './attendance.hook.check-in';
 import { MyToday } from './attendance.types';
-import { fa, hm, jalaliLabel } from './attendance.util';
+import { fa, hm, jalaliLabel, todayPunches } from './attendance.util';
 
 /**
  * ورود و خروج — the employee's day: check in/out with GPS, today's shift,
@@ -54,6 +55,12 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
 
   const att = today.attendance;
   const month = today.month;
+  const scheduleMode = Boolean(today.scheduleMode);
+  const punches = todayPunches(today, scheduleMode);
+  // Schedule mode: a time nobody recorded is the shift's.
+  const presumed = scheduleMode && Boolean(today.shiftStart) && !today.holiday;
+  const inTime = punches.in.time ?? (presumed ? today.shiftStart : null);
+  const outTime = punches.out.time ?? (presumed ? today.shiftEnd : null);
 
   const done = Boolean(att?.checkIn && att?.checkOut);
 
@@ -84,7 +91,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           )}
         </div>
 
-        {today.remoteStatus && (
+        {scheduleMode ? (
+          <ScheduleModeNotice note={today.scheduleModeNote} className="text-sm" />
+        ) : today.remoteStatus && (
           <p className="flex items-center gap-2 rounded-xl bg-sky-50 p-3 text-sm text-sky-700">
             <IconHome className="size-4" />
             {REMOTE_STATUS_LABELS[today.remoteStatus]}
@@ -94,19 +103,24 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">ورود</div>
-            <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(att?.checkIn) || '--:--'}</div>
-            {att?.workMode === 'remote' && att.checkIn && <div className="text-xs text-sky-600">دورکاری</div>}
+            <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(inTime) || '--:--'}</div>
+            <div className="text-xs">
+              <PunchHint punch={punches.in} presumed={presumed} remote={att?.workMode === 'remote' && Boolean(att.checkIn)} />
+            </div>
             {att?.checkInDistanceM != null && (
               <div className="text-xs text-slate-400">{fa(att.checkInDistanceM)} متر از محل کار</div>
             )}
           </div>
           <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">خروج</div>
-            <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(att?.checkOut) || '--:--'}</div>
+            <div className="mt-1 text-2xl font-bold tabular-nums text-slate-800">{fa(outTime) || '--:--'}</div>
+            <div className="text-xs">
+              <PunchHint punch={punches.out} presumed={presumed} />
+            </div>
           </div>
         </div>
 
-        {lastError && (
+        {lastError && !scheduleMode && (
           <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
             <p>{fa(lastError)}</p>
             {offerRemote && !att?.checkIn && (
@@ -123,7 +137,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           </div>
         )}
 
-        {done ? (
+        {scheduleMode ? (
+          presumed && <ScheduleModeAction today={today} punches={punches} onChange={onChange} />
+        ) : done ? (
           <p className="rounded-xl bg-emerald-50 p-3 text-center text-sm text-emerald-700">
             ورود و خروج امروز ثبت شده است.
           </p>
@@ -149,7 +165,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             points={me ? [{ ...me, label: 'موقعیت شما', color: MAP_COLORS.me, permanent: true }] : []}
           />
           <p className="text-xs text-slate-400">
-            {me
+            {scheduleMode
+              ? `محل کار شما: ${workplace.name}`
+              : me
               ? '«موقعیت شما» جایی است که GPS هنگام آخرین ثبت نشان داد؛ ورود و خروج داخل دایره پذیرفته می‌شود.'
               : 'ورود و خروج داخل دایره پذیرفته می‌شود؛ موقعیت شما هنگام ثبت روی نقشه نشان داده می‌شود.'}
           </p>

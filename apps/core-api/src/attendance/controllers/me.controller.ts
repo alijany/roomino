@@ -27,11 +27,13 @@ import { EmployeeService } from '../services/employee.service';
 import { HolidayService } from '../services/holiday.service';
 import { ReportService } from '../services/report.service';
 import { RequestService } from '../services/request.service';
+import { ScheduleModeService } from '../services/schedule-mode.service';
 import { tehranToday } from '../utils/attendance-time.util';
 import {
   toAttendanceView,
   toEmployeeView,
   toLeaveBalanceView,
+  toManualRequestBrief,
   toRequestView,
   toWorkplaceView,
 } from '../utils/attendance-view.util';
@@ -52,6 +54,7 @@ export class MeController {
     private readonly reports: ReportService,
     private readonly requests: RequestService,
     private readonly exports: AttendanceExportService,
+    private readonly scheduleMode: ScheduleModeService,
   ) {}
 
   /**
@@ -74,7 +77,7 @@ export class MeController {
     }
 
     const today = tehranToday();
-    const [day, holiday, remoteStatus, report, current, pending] =
+    const [day, holiday, remoteStatus, report, current, pending, manual, mode] =
       await Promise.all([
         this.attendance.findDay(profile.id, today),
         this.holidays.isHoliday(today),
@@ -82,6 +85,8 @@ export class MeController {
         this.reports.report(profile, this.reports.periodOf({})),
         this.employees.currentAssignment(profile.id),
         this.requests.pendingCountByEmployee([profile.id]),
+        this.requests.manualOn(profile.id, today),
+        this.scheduleMode.on(today),
       ]);
     const todayRow = report.days.find((d) => d.date === today);
 
@@ -105,6 +110,13 @@ export class MeController {
         balance: report.summary.balance,
       },
       pendingRequests: pending.get(profile.id) ?? 0,
+      /** Schedule mode: no check-in/out, the shift counts unless excepted. */
+      scheduleMode: Boolean(mode),
+      scheduleModeNote: mode?.note ?? null,
+      /** Today as the report sees it — `by_schedule` in schedule mode. */
+      todayStatus: todayRow?.status ?? null,
+      /** Today's manual check-in/out requests not yet in `attendance`. */
+      manualRequests: manual.map(toManualRequestBrief),
     };
   }
 

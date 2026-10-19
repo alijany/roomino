@@ -38,6 +38,7 @@ import {
   RequestListResponse,
   ResetResult,
   ResetScope,
+  ScheduleMode,
   Shift,
   ShiftInput,
   UserBrief,
@@ -372,6 +373,15 @@ export function useSyncHolidays() {
 
 export function useMaintenanceSummary() {
   return useSwrHelper(useSWR<MaintenanceSummary>('/attendance/maintenance', fetcher));
+}
+
+export function useUpdateScheduleMode() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/attendance/maintenance/schedule-mode',
+      patchFetcher<{ enabled: boolean; note?: string }, ScheduleMode>,
+    ),
+  );
 }
 
 export function useResetAttendance() {

@@ -213,3 +213,14 @@ export class ResetAttendanceDto {
   @IsNotEmpty({ message: 'عبارت تایید را وارد کنید' })
   confirm: string;
 }
+
+export class UpdateScheduleModeDto {
+  @IsBoolean({ message: 'روشن یا خاموش بودن حالت طبق شیفت را مشخص کنید' })
+  enabled: boolean;
+
+  /** Omitted keeps the current note; an empty string clears it. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'پیام برای پرسنل حداکثر ۵۰۰ نویسه است' })
+  note?: string;
+}

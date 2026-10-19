@@ -14,7 +14,7 @@
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
 | `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift) |
-| `/maintenance` | admin | wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
+| `/maintenance` | admin | schedule-mode switch (with a note for staff, and its history); wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
 | `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
 
 The dashboard home (`/dashboard`) opens with `AttendanceTodayWidget`
@@ -23,6 +23,17 @@ The dashboard home (`/dashboard`) opens with `AttendanceTodayWidget`
 `useCheckInFlow` (`attendance.hook.check-in.ts`) with the attendance home, so
 GPS, the remote fallback and errors behave the same in both. People without
 a profile don't see it.
+
+**Schedule mode (حضور طبق شیفت).** When `/attendance/me` says
+`scheduleMode`, the widget and the attendance home drop check-in/out: times
+nobody recorded show as the shift's («طبق شیفت»), the counter runs from the
+shift start, and the one action is «ثبت تأخیر یا خروج زودتر»
+(`attendance.component.schedule-mode.tsx`) — the request form as manual
+attendance at the time of the tap, its type switchable to leave or
+overtime. `todayPunches` merges what's recorded with today's
+`manualRequests`, so an exception shows «در انتظار تایید» until it's decided.
+The board and «تیم من» explain the mode; reviewers record an absence with
+«غایب بود» in the correction form.
 
 «تیم من» is deliberately not in the sidebar: it belongs to whoever an admin
 assigned as a job-group approver, which is not a role, so `RouteItem.roles`

@@ -28,7 +28,7 @@ answers `{ hasProfile: false }` so the UI can explain rather than 403.
 |---|---|---|
 | Workplaces, shifts (write), job groups, work policies, employees, holidays (write), all requests, company reports, corrections, grants | `admin`, `hr` | `@Roles` on every handler (`RolesGuard` reads handler metadata only) |
 | Shifts and holidays (read) | anyone signed in | — |
-| `/attendance/maintenance` — row counts, reset | `admin` only (not HR — it can't be undone) | `@Roles` |
+| `/attendance/maintenance` — row counts, schedule mode, reset | `admin` only (not HR — these change attendance for everyone, and a reset can't be undone) | `@Roles` |
 | `/attendance/me/**` — today, check-in/out, own report, own requests | anyone with an **active** profile | `EmployeeService.requireOwn` |
 | `/attendance/team/**` — board, requests, member report/corrections/schedule | approvers of ≥1 job group | `EmployeeService.requireApprover` + `teamMemberOrFail` on every call |
 
@@ -96,14 +96,44 @@ HolidayEntity
   solar holidays are stored and the response says so. Official holidays are
   deactivated, never deleted, so a sync doesn't resurrect them.
 
+## Schedule mode (حضور طبق شیفت)
+
+For when daily check-in isn't wanted (GPS unreliable, a remote stretch): an
+admin switches it on with `PATCH /attendance/maintenance/schedule-mode`
+`{ enabled, note? }`. While it covers a day:
+
+- `check-in` and `check-out` answer 403 — nobody punches.
+- A shift day with nothing recorded counts as worked in full
+  (`DayStatus.BY_SCHEDULE`, `worked = scheduled`), the same way an approved
+  remote day does.
+- Exceptions are the requests that already exist: leave, mission and
+  overtime as usual; a late arrival or early departure as manual attendance.
+  A recorded or approved time counts and the missing side defaults to the
+  shift, so a 09:30 check-in is still 90 minutes late. Approved hourly leave
+  comes out of a presumed day.
+- Absence is recorded by a reviewer: the correction endpoint takes
+  `absent: true`, which clears the times and marks the day absent (in any
+  mode).
+- The board shows `by_schedule` instead of «ورود ثبت نشده».
+
+It's stored as periods (`ScheduleModePeriodEntity`), not a flag, so switching
+it off doesn't turn the days it covered into absences. On covers today at
+once; off ends the period today and takes effect tomorrow — on the day it was
+switched on, off removes the period instead. Switching on again before the
+last period ran out carries it on. Switching is serialised with an advisory
+lock. A reset never touches the periods.
+
+`GET /attendance/me` returns `scheduleMode`, the admin's note, `todayStatus`
+and `manualRequests` (today's manual requests still pending or rejected).
+
 ## Reset
 
 `POST /attendance/maintenance/reset` `{ scope, confirm }` wipes the module in
 one `TRUNCATE … RESTART IDENTITY` inside a transaction. `records` empties
 attendance, requests and leave balances and keeps setup and profiles; `all`
 also empties profiles, shift history, job groups (and their approvers),
-policies, shifts, workplaces and holidays. Users, roles and notifications are
-never touched. `confirm` must be `RESET_CONFIRMATION` (spaces/ZWNJ ignored).
+policies, shifts, workplaces and holidays. Users, roles, notifications and the
+schedule-mode periods are never touched. `confirm` must be `RESET_CONFIRMATION` (spaces/ZWNJ ignored).
 There is no `CASCADE`: a table outside the module that starts referencing
 these makes the reset fail rather than silently empty it too.
 
@@ -135,6 +165,6 @@ Stored but, as in Tesmino, not enforced: `allowedDeviceType`, `useWifi`,
 ## Verifying
 
 `lint` type-checks; `docs/attendance-e2e/` holds the behavioural suites
-against a real Postgres: `01-attendance.sh` (89 checks — flows and access)
-and `02-calculations.mjs` (74 — the arithmetic of a planted month, and
-races).
+against a real Postgres: `01-attendance.sh` (89 checks — flows and access),
+`02-calculations.mjs` (74 — the arithmetic of a planted month, and races)
+and `03-maintenance.sh` (54 — reset and schedule mode, run after 01).

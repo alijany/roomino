@@ -9,7 +9,7 @@ import {
 } from 'date-fns-jalali';
 import { API_URL } from '../../../../constants';
 import { DayFilter } from './attendance.constants';
-import { DayStatus, ReportDay, RequestType } from './attendance.types';
+import { DayStatus, ManualRequestBrief, MyToday, ReportDay, RequestType } from './attendance.types';
 
 const TEHRAN_TZ = 'Asia/Tehran';
 
@@ -53,6 +53,17 @@ export function durationLabel(minutes: number | null | undefined): string {
 /** Today's civil date in Tehran. */
 export function tehranToday(): string {
   return format(TZDate.tz(TEHRAN_TZ), 'yyyy-MM-dd');
+}
+
+/** Now as Tehran wall-clock `"HH:mm"`. */
+export function tehranClockNow(): string {
+  return format(TZDate.tz(TEHRAN_TZ), 'HH:mm');
+}
+
+/** `"HH:mm"` → minutes since midnight. */
+export function clockMinutes(clock: string): number {
+  const [h, m] = clock.split(':').map(Number);
+  return h * 60 + m;
 }
 
 /** A picked Date → Tehran civil date. */
@@ -178,4 +189,39 @@ export function errorMessage(error: unknown, fallback: string): string {
   const message = (error as { message?: string | string[] })?.message;
   if (Array.isArray(message)) return message[0] ?? fallback;
   return message || fallback;
+}
+
+// --- today's check-in/out ---------------------------------------------------------------
+
+export interface Punch {
+  /** `"HH:mm"` — recorded, else requested and awaiting review. */
+  time: string | null;
+  /** The time is only requested so far. */
+  pending: boolean;
+  /** Nothing recorded or pending, and the latest request was rejected. */
+  rejected: ManualRequestBrief | null;
+}
+
+/**
+ * Today's check-in and check-out as the person sees them: what's recorded,
+ * else what they've asked for — in schedule mode the requested times are the
+ * day's exceptions, shown until a reviewer decides on them.
+ */
+export function todayPunches(today: MyToday, includeRequested = true): { in: Punch; out: Punch } {
+  const punch = (direction: 'in' | 'out', recorded: string | null | undefined): Punch => {
+    const requests = includeRequested
+      ? (today.manualRequests ?? []).filter((r) => r.direction === direction)
+      : [];
+    const pending = requests.find((r) => r.status === 'pending');
+    const last = requests.at(-1);
+    return {
+      time: recorded ?? pending?.time ?? null,
+      pending: !recorded && Boolean(pending),
+      rejected: !recorded && !pending && last?.status === 'rejected' ? last : null,
+    };
+  };
+  return {
+    in: punch('in', today.attendance?.checkIn),
+    out: punch('out', today.attendance?.checkOut),
+  };
 }

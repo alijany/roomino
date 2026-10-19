@@ -6,6 +6,7 @@ a real Postgres, like the finance suites.
 | Suite | What | How |
 |---|---|---|
 | `01-attendance.sh` | flows and access — who can do what | `curl` + `jq` + `psql` |
+| `03-maintenance.sh` | admin maintenance — reset (validation, both scopes) and schedule mode; run right after `01`, on its database | `curl` + `jq` + `psql` |
 | `02-calculations.mjs` | the arithmetic — every day of a planted month, the summary, caps, shift history; and races (double taps, two reviewers at once) | Node 18+, `psql` |
 
 ## Prerequisites
@@ -26,7 +27,12 @@ psql -h 127.0.0.1 -U postgres -d roomino -f seed-users.sql
 export JWT_SECRET=<the dev API's secret>
 for i in 1 2 3 4 5 6; do node mint-token.js $i +9891200000$((10+i)) > /tmp/at_$i; done
 bash 01-attendance.sh                          # TOK=<dir> if the tokens aren't in /tmp
+bash 03-maintenance.sh                         # same database, straight after 01
 ```
+
+If `ADMIN_PHONE` is set in `apps/core-api/.env`, start the API with
+`ADMIN_PHONE=` — otherwise the bootstrap admin takes user id 1 and every
+persona below is off by one.
 
 `02-calculations.mjs` needs a fresh database of its own (same steps, then
 `node 02-calculations.mjs`) and a built API (`pnpm --filter core-api build`):
@@ -61,6 +67,19 @@ team) · self-review blocked · approval effects (balance, manual check-in) ·
 withdrawal · day statuses, delay, overtime, planned leave · corrections ·
 performance list, filters, board · CSV exports · grants · holidays and sync
 idempotence · user deletion with and without history.
+
+## What `03-maintenance.sh` covers
+
+Admin-only access (HR refused) · reset validation leaves data intact · a
+`records` reset keeps profiles, setup and approvers · schedule mode:
+validation, on/off the same day undone, the note, check-in/out refused for
+everyone, the board · a planted week (the period's start moved back in the
+database, holidays cleared): a day with nothing recorded counts in full, a
+late arrival filed as manual attendance is late with the check-out taken
+from the shift, a day marked absent, hourly leave taken out of a presumed
+day, a day's leave · switching off keeps today and the past by schedule,
+on again carries the period on · an `all` reset empties the module but
+keeps users and the mode.
 
 ## What `02-calculations.mjs` covers
 

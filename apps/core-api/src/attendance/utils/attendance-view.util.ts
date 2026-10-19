@@ -12,6 +12,7 @@ import { EmployeeShiftEntity } from '../entities/employee-shift.entity';
 import { HolidayEntity } from '../entities/holiday.entity';
 import { JobGroupEntity } from '../entities/job-group.entity';
 import { LeaveBalanceEntity } from '../entities/leave-balance.entity';
+import { ScheduleModePeriodEntity } from '../entities/schedule-mode-period.entity';
 import { ShiftEntity } from '../entities/shift.entity';
 import { WorkPolicyEntity } from '../entities/work-policy.entity';
 import { WorkplaceEntity } from '../entities/workplace.entity';
@@ -244,6 +245,32 @@ export function toRequestView(r: AttendanceRequestEntity) {
     createdAt: r.created_at,
     employee:
       employee && loaded(employee.user) ? toEmployeeBrief(employee) : null,
+  };
+}
+
+/** Today's manual check-in/out request, as the home screen shows it. */
+export function toManualRequestBrief(r: AttendanceRequestEntity) {
+  return {
+    id: r.id,
+    direction: r.manualDirection ?? null,
+    time: r.manualTime ?? null,
+    status: r.status,
+    reviewNote: r.reviewNote ?? null,
+  };
+}
+
+export function toScheduleModePeriodView(p: ScheduleModePeriodEntity) {
+  const startedBy = loaded(p.startedBy);
+  const endedBy = loaded(p.endedBy);
+  return {
+    id: p.id,
+    startDate: p.startDate,
+    startJalali: formatJalaliDate(p.startDate),
+    endDate: p.endDate ?? null,
+    endJalali: p.endDate ? formatJalaliDate(p.endDate) : null,
+    note: p.note ?? null,
+    startedBy: startedBy ? toUserBrief(startedBy) : null,
+    endedBy: endedBy ? toUserBrief(endedBy) : null,
   };
 }
 

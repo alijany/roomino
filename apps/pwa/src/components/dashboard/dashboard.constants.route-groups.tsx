@@ -11,7 +11,6 @@ import {
   IconClipboardList,
   IconDashboard,
   IconDoor,
-  IconEraser,
   IconFingerprint,
   IconId,
   IconLayoutDashboard,
@@ -23,6 +22,7 @@ import {
   IconReportSearch,
   IconRepeat,
   IconSettings,
+  IconTool,
   IconUser,
   IconUsers,
 } from "@tabler/icons-react";
@@ -198,10 +198,11 @@ export const RouteItems = {
 
   attendanceMaintenance: {
     href: "/dashboard/attendance/maintenance",
-    // Irreversible — admin only, not HR; enforced server-side too.
-    label: "پاک‌سازی داده‌های حضور",
+    // Schedule mode and data reset change attendance for everyone (and a
+    // reset is irreversible) — admin only, not HR; enforced server-side too.
+    label: "نگهداری حضور و غیاب",
     roles: [Role.ADMIN],
-    icon: <IconEraser className="size-5" />
+    icon: <IconTool className="size-5" />
   },
 
   financeSettings: {

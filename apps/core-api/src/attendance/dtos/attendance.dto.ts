@@ -9,6 +9,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { CLOCK_PATTERN, DATE_PATTERN, Digits } from './common.dto';
 
@@ -41,11 +42,22 @@ export class CorrectAttendanceDto {
   @Matches(DATE_PATTERN, { message: 'تاریخ نامعتبر است' })
   date: string;
 
+  /**
+   * The person wasn't at work: times are cleared and the day is absent —
+   * the way to record an absence in schedule mode, where a day with nothing
+   * recorded counts as worked.
+   */
+  @IsOptional()
+  @IsBoolean()
+  absent?: boolean;
+
+  @ValidateIf((dto: CorrectAttendanceDto) => !dto.absent)
   @Digits()
   @Matches(CLOCK_PATTERN, { message: 'ساعت ورود نامعتبر است' })
-  checkIn: string;
+  checkIn?: string;
 
   @IsOptional()
+  @ValidateIf((dto: CorrectAttendanceDto) => !dto.absent)
   @Digits()
   @Matches(CLOCK_PATTERN, { message: 'ساعت خروج نامعتبر است' })
   checkOut?: string;

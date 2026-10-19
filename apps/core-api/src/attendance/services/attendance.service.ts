@@ -30,6 +30,7 @@ import {
 } from '../utils/attendance-time.util';
 import { isFixedRemoteDay } from '../utils/attendance-shift.util';
 import { AttendanceNotificationService } from './attendance-notification.service';
+import { ScheduleModeService } from './schedule-mode.service';
 
 export interface CheckInResult {
   success: boolean;
@@ -43,12 +44,16 @@ export interface CheckInResult {
  * Check-in/out and corrections. GPS is the gate: inside the workplace
  * radius is an office day; outside it is only allowed as remote work, which
  * — unless already permitted — files a remote-work request for approval.
+ *
+ * In schedule mode (see `ScheduleModePeriodEntity`) check-in/out are
+ * refused outright; corrections by reviewers still work.
  */
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly em: EntityManager,
     private readonly notifications: AttendanceNotificationService,
+    private readonly scheduleMode: ScheduleModeService,
   ) {}
 
   findDay(profileId: number, date: string) {
@@ -98,6 +103,7 @@ export class AttendanceService {
     profile: EmployeeProfileEntity,
     dto: CheckInDto,
   ): Promise<CheckInResult> {
+    await this.scheduleMode.assertDirectAllowed();
     const today = tehranToday();
     const workplace = profile.workplace;
     const existing = await this.findDay(profile.id, today);
@@ -215,6 +221,7 @@ export class AttendanceService {
     profile: EmployeeProfileEntity,
     dto: CheckOutDto,
   ): Promise<CheckInResult> {
+    await this.scheduleMode.assertDirectAllowed();
     const today = tehranToday();
     const workplace = profile.workplace;
     const attendance = await this.findDay(profile.id, today);
@@ -278,6 +285,7 @@ export class AttendanceService {
       throw new BadRequestException('تردد روزهای آینده قابل ثبت نیست');
     }
     if (
+      !dto.absent &&
       dto.checkOut &&
       clockToMinutes(dto.checkOut) <= clockToMinutes(dto.checkIn)
     ) {
@@ -293,6 +301,28 @@ export class AttendanceService {
         status: AttendanceStatus.PRESENT,
         workMode: WorkMode.OFFICE,
       });
+
+    attendance.editedBy = editor;
+    attendance.editedAt = new Date();
+    attendance.editNote = dto.note;
+
+    if (dto.absent) {
+      this.em.assign(attendance, {
+        checkInAt: null,
+        checkInSource: null,
+        checkInLat: null,
+        checkInLng: null,
+        checkInDistanceM: null,
+        checkOutAt: null,
+        checkOutSource: null,
+        checkOutLat: null,
+        checkOutLng: null,
+        checkOutDistanceM: null,
+        status: AttendanceStatus.ABSENT,
+      });
+      await this.em.persistAndFlush(attendance);
+      return attendance;
+    }
 
     // Only a changed time is re-sourced as manual; an untouched GPS check-in
     // keeps its provenance.
@@ -311,9 +341,6 @@ export class AttendanceService {
     if (attendance.status !== AttendanceStatus.ON_LEAVE) {
       attendance.status = AttendanceStatus.PRESENT;
     }
-    attendance.editedBy = editor;
-    attendance.editedAt = new Date();
-    attendance.editNote = dto.note;
 
     await this.em.persistAndFlush(attendance);
     return attendance;

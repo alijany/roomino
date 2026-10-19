@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -15,18 +16,27 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import { RESET_CONFIRMATION } from '../attendance.constants';
-import { ResetAttendanceDto } from '../dtos/setup.dto';
+import {
+  ResetAttendanceDto,
+  UpdateScheduleModeDto,
+} from '../dtos/setup.dto';
 import { AttendanceMaintenanceService } from '../services/attendance-maintenance.service';
+import { ScheduleModeService } from '../services/schedule-mode.service';
+import { toScheduleModePeriodView } from '../utils/attendance-view.util';
 
 /**
- * Wiping attendance data. Admin only — not HR, who run attendance day to
- * day: a reset can't be undone.
+ * Module-wide controls: schedule mode and wiping data. Admin only — not
+ * HR, who run attendance day to day: these change it for everyone, and a
+ * reset can't be undone.
  */
 @Controller('attendance/maintenance')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class MaintenanceController {
-  constructor(private readonly maintenance: AttendanceMaintenanceService) {}
+  constructor(
+    private readonly maintenance: AttendanceMaintenanceService,
+    private readonly scheduleMode: ScheduleModeService,
+  ) {}
 
   @Get()
   @Roles(Role.ADMIN)
@@ -34,6 +44,32 @@ export class MaintenanceController {
     return {
       counts: await this.maintenance.summary(),
       confirmation: RESET_CONFIRMATION,
+      scheduleMode: await this.scheduleModeView(),
+    };
+  }
+
+  @Patch('schedule-mode')
+  @Roles(Role.ADMIN)
+  async updateScheduleMode(
+    @CurrentUser() user: UserEntity,
+    @Body() dto: UpdateScheduleModeDto,
+  ) {
+    await this.scheduleMode.update(dto, user);
+    return this.scheduleModeView();
+  }
+
+  private async scheduleModeView() {
+    const [open, today, history] = await Promise.all([
+      this.scheduleMode.open(),
+      this.scheduleMode.on(),
+      this.scheduleMode.history(),
+    ]);
+    return {
+      enabled: Boolean(open),
+      /** Still true on the day it's switched off — that takes effect tomorrow. */
+      coversToday: Boolean(today),
+      current: open ? toScheduleModePeriodView(open) : null,
+      history: history.map(toScheduleModePeriodView),
     };
   }
 

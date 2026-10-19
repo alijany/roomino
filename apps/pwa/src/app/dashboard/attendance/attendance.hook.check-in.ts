@@ -53,6 +53,8 @@ export function useCheckInFlow(onChange: () => void) {
       handle(await checkIn.submit({ ...position, remote: remote || undefined }));
     } catch (error) {
       toast.error(errorMessage(error, 'ثبت ورود انجام نشد'));
+      // An admin may have just switched to schedule mode.
+      onChange();
     }
   };
 
@@ -62,6 +64,7 @@ export function useCheckInFlow(onChange: () => void) {
       handle(await checkOut.submit(position));
     } catch (error) {
       toast.error(errorMessage(error, 'ثبت خروج انجام نشد'));
+      onChange();
     }
   };
 

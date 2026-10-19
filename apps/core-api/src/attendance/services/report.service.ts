@@ -15,6 +15,7 @@ import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeShiftEntity } from '../entities/employee-shift.entity';
 import { HolidayEntity } from '../entities/holiday.entity';
+import { ScheduleModePeriodEntity } from '../entities/schedule-mode-period.entity';
 import { categoryOf, isHourly } from '../utils/attendance-request.util';
 import {
   isFixedRemoteDay,
@@ -41,6 +42,7 @@ import {
 import { EmployeeService } from './employee.service';
 import { HolidayService } from './holiday.service';
 import { RequestService } from './request.service';
+import { covers, ScheduleModeService } from './schedule-mode.service';
 
 /** Longest custom range a report may cover. */
 const MAX_RANGE_DAYS = 370;
@@ -103,6 +105,8 @@ export interface ReportSummary {
   remotePendingDays: number;
   remoteMinutes: number;
   presentDays: number;
+  /** Of `presentDays`, those counted from the shift in schedule mode. */
+  byScheduleDays: number;
 }
 
 interface ReportInput {
@@ -110,6 +114,7 @@ interface ReportInput {
   requests: AttendanceRequestEntity[];
   holidays: Map<string, HolidayEntity>;
   assignments: EmployeeShiftEntity[];
+  schedulePeriods: ScheduleModePeriodEntity[];
 }
 
 const sum = <T>(items: T[], pick: (item: T) => number) =>
@@ -127,6 +132,7 @@ export class ReportService {
     private readonly employees: EmployeeService,
     private readonly holidays: HolidayService,
     private readonly requests: RequestService,
+    private readonly scheduleMode: ScheduleModeService,
   ) {}
 
   // --- period -----------------------------------------------------------------------
@@ -173,8 +179,8 @@ export class ReportService {
   ) {
     const ids = profiles.map((p) => p.id);
 
-    const [attendanceRows, requests, holidays, assignments] = await Promise.all(
-      [
+    const [attendanceRows, requests, holidays, assignments, schedulePeriods] =
+      await Promise.all([
         ids.length
           ? this.em.find(
               AttendanceEntity,
@@ -188,8 +194,8 @@ export class ReportService {
         ]),
         this.holidays.between(from, to),
         this.employees.assignmentsFor(ids),
-      ],
-    );
+        this.scheduleMode.between(from, to),
+      ]);
 
     return (profileId: number): ReportInput => ({
       attendances: new Map(
@@ -200,6 +206,7 @@ export class ReportService {
       requests: requests.filter((r) => r.employee.id === profileId),
       holidays,
       assignments: assignments.get(profileId) ?? [],
+      schedulePeriods,
     });
   }
 
@@ -286,14 +293,37 @@ export class ReportService {
     );
     const creditRemote = fullDayRemote || (fixedRemote && remoteCheckIn);
 
-    const checkIn = att?.checkInAt ?? null;
-    const checkOut = att?.checkOutAt ?? null;
     const isToday = date === today;
     const isFuture = date > today;
 
+    // Schedule mode: nobody checks in, so a missing time is taken from the
+    // shift. A recorded or approved one still counts — a late arrival filed
+    // as manual attendance is still late. Days already accounted for — full
+    // leave, mission or remote work, or marked absent — aren't presumed.
+    const bySchedule =
+      scheduled > 0 &&
+      !isFuture &&
+      !fullDayLeave &&
+      !fullDayMission &&
+      !fullDayRemote &&
+      att?.status !== AttendanceStatus.ABSENT &&
+      att?.status !== AttendanceStatus.ON_LEAVE &&
+      input.schedulePeriods.some((p) => covers(p, date));
+    const presumedIn = bySchedule && !att?.checkInAt;
+    const presumedOut = bySchedule && !att?.checkOutAt;
+    const checkIn = att?.checkInAt ?? (presumedIn ? shiftStart : null);
+    const checkOut = att?.checkOutAt ?? (presumedOut ? shiftEnd : null);
+
     let worked = 0;
-    if (checkIn && (checkOut || isToday)) {
-      worked = Math.max(0, minutesBetween(checkIn, checkOut ?? now));
+    if (presumedIn && presumedOut) {
+      // The shift's own length — its span would count a split shift's break.
+      worked = isToday
+        ? Math.min(scheduled, Math.max(0, minutesBetween(shiftStart, now)))
+        : scheduled;
+    } else if (checkIn && (checkOut || isToday)) {
+      const end =
+        presumedOut && isToday && now < checkOut ? now : checkOut ?? now;
+      worked = Math.max(0, minutesBetween(checkIn, end));
     }
 
     let delay = 0;
@@ -309,7 +339,16 @@ export class ReportService {
     if (fullDayLeave || att?.status === AttendanceStatus.ON_LEAVE)
       status = DayStatus.ON_LEAVE;
     else if (fullDayMission) status = DayStatus.MISSION;
+    else if (att?.status === AttendanceStatus.ABSENT)
+      status = DayStatus.ABSENT; // marked by a reviewer
     else if (creditRemote) status = DayStatus.REMOTE;
+    else if (bySchedule)
+      status =
+        presumedIn && presumedOut
+          ? DayStatus.BY_SCHEDULE
+          : isToday && presumedOut && now < checkOut
+          ? DayStatus.IN_PROGRESS
+          : DayStatus.PRESENT;
     else if (remoteCheckIn && pendingRemote) status = DayStatus.REMOTE_PENDING;
     else if (remoteCheckIn)
       status = DayStatus.ABSENT; // remote request rejected
@@ -369,6 +408,19 @@ export class ReportService {
       (r) => (isHourly(r.type) ? r.durationMinutes ?? 0 : scheduled),
     );
 
+    // A presumed time covers the whole shift, hours on leave included; take
+    // them back out, as a check-out at the start of the leave would have.
+    if (
+      (presumedIn || presumedOut) &&
+      [
+        DayStatus.BY_SCHEDULE,
+        DayStatus.PRESENT,
+        DayStatus.IN_PROGRESS,
+      ].includes(status)
+    ) {
+      worked = Math.max(0, worked - leaveMinutes);
+    }
+
     return {
       date,
       jalali: formatJalaliDate(date),
@@ -379,8 +431,9 @@ export class ReportService {
       shiftStart: tehranClock(shiftStart),
       shiftEnd: tehranClock(shiftEnd),
       scheduled,
-      checkIn: tehranClock(checkIn),
-      checkOut: tehranClock(checkOut),
+      // What was recorded; a time presumed from the shift isn't shown.
+      checkIn: tehranClock(att?.checkInAt),
+      checkOut: tehranClock(att?.checkOutAt),
       worked,
       delay,
       early,
@@ -401,11 +454,14 @@ export class ReportService {
   }
 
   private summarize(days: ReportDay[], today: string): ReportSummary {
-    // Today only counts once the day is finished with a check-out.
+    // Today only counts once the day is finished — with a check-out, or in
+    // schedule mode once the shift is over.
     const past = days.filter(
       (d) =>
         d.date < today ||
-        (d.isToday && [DayStatus.PRESENT, DayStatus.REMOTE].includes(d.status)),
+        (d.isToday &&
+          ([DayStatus.PRESENT, DayStatus.REMOTE].includes(d.status) ||
+            (d.status === DayStatus.BY_SCHEDULE && d.worked >= d.scheduled))),
     );
     // Scheduled time up to today, without full-day leave or mission days.
     const required = sum(
@@ -442,8 +498,14 @@ export class ReportService {
       ).length,
       remoteMinutes: sum(days, (d) => d.remote),
       presentDays: days.filter((d) =>
-        [DayStatus.PRESENT, DayStatus.IN_PROGRESS].includes(d.status),
+        [
+          DayStatus.PRESENT,
+          DayStatus.IN_PROGRESS,
+          DayStatus.BY_SCHEDULE,
+        ].includes(d.status),
       ).length,
+      byScheduleDays: days.filter((d) => d.status === DayStatus.BY_SCHEDULE)
+        .length,
     };
   }
 
@@ -455,16 +517,18 @@ export class ReportService {
     const now = new Date();
     const ids = profiles.map((p) => p.id);
 
-    const [attendances, holiday, assignments] = await Promise.all([
-      ids.length
-        ? this.em.find(AttendanceEntity, {
-            employee: { $in: ids },
-            date: today,
-          })
-        : Promise.resolve([] as AttendanceEntity[]),
-      this.holidays.isHoliday(today),
-      this.employees.assignmentsFor(ids),
-    ]);
+    const [attendances, holiday, assignments, scheduleMode] =
+      await Promise.all([
+        ids.length
+          ? this.em.find(AttendanceEntity, {
+              employee: { $in: ids },
+              date: today,
+            })
+          : Promise.resolve([] as AttendanceEntity[]),
+        this.holidays.isHoliday(today),
+        this.employees.assignmentsFor(ids),
+        this.scheduleMode.on(today),
+      ]);
     const byProfile = new Map(attendances.map((a) => [a.employee.id, a]));
 
     const rows = profiles.map((profile) => {
@@ -481,6 +545,9 @@ export class ReportService {
       } else if (att?.checkOutAt) status = BoardStatus.DONE;
       else if (att?.checkInAt) status = BoardStatus.WORKING;
       else if (!start) status = BoardStatus.OFF;
+      else if (att?.status === AttendanceStatus.ABSENT)
+        status = BoardStatus.MISSING;
+      else if (scheduleMode) status = BoardStatus.BY_SCHEDULE;
       else if (now < start) status = BoardStatus.NOT_YET;
       else status = BoardStatus.MISSING;
 
@@ -499,12 +566,14 @@ export class ReportService {
       BoardStatus.DONE,
       BoardStatus.REMOTE,
       BoardStatus.REMOTE_DONE,
+      BoardStatus.BY_SCHEDULE,
     ];
 
     return {
       date: today,
       jalali: formatJalaliDate(today),
       holiday: holiday?.title ?? null,
+      scheduleMode: Boolean(scheduleMode),
       rows,
       stats: {
         employees: rows.length,

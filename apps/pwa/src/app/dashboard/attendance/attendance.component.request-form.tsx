@@ -20,6 +20,8 @@ export interface RequestPrefill {
   type?: RequestType;
   date?: string;
   direction?: 'in' | 'out';
+  /** Manual attendance: `"HH:mm"`. */
+  time?: string;
 }
 
 /**
@@ -51,7 +53,7 @@ export function RequestForm({
   const [date, setDate] = useState(start);
   const [timeFrom, setTimeFrom] = useState('');
   const [timeTo, setTimeTo] = useState('');
-  const [manualTime, setManualTime] = useState('');
+  const [manualTime, setManualTime] = useState(prefill?.time ?? '');
   const [direction, setDirection] = useState<'in' | 'out'>(prefill?.direction ?? 'in');
   const [description, setDescription] = useState('');
 
