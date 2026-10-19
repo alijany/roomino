@@ -209,3 +209,18 @@ export enum RemoteStatus {
   APPROVED = 'approved',
   PENDING = 'pending',
 }
+
+/**
+ * How much an admin's reset wipes:
+ * - `records` — what people did: check-ins, requests, leave ledgers. Setup
+ *   and profiles stay, so attendance carries on from a clean slate.
+ * - `all` — the whole module, setup and profiles included, as if it had
+ *   never been used. Users themselves are untouched.
+ */
+export enum ResetScope {
+  RECORDS = 'records',
+  ALL = 'all',
+}
+
+/** What the admin types to confirm a reset, compared without spaces or ZWNJ. */
+export const RESET_CONFIRMATION = 'پاکسازی';

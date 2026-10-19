@@ -11,6 +11,7 @@ import {
   IconClipboardList,
   IconDashboard,
   IconDoor,
+  IconEraser,
   IconFingerprint,
   IconId,
   IconLayoutDashboard,
@@ -195,6 +196,14 @@ export const RouteItems = {
     icon: <IconAdjustmentsHorizontal className="size-5" />
   },
 
+  attendanceMaintenance: {
+    href: "/dashboard/attendance/maintenance",
+    // Irreversible — admin only, not HR; enforced server-side too.
+    label: "پاک‌سازی داده‌های حضور",
+    roles: [Role.ADMIN],
+    icon: <IconEraser className="size-5" />
+  },
+
   financeSettings: {
     href: "/dashboard/finance/settings",
     label: "تنظیمات مالی",
@@ -240,6 +249,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.attendancePerformance,
       RouteItems.attendanceEmployees,
       RouteItems.attendanceSettings,
+      RouteItems.attendanceMaintenance,
     ]
   },
   {

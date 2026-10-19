@@ -16,7 +16,7 @@ import { getActiveRoute } from "./dashboard.util.navigation";
 const SHORT_LABELS: Record<string, string> = {
   [RouteItems.dashboard.href]: "پیشخوان",
   [RouteItems.attendanceHome.href]: "حضور",
-  [RouteItems.financeMyRequests.href]: "پرداخت‌ها",
+  [RouteItems.attendanceMyRequests.href]: "درخواست‌ها",
   [RouteItems.financeApprovals.href]: "تأییدها",
   [RouteItems.financeQueue.href]: "صف پرداخت",
   [RouteItems.management.href]: "مدیریت",
@@ -32,25 +32,25 @@ export const BottomNavBar: React.FC = () => {
   const pathname = usePathname();
   const { hasAnyRole } = useAuth();
 
-  // One finance slot, filled with whichever finance surface this person acts
-  // on. Approving is designed to happen on a phone, so an approver who could
-  // only reach their inbox through the hamburger menu was a real gap; Finance
-  // gets the payment queue for the same reason.
-  const financeSlot: RouteItem | null = hasAnyRole([Role.APPROVER])
+  // Approvers and Finance keep a finance slot — approving and paying are
+  // designed to happen on a phone. Everyone else gets their leave and
+  // attendance requests there instead: filing leave is the phone task people
+  // actually have, and payment requests stay a tap away in the menu.
+  const requestsSlot: RouteItem = hasAnyRole([Role.APPROVER])
     ? RouteItems.financeApprovals
     : hasAnyRole([Role.FINANCE])
       ? RouteItems.financeQueue
-      : RouteItems.financeMyRequests;
+      : RouteItems.attendanceMyRequests;
 
   // Checking in happens on a phone, so attendance gets a slot; notifications
   // give theirs up because the header's bell already reaches them.
   const bottomNavItems: RouteItem[] = [
     RouteItems.dashboard,
     RouteItems.attendanceHome,
-    financeSlot,
+    requestsSlot,
     RouteItems.management,
     RouteItems.profile,
-  ].filter(Boolean) as RouteItem[];
+  ];
 
   // Filtered against every role the user holds, matching the sidebar and the
   // route guards. Filtering by the selected role hid work people were

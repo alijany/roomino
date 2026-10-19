@@ -537,3 +537,24 @@ export interface HolidaySyncResult {
   source: 'api' | 'fallback';
   error: string | null;
 }
+
+// --- maintenance (admin) -----------------------------------------------------------------
+
+/** `records` — check-ins, requests, leave ledgers. `all` — setup and profiles too. */
+export type ResetScope = 'records' | 'all';
+
+export type AttendanceTable =
+  | 'attendance' | 'requests' | 'leaveBalances'
+  | 'employees' | 'employeeShifts' | 'jobGroups' | 'workPolicies' | 'workPolicyRules'
+  | 'shifts' | 'shiftDays' | 'workplaces' | 'holidays';
+
+export interface MaintenanceSummary {
+  counts: Record<AttendanceTable, number>;
+  /** The phrase the admin types to confirm. */
+  confirmation: string;
+}
+
+export interface ResetResult {
+  scope: ResetScope;
+  deleted: Partial<Record<AttendanceTable, number>>;
+}

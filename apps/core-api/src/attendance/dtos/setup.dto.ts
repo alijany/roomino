@@ -16,7 +16,11 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { PolicyPeriod, PolicyRequestType } from '../attendance.constants';
+import {
+  PolicyPeriod,
+  PolicyRequestType,
+  ResetScope,
+} from '../attendance.constants';
 import { CLOCK_PATTERN, Digits } from './common.dto';
 
 // --- workplaces ----------------------------------------------------------------
@@ -199,4 +203,13 @@ export class SaveWorkPolicyDto {
   @ValidateNested({ each: true })
   @Type(() => PolicyRuleDto)
   rules: PolicyRuleDto[];
+}
+
+export class ResetAttendanceDto {
+  @IsEnum(ResetScope, { message: 'دامنه پاک‌سازی نامعتبر است' })
+  scope: ResetScope;
+
+  @IsString()
+  @IsNotEmpty({ message: 'عبارت تایید را وارد کنید' })
+  confirm: string;
 }

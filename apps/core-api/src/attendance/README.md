@@ -28,6 +28,7 @@ answers `{ hasProfile: false }` so the UI can explain rather than 403.
 |---|---|---|
 | Workplaces, shifts (write), job groups, work policies, employees, holidays (write), all requests, company reports, corrections, grants | `admin`, `hr` | `@Roles` on every handler (`RolesGuard` reads handler metadata only) |
 | Shifts and holidays (read) | anyone signed in | — |
+| `/attendance/maintenance` — row counts, reset | `admin` only (not HR — it can't be undone) | `@Roles` |
 | `/attendance/me/**` — today, check-in/out, own report, own requests | anyone with an **active** profile | `EmployeeService.requireOwn` |
 | `/attendance/team/**` — board, requests, member report/corrections/schedule | approvers of ≥1 job group | `EmployeeService.requireApprover` + `teamMemberOrFail` on every call |
 
@@ -94,6 +95,17 @@ HolidayEntity
   (default `https://pnldev.com/api/calender`); if it's unreachable the fixed
   solar holidays are stored and the response says so. Official holidays are
   deactivated, never deleted, so a sync doesn't resurrect them.
+
+## Reset
+
+`POST /attendance/maintenance/reset` `{ scope, confirm }` wipes the module in
+one `TRUNCATE … RESTART IDENTITY` inside a transaction. `records` empties
+attendance, requests and leave balances and keeps setup and profiles; `all`
+also empties profiles, shift history, job groups (and their approvers),
+policies, shifts, workplaces and holidays. Users, roles and notifications are
+never touched. `confirm` must be `RESET_CONFIRMATION` (spaces/ZWNJ ignored).
+There is no `CASCADE`: a table outside the module that starts referencing
+these makes the reset fail rather than silently empty it too.
 
 ## Deviations from Tesmino
 

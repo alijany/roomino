@@ -14,7 +14,15 @@
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
 | `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift) |
+| `/maintenance` | admin | wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
 | `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
+
+The dashboard home (`/dashboard`) opens with `AttendanceTodayWidget`
+(`attendance.component.today-widget.tsx`): today's status, the next action
+(check in / check out), time present so far and shortcuts. It shares
+`useCheckInFlow` (`attendance.hook.check-in.ts`) with the attendance home, so
+GPS, the remote fallback and errors behave the same in both. People without
+a profile don't see it.
 
 «تیم من» is deliberately not in the sidebar: it belongs to whoever an admin
 assigned as a job-group approver, which is not a role, so `RouteItem.roles`

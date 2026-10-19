@@ -4,6 +4,7 @@ import { NotificationModule } from '../notification/notification.module';
 import { EmployeeController } from './controllers/employee.controller';
 import { HolidayController } from './controllers/holiday.controller';
 import { JobGroupController } from './controllers/job-group.controller';
+import { MaintenanceController } from './controllers/maintenance.controller';
 import { MeController } from './controllers/me.controller';
 import { ReportController } from './controllers/report.controller';
 import { RequestController } from './controllers/request.controller';
@@ -24,6 +25,7 @@ import { WorkPolicyRuleEntity } from './entities/work-policy-rule.entity';
 import { WorkPolicyEntity } from './entities/work-policy.entity';
 import { WorkplaceEntity } from './entities/workplace.entity';
 import { AttendanceExportService } from './services/attendance-export.service';
+import { AttendanceMaintenanceService } from './services/attendance-maintenance.service';
 import { AttendanceNotificationService } from './services/attendance-notification.service';
 import { AttendanceScheduleService } from './services/attendance-schedule.service';
 import { AttendanceService } from './services/attendance.service';
@@ -76,6 +78,7 @@ import { WorkplaceService } from './services/workplace.service';
     ReportService,
     AttendanceExportService,
     AttendanceScheduleService,
+    AttendanceMaintenanceService,
   ],
   controllers: [
     WorkplaceController,
@@ -88,6 +91,7 @@ import { WorkplaceService } from './services/workplace.service';
     HolidayController,
     ReportController,
     TeamController,
+    MaintenanceController,
   ],
 })
 export class AttendanceModule {}

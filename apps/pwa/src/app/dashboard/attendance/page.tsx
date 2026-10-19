@@ -13,15 +13,14 @@ import {
   IconLogout,
 } from '@tabler/icons-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import { useCheckIn, useCheckOut, useHolidays, useMyToday } from './attendance.api';
+import { useHolidays, useMyToday } from './attendance.api';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
 import { AttendanceMap, MAP_COLORS } from './attendance.component.map';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
-import { CheckResult, MyToday } from './attendance.types';
-import { errorMessage, fa, getPosition, hm, jalaliLabel } from './attendance.util';
+import { useCheckInFlow } from './attendance.hook.check-in';
+import { MyToday } from './attendance.types';
+import { fa, hm, jalaliLabel } from './attendance.util';
 
 /**
  * ورود و خروج — the employee's day: check in/out with GPS, today's shift,
@@ -50,66 +49,11 @@ export default function AttendanceHomePage() {
 }
 
 function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const checkIn = useCheckIn();
-  const checkOut = useCheckOut();
-  const [locating, setLocating] = useState(false);
-  const [offerRemote, setOfferRemote] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
-  /** Where GPS last put the person, drawn on the map as «موقعیت شما». */
-  const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
+  const { locating, busy, offerRemote, lastError, me, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const { data: holidays } = useHolidays({ upcoming: 3 });
 
   const att = today.attendance;
-  const busy = locating || checkIn.isLoading || checkOut.isLoading;
   const month = today.month;
-
-  /**
-   * Position is optional: without it the server decides (no GPS rule, a
-   * remote day, or a refusal that offers remote check-in).
-   */
-  const locate = async () => {
-    setLocating(true);
-    try {
-      const position = await getPosition();
-      setMe(position);
-      return position;
-    } catch (error) {
-      toast.warning((error as Error).message);
-      return {};
-    } finally {
-      setLocating(false);
-    }
-  };
-
-  const handle = (result: CheckResult) => {
-    if (result.success) {
-      toast.success(result.message);
-      setOfferRemote(false);
-      setLastError(null);
-      onChange();
-    } else {
-      setLastError(result.message);
-      setOfferRemote(Boolean(result.canRemote));
-    }
-  };
-
-  const doCheckIn = async (remote = false) => {
-    const position = await locate();
-    try {
-      handle(await checkIn.submit({ ...position, remote: remote || undefined }));
-    } catch (error) {
-      toast.error(errorMessage(error, 'ثبت ورود انجام نشد'));
-    }
-  };
-
-  const doCheckOut = async () => {
-    const position = await locate();
-    try {
-      handle(await checkOut.submit(position));
-    } catch (error) {
-      toast.error(errorMessage(error, 'ثبت خروج انجام نشد'));
-    }
-  };
 
   const done = Boolean(att?.checkIn && att?.checkOut);
 

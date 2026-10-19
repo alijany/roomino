@@ -1,0 +1,271 @@
+'use client';
+
+import { cn } from '@/libs/style/style.util.helpers';
+import { Button } from '@/ui/atoms';
+import { DataView } from '@/ui/molecules';
+import { TZDate } from '@date-fns/tz';
+import {
+  IconArrowLeft,
+  IconCalendarStats,
+  IconCurrentLocation,
+  IconFingerprint,
+  IconHome,
+  IconLogin,
+  IconLogout,
+  IconMailbox,
+} from '@tabler/icons-react';
+import { format } from 'date-fns';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useMyToday } from './attendance.api';
+import { REMOTE_STATUS_LABELS } from './attendance.constants';
+import { useCheckInFlow } from './attendance.hook.check-in';
+import { MyToday } from './attendance.types';
+import { durationLabel, fa, hm } from './attendance.util';
+
+/**
+ * Today's attendance on the dashboard home: where the day stands and the one
+ * action that comes next, a thumb's reach from opening the app. People
+ * without an attendance profile don't get the card at all.
+ */
+export function AttendanceTodayWidget() {
+  const { data, error, isLoading, refresh } = useMyToday();
+
+  if (data && !data.hasProfile) return null;
+
+  return (
+    <section aria-labelledby="attendance-widget-title" className="ui-surface p-4 lg:p-5">
+      <DataView
+        data={data}
+        error={error}
+        isLoading={isLoading}
+        onRetry={refresh}
+        variant="inline"
+        errorTitle="وضعیت حضور بارگذاری نشد"
+      >
+        {data && <WidgetBody today={data} onChange={refresh} />}
+      </DataView>
+    </section>
+  );
+}
+
+type DayState = 'out' | 'late' | 'working' | 'done' | 'off';
+
+const STATE_META: Record<DayState, { label: string; className: string; dot: string }> = {
+  out: { label: 'در انتظار ورود', className: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
+  late: { label: 'ورود ثبت نشده', className: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
+  working: { label: 'در حال کار', className: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  done: { label: 'تکمیل شد', className: 'bg-brand-50 text-brand-700', dot: 'bg-brand-500' },
+  off: { label: 'بدون شیفت', className: 'bg-sky-50 text-sky-700', dot: 'bg-sky-500' },
+};
+
+/** `"HH:mm"` → minutes since midnight. */
+const minutesOf = (clock: string) => {
+  const [h, m] = clock.split(':').map(Number);
+  return h * 60 + m;
+};
+
+const tehranNowMinutes = () => minutesOf(format(TZDate.tz('Asia/Tehran'), 'HH:mm'));
+
+/** Re-renders every `ms` while `active`, for the live time-present counter. */
+function useNow(active: boolean, ms = 30_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(timer);
+  }, [active, ms]);
+  return now;
+}
+
+function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void }) {
+  const { locating, busy, offerRemote, lastError, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const att = today.attendance;
+  const checkedIn = Boolean(att?.checkIn);
+  const checkedOut = Boolean(att?.checkOut);
+  const now = useNow(checkedIn && !checkedOut);
+
+  const shiftMinutes = today.shiftStart && today.shiftEnd
+    ? minutesOf(today.shiftEnd) - minutesOf(today.shiftStart)
+    : 0;
+  const worked = att?.checkInAt
+    ? Math.max(0, Math.floor(((att.checkOutAt ? Date.parse(att.checkOutAt) : now) - Date.parse(att.checkInAt)) / 60_000))
+    : 0;
+  const progress = shiftMinutes > 0 ? Math.min(100, Math.round((worked / shiftMinutes) * 100)) : 0;
+
+  const state: DayState = checkedOut
+    ? 'done'
+    : checkedIn
+      ? 'working'
+      : today.holiday || !today.shiftStart
+        ? 'off'
+        : tehranNowMinutes() > minutesOf(today.shiftStart)
+          ? 'late'
+          : 'out';
+  const meta = STATE_META[state];
+  const stateLabel = state === 'off' && today.holiday ? 'تعطیل' : meta.label;
+
+  const shiftLabel = today.holiday
+    ? `تعطیل — ${today.holiday}`
+    : today.shiftStart
+      ? `شیفت ${fa(today.shiftStart)} تا ${fa(today.shiftEnd)}`
+      : 'بدون شیفت';
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700" aria-hidden="true">
+          <IconFingerprint className="size-5" />
+        </span>
+        <div className="min-w-0 grow">
+          <h2 id="attendance-widget-title" className="font-bold text-slate-800">حضور امروز</h2>
+          <p className="mt-0.5 truncate text-xs text-slate-500" title={shiftLabel}>
+            {shiftLabel}
+          </p>
+        </div>
+        <span
+          role="status"
+          className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', meta.className)}
+        >
+          <span className="relative flex size-2" aria-hidden="true">
+            {state === 'working' && (
+              <span className={cn('absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden', meta.dot)} />
+            )}
+            <span className={cn('relative inline-flex size-2 rounded-full', meta.dot)} />
+          </span>
+          {stateLabel}
+        </span>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_minmax(15rem,auto)] lg:items-center">
+        <div className="space-y-3">
+          <dl className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/70 rounded-2xl bg-slate-50 py-3 text-center ring-1 ring-inset ring-slate-200/60">
+            <TimeCell label="ورود" value={fa(att?.checkIn) || '--:--'} hint={att?.workMode === 'remote' && checkedIn ? 'دورکاری' : undefined} />
+            <TimeCell label="خروج" value={fa(att?.checkOut) || '--:--'} />
+            <TimeCell label="مدت حضور" value={checkedIn ? hm(worked) : '--:--'} accent={state === 'working'} />
+          </dl>
+
+          {shiftMinutes > 0 && checkedIn && (
+            <div className="space-y-1">
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-slate-100"
+                role="progressbar"
+                aria-label="پیشرفت شیفت امروز"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className={cn('h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none', state === 'done' ? 'bg-brand-500' : 'bg-emerald-500')}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-400">
+                {fa(progress)}٪ از {durationLabel(shiftMinutes)} شیفت امروز
+              </p>
+            </div>
+          )}
+
+          {today.remoteStatus && (
+            <p className="flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-700">
+              <IconHome className="size-4 shrink-0" aria-hidden="true" />
+              {REMOTE_STATUS_LABELS[today.remoteStatus]}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {checkedOut ? (
+            <Link
+              href="/dashboard/attendance/my-report"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              <IconCalendarStats className="size-5" aria-hidden="true" />
+              مشاهده کارکرد من
+            </Link>
+          ) : (
+            <Button
+              size="lg"
+              variant={!checkedIn && state === 'off' ? 'outline' : 'primary'}
+              className={cn('w-full gap-2', checkedIn && 'bg-slate-900 shadow-none hover:bg-slate-800')}
+              disabled={busy}
+              aria-busy={busy}
+              onClick={() => (checkedIn ? doCheckOut() : doCheckIn())}
+            >
+              {locating
+                ? <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
+                : checkedIn
+                  ? <IconLogout className="size-5" aria-hidden="true" />
+                  : <IconLogin className="size-5" aria-hidden="true" />}
+              {locating ? 'در حال دریافت موقعیت...' : checkedIn ? 'ثبت خروج' : 'ثبت ورود'}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {lastError && (
+        <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+          <p>{fa(lastError)}</p>
+          {offerRemote && !checkedIn && (
+            <Button size="sm" className="mt-3 w-full gap-1 sm:w-auto" disabled={busy} onClick={() => doCheckIn(true)}>
+              <IconHome className="size-4" aria-hidden="true" />
+              ثبت ورود دورکاری
+            </Button>
+          )}
+        </div>
+      )}
+
+      <nav aria-label="میانبرهای حضور و غیاب" className="-mx-1 flex flex-wrap gap-2 border-t border-slate-100 px-1 pt-3">
+        <Shortcut href="/dashboard/attendance/my-requests" icon={<IconMailbox className="size-4" />}>
+          درخواست مرخصی و تردد
+          {Boolean(today.pendingRequests) && (
+            <span className="rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-700">
+              {fa(today.pendingRequests)} در انتظار
+            </span>
+          )}
+        </Shortcut>
+        <Shortcut href="/dashboard/attendance" icon={<IconArrowLeft className="size-4" />} trailing>
+          جزئیات و نقشه
+        </Shortcut>
+      </nav>
+    </div>
+  );
+}
+
+function TimeCell({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent?: boolean }) {
+  return (
+    <div className="min-w-0 px-2">
+      <dt className="text-[11px] text-slate-500">{label}</dt>
+      <dd className={cn('mt-0.5 text-lg font-bold tabular-nums lg:text-xl', accent ? 'text-emerald-600' : 'text-slate-800')}>
+        {value}
+      </dd>
+      {hint && <dd className="text-[11px] text-sky-600">{hint}</dd>}
+    </div>
+  );
+}
+
+function Shortcut({
+  href,
+  icon,
+  trailing,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  trailing?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+        trailing ? 'ms-auto flex-row-reverse text-brand-700 hover:text-brand-800' : 'bg-slate-50',
+      )}
+    >
+      <span className="shrink-0" aria-hidden="true">{icon}</span>
+      {children}
+    </Link>
+  );
+}

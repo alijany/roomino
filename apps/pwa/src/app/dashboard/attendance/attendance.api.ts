@@ -25,6 +25,7 @@ import {
   JobGroup,
   JobGroupInput,
   LeaveBalance,
+  MaintenanceSummary,
   MyToday,
   PaginationMeta,
   PerformanceQuery,
@@ -35,6 +36,8 @@ import {
   RequestFilterDto,
   RequestInput,
   RequestListResponse,
+  ResetResult,
+  ResetScope,
   Shift,
   ShiftInput,
   UserBrief,
@@ -362,5 +365,20 @@ export function useDeleteHoliday() {
 export function useSyncHolidays() {
   return useSwrMutationHelper(
     useSWRMutation('/attendance/holidays/sync', postFetcher<{ year: number }, HolidaySyncResult>),
+  );
+}
+
+// --- maintenance (admin) -----------------------------------------------------------------
+
+export function useMaintenanceSummary() {
+  return useSwrHelper(useSWR<MaintenanceSummary>('/attendance/maintenance', fetcher));
+}
+
+export function useResetAttendance() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/attendance/maintenance/reset',
+      postFetcher<{ scope: ResetScope; confirm: string }, ResetResult>,
+    ),
   );
 }
