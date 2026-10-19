@@ -30,6 +30,7 @@ export function toUserSummary(user?: UserEntity): UserSummary | undefined {
     id: user.id,
     name: user.name,
     phone: user.phone,
+    profilePicture: user.profilePicture ?? null,
   };
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input } from '@/ui/atoms';
+import { Avatar, Button, Input } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
@@ -76,7 +76,8 @@ export function JobGroupsSettings() {
               <div className="flex flex-wrap gap-1">
                 {group.approvers.length ? (
                   group.approvers.map((a) => (
-                    <Badge key={a.id} tone="info" withDot={false}>
+                    <Badge key={a.id} tone="info" withDot={false} className="gap-1.5 ps-1">
+                      <Avatar src={a.profilePicture} name={a.name} className="size-5" />
                       {a.name ?? fa(a.phone)}
                     </Badge>
                   ))
@@ -154,7 +155,8 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
       <Field label="تاییدکنندگان">
         <div className="mb-2 flex flex-wrap gap-1">
           {approvers.map((a) => (
-            <span key={a.id} className="flex items-center gap-1 rounded-lg bg-sky-50 px-2 py-1 text-sm text-sky-700">
+            <span key={a.id} className="flex items-center gap-1.5 rounded-lg bg-sky-50 py-1 pe-2 ps-1 text-sm text-sky-700">
+              <Avatar src={a.profilePicture} name={a.name} className="size-6" />
               {a.name ?? fa(a.phone)}
               <button type="button" onClick={() => setApprovers(approvers.filter((x) => x.id !== a.id))} aria-label="حذف">
                 <IconX className="size-3.5" />
@@ -182,6 +184,7 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
                 >
                   <span className="flex items-center gap-2">
                     <IconPlus className="size-4 text-slate-400" />
+                    <Avatar src={u.profilePicture} name={u.name} className="size-6" />
                     {u.name ?? 'بدون نام'}
                   </span>
                   <span dir="ltr" className="text-xs text-slate-400">{fa(u.phone)}</span>

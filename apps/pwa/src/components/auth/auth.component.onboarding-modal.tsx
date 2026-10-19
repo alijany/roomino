@@ -1,13 +1,14 @@
 'use client';
 
-import { Button, Input, Modal } from '@/ui/atoms';
+import { Avatar, Button, Input, Modal } from '@/ui/atoms';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconCamera, IconUserFilled } from '@tabler/icons-react';
+import { IconCamera } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { uploadProfilePicture, useUpdateProfileMutation } from './auth.api.client';
 import { useAuth } from './auth.context.provider';
+import { prepareAvatar } from '@/libs/image/image.util.avatar';
 
 const onboardingFormSchema = z.object({
     firstName: z.string().min(1, { message: 'نام را وارد کنید' }),
@@ -33,11 +34,17 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
         resolver: zodResolver(onboardingFormSchema),
     });
 
-    const handlePictureSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePictureSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = '';
         if (!file) return;
-        setPendingFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+        // Shrunk now, so the preview shows exactly what will be uploaded.
+        const prepared = await prepareAvatar(file);
+        setPendingFile(prepared);
+        setPreviewUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return URL.createObjectURL(prepared);
+        });
     };
 
     const onSubmit = async (data: OnboardingFormData) => {
@@ -48,19 +55,27 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
                 lastName: data.lastName || undefined,
             });
 
-            if (pendingFile) {
-                setIsUploadingImage(true);
-                try {
-                    await uploadProfilePicture(pendingFile);
-                } finally {
-                    setIsUploadingImage(false);
-                }
-            }
-
-            await refreshProfile();
         } catch {
             setError('ثبت اطلاعات با خطا مواجه شد. دوباره تلاش کنید.');
+            return;
         }
+
+        if (pendingFile) {
+            setIsUploadingImage(true);
+            try {
+                await uploadProfilePicture(pendingFile);
+            } catch (uploadError) {
+                // The name is saved; let them pick another photo or go on without.
+                setPendingFile(null);
+                setPreviewUrl(null);
+                setError(`عکس پروفایل ذخیره نشد: ${(uploadError as Error).message} — عکس دیگری انتخاب کنید یا بدون عکس ادامه دهید.`);
+                return;
+            } finally {
+                setIsUploadingImage(false);
+            }
+        }
+
+        await refreshProfile();
     };
 
     const isBusy = isSaving || isUploadingImage;
@@ -90,15 +105,12 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
             <div className='flex flex-col items-center'>
                 <div className='relative group'>
                     <div className='w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg'>
-                        {previewUrl || user?.profilePicture ? (
-                            <img
-                                src={previewUrl || user?.profilePicture}
-                                alt="Profile"
-                                className='w-full h-full object-cover'
-                            />
-                        ) : (
-                            <IconUserFilled className='size-12 text-primary/60' />
-                        )}
+                        <Avatar
+                            src={previewUrl || user?.profilePicture}
+                            name={user?.name}
+                            className='size-full rounded-none'
+                            labelled
+                        />
                     </div>
                     <button
                         type='button'

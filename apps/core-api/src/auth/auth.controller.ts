@@ -1,3 +1,4 @@
+import { wrap } from '@mikro-orm/core';
 import {
   Body,
   Controller,
@@ -26,7 +27,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@CurrentUser() user: UserEntity) {
-    return user;
+    // `name` is a getter, which serialising the entity leaves out; the
+    // client shows it (and derives the avatar's initial from it).
+    return { ...wrap(user).toObject(), name: user.name ?? null };
   }
 
   // --- OTP Endpoints ---

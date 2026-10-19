@@ -4,7 +4,7 @@ import ProtectedRoute from '@/components/auth/auth.component.protected-route';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { formatMoney } from '@/libs/format/format.util';
 import { cn } from '@/libs/style/style.util.helpers';
-import { Button } from '@/ui/atoms';
+import { Avatar, Button } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import {
@@ -195,8 +195,10 @@ export default function PaymentRequestDetailPage() {
                         </span>
                       </div>
                       <h1 className="text-xl font-bold text-slate-800">{data.title}</h1>
-                      <p className="mt-1 text-sm text-slate-500">
-                        ثبت‌کننده: {data.requester?.name || '—'}
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+                        ثبت‌کننده:
+                        <Avatar src={data.requester?.profilePicture} name={data.requester?.name} className="size-5" />
+                        {data.requester?.name || '—'}
                       </p>
                     </div>
 
@@ -416,7 +418,8 @@ export default function PaymentRequestDetailPage() {
                             </span>
                             <span className="flex items-center gap-2">
                               {step.actor?.name && (
-                                <span className="text-xs text-slate-500">
+                                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                                  <Avatar src={step.actor.profilePicture} name={step.actor.name} className="size-5" />
                                   {step.actor.name}
                                 </span>
                               )}

@@ -2,10 +2,11 @@
 
 import { minutesToHHmm } from '@/libs/meeting/meeting.time';
 import { cn } from '@/libs/style/style.util.helpers';
-import { IconClock, IconLock, IconPhone, IconUser } from '@tabler/icons-react';
+import { IconClock, IconLock, IconPhone } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AvailabilitySlot } from './reservations.types';
+import { Avatar } from '@/ui/atoms';
 
 interface SlotCellProps {
   slot: AvailabilitySlot;
@@ -157,7 +158,7 @@ export function SlotCell({
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-white/70">
-                    <IconUser className="size-3.5" />
+                    <Avatar src={reservation?.ownerPicture} name={reservation?.ownerName} className="size-5" />
                     <span>{reservation?.ownerName}</span>
                   </div>
                   {reservation?.purpose && (

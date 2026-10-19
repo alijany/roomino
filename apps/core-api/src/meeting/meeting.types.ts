@@ -10,6 +10,7 @@ export interface AvailabilitySlot {
     purpose?: string;
     ownerName: string;
     ownerPhone?: string;
+    ownerPicture?: string | null;
     isOwn: boolean;
   };
   lockTitle?: string;

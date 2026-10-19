@@ -6,7 +6,7 @@ import { RouteItems } from '@/components/dashboard/dashboard.constants.route-gro
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView } from '@/ui/molecules';
-import { IconArrowRight, IconUser } from '@tabler/icons-react';
+import { IconArrowRight } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -22,6 +22,7 @@ import {
   performanceViewFromSearch,
   reportPeriodFromSearch,
 } from '../../attendance.util.performance';
+import { Avatar } from '@/ui/atoms';
 
 /** One employee for admin/HR: profile, leave balances and the full report. */
 export default function EmployeeReportPage() {
@@ -54,7 +55,7 @@ function EmployeeReportContent() {
   return (
     <div className="flex grow flex-col gap-3 overflow-auto pb-6">
       <PageHeader
-        icon={<IconUser className="size-6" />}
+        icon={<Avatar src={e?.user.profilePicture} name={e?.user.name} className="size-full rounded-[inherit]" />}
         title={e ? `کارکرد ${e.user.name ?? 'پرسنل'}` : 'گزارش پرسنل'}
         subtitle={
           e && (

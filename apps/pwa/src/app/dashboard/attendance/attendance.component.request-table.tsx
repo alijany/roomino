@@ -1,6 +1,6 @@
 'use client';
 
-import { Table, TableColumn } from '@/ui/molecules';
+import { PersonLabel, Table, TableColumn } from '@/ui/molecules';
 import { ReactNode } from 'react';
 import { RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceRequest } from './attendance.types';
@@ -25,10 +25,12 @@ export function RequestTable({
             key: 'employee',
             header: 'پرسنل',
             render: (r: AttendanceRequest) => (
-              <div>
-                <div className="font-medium text-slate-800">{r.employee?.name ?? '—'}</div>
-                <div className="text-xs text-slate-400">{fa(r.employee?.personnelCode)}</div>
-              </div>
+              <PersonLabel
+                name={r.employee?.name}
+                picture={r.employee?.profilePicture}
+                fallback="—"
+                detail={fa(r.employee?.personnelCode)}
+              />
             ),
           },
         ]

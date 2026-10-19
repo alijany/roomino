@@ -7,6 +7,7 @@ import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, us
 import { FormModal, RequestStatusBadge, TimeField } from './attendance.component.layout';
 import { AttendanceRequest, RequestStatus } from './attendance.types';
 import { durationLabel, errorMessage, fa, jalaliDateTime, jalaliLabel } from './attendance.util';
+import { PersonLabel } from '@/ui/molecules';
 
 /** Approve/reject buttons for one pending request, with the reject note modal. */
 export function ReviewActions({
@@ -98,7 +99,9 @@ export function ReviewActions({
 function RequestSummary({ request }: { request: AttendanceRequest }) {
   return (
     <div className="space-y-1 rounded-xl bg-slate-50 px-4 py-3 text-sm">
-      {request.employee?.name && <div className="font-medium text-slate-800">{request.employee.name}</div>}
+      {request.employee?.name && (
+        <PersonLabel name={request.employee.name} picture={request.employee.profilePicture} avatarClassName="size-7" />
+      )}
       <div className="text-slate-600">
         {request.typeLabel} · {fa(request.periodLabel)}
       </div>

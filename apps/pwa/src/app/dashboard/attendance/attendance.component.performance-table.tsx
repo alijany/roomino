@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { PerformanceQuery, PerformanceRow } from './attendance.types';
 import { fa, hm } from './attendance.util';
 import { performanceHref, PerformanceView } from './attendance.util.performance';
+import { Avatar } from '@/ui/atoms';
 
 const duration = (minutes: number) => <bdi dir="ltr">{hm(minutes)}</bdi>;
 
@@ -29,8 +30,9 @@ export function PerformanceTable({
         <div className="min-w-36 text-right">
           <Link
             href={performanceHref(query, row.employee.id, view)}
-            className="rounded font-semibold text-slate-800 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="flex items-center gap-2 rounded font-semibold text-slate-800 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
+            <Avatar src={row.employee.profilePicture} name={row.employee.name} className="size-7" />
             {row.employee.name ?? 'بدون نام'}
           </Link>
           <div className="mt-1 text-xs text-slate-500">کد {fa(row.employee.personnelCode)}</div>

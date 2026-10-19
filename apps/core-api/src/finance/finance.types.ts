@@ -22,6 +22,7 @@ export interface UserSummary {
   id: number;
   name?: string;
   phone?: string;
+  profilePicture?: string | null;
 }
 
 export interface ApprovalStepView {

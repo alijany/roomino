@@ -1,7 +1,7 @@
 'use client';
 
 import { minutesToHHmm } from '@/libs/meeting/meeting.time';
-import { Button } from '@/ui/atoms';
+import { Avatar, Button } from '@/ui/atoms';
 import { Modal } from '@/ui/atoms/ui.modal';
 import {
   IconCheck,
@@ -9,7 +9,6 @@ import {
   IconCopy,
   IconFileText,
   IconPhone,
-  IconUser,
   IconX,
 } from '@tabler/icons-react';
 import { useState } from 'react';
@@ -49,9 +48,7 @@ export function ReservationInfoModal({ room, slot, onClose }: InfoModalProps) {
 
         {/* Owner */}
         <div className="flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
-            <IconUser className="size-6" />
-          </div>
+          <Avatar src={res?.ownerPicture} name={res?.ownerName} className="size-12 rounded-2xl" />
           <div>
             <div className="font-semibold text-slate-800">{res?.ownerName}</div>
             <div className="text-xs text-slate-400">رزرو کننده</div>

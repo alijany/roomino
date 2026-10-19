@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from "@/libs/style/style.util.helpers";
-import { Dropdown, Input } from "@/ui/atoms";
+import { Avatar, Dropdown, Input } from "@/ui/atoms";
 import { IconChevronDown, IconLogout, IconReplace, IconSearch, IconUserFilled, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -119,9 +119,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
               aria-label={`انتخاب نقش، ${getRoleName(selectedRole.role)}`}
               className="flex w-full items-center gap-3 rounded-2xl border border-neutral-100 p-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
-              <span className="rounded-xl bg-slate-50 p-2.5" aria-hidden="true">
-                <IconUserFilled className="size-5 text-slate-700" />
-              </span>
+              <Avatar src={user?.profilePicture} name={user?.name} className="size-10 rounded-xl" />
               <span className="flex min-w-0 grow flex-col items-start gap-1">
                 <span dir="ltr" className="text-sm text-slate-700">{user?.phone}</span>
                 <span className="max-w-full truncate text-xs text-slate-500">

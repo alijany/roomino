@@ -67,6 +67,7 @@ export class UserController {
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
       phone: user.phone,
+      profilePicture: user.profilePicture ?? null,
       isApproved: user.isApproved,
       roles: user.roles
         ? user.roles.getItems().map((role) => ({
@@ -178,11 +179,17 @@ export class UserController {
       'profile-pictures',
     );
 
-    // Update user profile picture
-    const updatedUser = await this.userService.updateProfilePicture(
-      user.id,
-      fileUrl,
-    );
+    const { user: updatedUser, previous } =
+      await this.userService.updateProfilePicture(user.id, fileUrl);
+
+    // The old picture is no longer referenced anywhere; don't leave it in the
+    // bucket. Best effort — a failed delete mustn't fail the upload.
+    const previousKey = previous && this.s3StorageService.keyOf(previous);
+    if (previousKey?.startsWith('profile-pictures/')) {
+      await this.s3StorageService.deleteObject(previousKey).catch(() => {
+        /* logged by the storage service */
+      });
+    }
 
     return { profilePicture: updatedUser.profilePicture };
   }

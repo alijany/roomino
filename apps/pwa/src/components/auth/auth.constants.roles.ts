@@ -32,6 +32,7 @@ export type UserSummary = {
   lastName?: string;
   phone?: string;
   email?: string;
+  profilePicture?: string | null;
 };
 
 export type RoleType = {

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/libs/style/style.util.helpers';
-import { Table, TableColumn } from '@/ui/molecules';
+import { PersonLabel, Table, TableColumn } from '@/ui/molecules';
 import { useRouter } from 'next/navigation';
 import { FINANCE_ROUTES } from './finance.constants';
 import { StatusBadge } from './finance.component.status-badge';
@@ -69,7 +69,7 @@ export function RequestTable({ requests, hide = [] }: RequestTableProps) {
       key: 'requester',
       header: 'ثبت‌کننده',
       render: (row) => (
-        <span className="text-slate-600">{row.requester?.name || '—'}</span>
+        <PersonLabel name={row.requester?.name} picture={row.requester?.profilePicture} fallback="—" avatarClassName="size-7" />
       ),
     });
   }

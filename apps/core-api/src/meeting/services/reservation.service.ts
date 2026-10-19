@@ -243,6 +243,7 @@ export class ReservationService extends BaseRepositoryService<ReservationEntity>
               purpose: reservation.purpose,
               ownerName: reservation.user.name ?? 'کاربر',
               ownerPhone: reservation.user.phone,
+              ownerPicture: reservation.user.profilePicture ?? null,
               isOwn: reservation.user.id === currentUserId,
             };
           }

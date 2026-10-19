@@ -25,7 +25,9 @@ export class S3StorageService implements OnModuleInit {
   constructor(private configService: ConfigService) {
     this.bucketName = this.configService.get<string>('S3_BUCKET_NAME');
     this.region = this.configService.get<BucketLocationConstraint>('S3_REGION');
-    this.domain = this.configService.get<string>('S3_DOMAIN')?.replace(/\/+$/, '');
+    this.domain = this.configService
+      .get<string>('S3_DOMAIN')
+      ?.replace(/\/+$/, '');
 
     const clientConfig = {
       credentials: {
@@ -183,6 +185,19 @@ export class S3StorageService implements OnModuleInit {
     return getSignedUrl(this.publicReadClient, command, {
       expiresIn: expiresInSeconds,
     });
+  }
+
+  /**
+   * The object key behind a URL `uploadBuffer` returned, or null for a URL
+   * that isn't ours (another bucket, an external avatar).
+   */
+  keyOf(url: string): string | null {
+    const bases = [
+      this.domain && `${this.domain}/${this.bucketName}/`,
+      `https://${this.bucketName}.s3.${this.region}.amazonaws.com/`,
+    ].filter(Boolean);
+    const base = bases.find((b) => url.startsWith(b));
+    return base ? decodeURIComponent(url.slice(base.length)) : null;
   }
 
   async deleteObject(key: string): Promise<void> {

@@ -3,9 +3,9 @@
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Button, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
+import { Avatar, Button, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
-import { DataView, DatePickerField, Pagination, Table } from '@/ui/molecules';
+import { DataView, DatePickerField, Pagination, PersonLabel, Table } from '@/ui/molecules';
 import { IconCheck, IconId, IconPencil, IconPlus, IconReportSearch, IconSearch, IconUsersPlus, IconX } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -84,10 +84,7 @@ export default function EmployeesPage() {
                       key: 'name',
                       header: 'نام',
                       render: (e) => (
-                        <div>
-                          <div className="font-medium text-slate-800">{e.user.name ?? '—'}</div>
-                          <div className="text-xs text-slate-400">{e.jobTitle ?? ''}</div>
-                        </div>
+                        <PersonLabel name={e.user.name} picture={e.user.profilePicture} fallback="—" detail={e.jobTitle} />
                       ),
                     },
                     { key: 'code', header: 'کد پرسنلی', render: (e) => fa(e.personnelCode) },
@@ -271,6 +268,7 @@ function CandidateButton({ user, selected, onClick }: { user: Candidate; selecte
         ) : (
           <IconPlus className="size-4 shrink-0 text-slate-400" />
         )}
+        <Avatar src={user.profilePicture} name={user.name} className="size-6" />
         <span className="truncate">{user.name ?? 'بدون نام'}</span>
       </span>
       <span dir="ltr" className="shrink-0 text-xs text-slate-400">{fa(user.phone)}</span>
@@ -515,9 +513,12 @@ function BatchEmployeeForm({ onClose, onSaved }: { onClose: () => void; onSaved:
           <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
             {rows.map((row, i) => (
               <div key={row.user.id} className="flex flex-wrap items-start gap-2 p-3">
-                <div className="min-w-0 basis-full sm:basis-40 sm:pt-2.5">
-                  <div className="truncate text-sm font-medium text-slate-800">{row.user.name ?? 'بدون نام'}</div>
-                  <div dir="ltr" className="text-right text-xs text-slate-400">{fa(row.user.phone)}</div>
+                <div className="flex min-w-0 basis-full items-center gap-2 sm:basis-40 sm:pt-1.5">
+                  <Avatar src={row.user.profilePicture} name={row.user.name} className="size-8" />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-slate-800">{row.user.name ?? 'بدون نام'}</div>
+                    <div dir="ltr" className="text-right text-xs text-slate-400">{fa(row.user.phone)}</div>
+                  </div>
                 </div>
                 <div className="w-32">
                   <Input

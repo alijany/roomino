@@ -105,6 +105,7 @@ export interface UserBrief {
   id: number;
   name?: string;
   phone?: string;
+  profilePicture?: string | null;
 }
 
 export interface NamedRef {
@@ -226,6 +227,7 @@ export interface EmployeeBrief {
   id: number;
   userId: number;
   name: string | null;
+  profilePicture?: string | null;
   personnelCode: string;
   jobTitle: string | null;
 }

@@ -337,19 +337,21 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     return user;
   }
 
+  /** Sets the picture; returns the one it replaced, so it can be deleted. */
   async updateProfilePicture(
     userId: number,
     profilePictureUrl: string,
-  ): Promise<UserEntity> {
+  ): Promise<{ user: UserEntity; previous?: string }> {
     const user = await this.findOne({ id: userId });
 
     if (!user) {
       throw new NotFoundException('کاربر یافت نشد');
     }
 
+    const previous = user.profilePicture;
     user.profilePicture = profilePictureUrl;
     await this.persistAndFlush(user);
-    return user;
+    return { user, previous };
   }
 
   async updatePhoneNumber(

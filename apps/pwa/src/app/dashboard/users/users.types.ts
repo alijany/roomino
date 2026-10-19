@@ -18,6 +18,7 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   phone: string;
+  profilePicture?: string | null;
   isApproved: boolean;
   roles: UserRole[];
 }

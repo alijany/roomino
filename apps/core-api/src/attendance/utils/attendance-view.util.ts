@@ -30,7 +30,12 @@ const loaded = <T extends object>(ref: T | undefined): T | undefined =>
 
 export function toUserBrief(user?: UserEntity) {
   if (!user) return undefined;
-  return { id: user.id, name: user.name, phone: user.phone };
+  return {
+    id: user.id,
+    name: user.name,
+    phone: user.phone,
+    profilePicture: user.profilePicture ?? null,
+  };
 }
 
 export function toWorkplaceView(w: WorkplaceEntity) {
@@ -117,6 +122,7 @@ export function toEmployeeBrief(profile: EmployeeProfileEntity) {
     id: profile.id,
     userId: profile.user?.id,
     name: profile.user?.name ?? null,
+    profilePicture: profile.user?.profilePicture ?? null,
     personnelCode: profile.personnelCode,
     jobTitle: profile.jobTitle ?? null,
   };

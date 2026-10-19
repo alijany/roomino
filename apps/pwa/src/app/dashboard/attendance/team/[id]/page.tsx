@@ -2,9 +2,9 @@
 
 import ProtectedRoute from '@/components/auth/auth.component.protected-route';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Button, Dropdown, ToggleSwitch } from '@/ui/atoms';
+import { Avatar, Button, Dropdown, ToggleSwitch } from '@/ui/atoms';
 import { DataView, DatePickerField } from '@/ui/molecules';
-import { IconArrowRight, IconUser } from '@tabler/icons-react';
+import { IconArrowRight } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -30,7 +30,7 @@ export default function TeamMemberPage() {
       <DashbaordLayout>
         <div className="flex grow flex-col gap-3 overflow-auto pb-6">
           <PageHeader
-            icon={<IconUser className="size-6" />}
+            icon={<Avatar src={m?.user.profilePicture} name={m?.user.name} className="size-full rounded-[inherit]" />}
             title={m?.user.name ?? 'عضو تیم'}
             subtitle={m ? `${fa(m.personnelCode)} · ${m.jobGroup?.name ?? ''}` : undefined}
             actions={

@@ -1,6 +1,6 @@
 'use client';
 
-import { Table } from '@/ui/molecules';
+import { PersonLabel, Table } from '@/ui/molecules';
 import { BoardStatusBadge } from './attendance.component.layout';
 import { BoardRow } from './attendance.types';
 import { fa } from './attendance.util';
@@ -25,10 +25,7 @@ export function BoardTable({
           key: 'name',
           header: 'پرسنل',
           render: (r) => (
-            <div>
-              <div className="font-medium text-slate-800">{r.employee.name}</div>
-              <div className="text-xs text-slate-400">{fa(r.employee.personnelCode)}</div>
-            </div>
+            <PersonLabel name={r.employee.name} picture={r.employee.profilePicture} detail={fa(r.employee.personnelCode)} />
           ),
         },
         {

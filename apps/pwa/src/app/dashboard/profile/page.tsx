@@ -9,14 +9,15 @@ import {
 import ProtectedRoute from '@/components/auth/auth.component.protected-route';
 import { useAuth } from '@/components/auth/auth.context.provider';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Button, Input } from '@/ui/atoms';
+import { Avatar, Button, Input } from '@/ui/atoms';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconCamera, IconCheck, IconPhone, IconUserFilled, IconX } from '@tabler/icons-react';
+import { IconCamera, IconCheck, IconPhone, IconX } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import { PhoneChangeModal } from './profile.modal.phone-change';
+import { prepareAvatar } from '@/libs/image/image.util.avatar';
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth();
@@ -77,14 +78,17 @@ export default function ProfilePage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Cleared so picking the same file again still fires a change.
+    e.target.value = '';
     if (!file) return;
 
     setIsUploadingImage(true);
     try {
-      await uploadProfilePicture(file);
+      await uploadProfilePicture(await prepareAvatar(file));
       await refreshProfile();
+      toast.success('عکس پروفایل به‌روز شد');
     } catch (error) {
-      console.error('Error uploading image:', error);
+      toast.error((error as Error).message || 'آپلود عکس انجام نشد');
     } finally {
       setIsUploadingImage(false);
     }
@@ -123,17 +127,7 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center mb-8">
               <div className="relative group">
                 <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-                  {user?.profilePicture ? (
-                    <img
-                      src={user.profilePicture}
-                      alt="Profile"
-                      width={128}
-                      height={128}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <IconUserFilled className="size-16 text-primary/60" />
-                  )}
+                  <Avatar src={user?.profilePicture} name={user?.name} className="size-full rounded-none" labelled />
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}

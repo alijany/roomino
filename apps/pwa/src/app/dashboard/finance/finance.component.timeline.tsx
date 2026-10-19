@@ -5,6 +5,7 @@ import { DataView } from '@/ui/molecules';
 import { useRequestActivity } from './finance.api';
 import { ACTIVITY_LABELS } from './finance.constants';
 import { formatJalaliDateTime } from './finance.util';
+import { Avatar } from '@/ui/atoms';
 
 /** Actions that changed the money or ended the request get a stronger marker. */
 const EMPHASISED = new Set(['paid', 'rejected', 'payment_failed', 'cancelled']);
@@ -36,7 +37,11 @@ export function RequestTimeline({ requestId }: { requestId: number }) {
                 {ACTIVITY_LABELS[entry.action] ?? entry.action}
               </span>
               {entry.actor?.name && (
-                <span className="text-xs text-slate-500">توسط {entry.actor.name}</span>
+                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                  توسط
+                  <Avatar src={entry.actor.profilePicture} name={entry.actor.name} className="size-4" />
+                  {entry.actor.name}
+                </span>
               )}
               <span className="text-xs text-slate-400 tabular-nums">
                 {formatJalaliDateTime(entry.created_at)}
