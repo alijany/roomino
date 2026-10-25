@@ -103,6 +103,7 @@ export function ReportSummaryTiles({
     'absent',
     personal ? 'leave' : 'overtime',
   ];
+  const primary = tiles.filter((tile) => primaryKeys.includes(tile.key));
   const renderTile = ({ key, ...props }: (typeof tiles)[number]) => <StatTile key={key} {...props} />;
 
   if (!compact) {
@@ -111,8 +112,14 @@ export function ReportSummaryTiles({
 
   return (
     <section aria-label="خلاصه کارکرد" className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {tiles.filter((tile) => primaryKeys.includes(tile.key)).map(renderTile)}
+      {/* The main tiles stay in one row from tablet width up. */}
+      <div
+        className="grid grid-cols-2 gap-2 md:[grid-template-columns:repeat(var(--tiles),minmax(0,1fr))]"
+        style={{ '--tiles': primary.length } as React.CSSProperties}
+      >
+        {primary.map(({ key, ...props }) => (
+          <StatTile key={key} {...props} dense />
+        ))}
       </div>
       <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
         <summary className="cursor-pointer rounded-lg text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
