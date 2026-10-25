@@ -3,19 +3,20 @@
 import { Button, Dropdown } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
 import { Tabs } from '@/ui/molecules/tabs';
-import { IconAlertCircle, IconDownload, IconPlus } from '@tabler/icons-react';
+import { IconAlertCircle, IconDownload, IconPlus, IconUserCheck } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { CorrectionBase, ReviewBase } from './attendance.api';
+import { CorrectionBase, ReviewBase, useRevokePresence } from './attendance.api';
 import { DayList } from './attendance.component.day-list';
 import { Panel } from './attendance.component.layout';
 import { PeriodPicker } from './attendance.component.period-picker';
+import { ConfirmPresenceModal } from './attendance.component.presence-review';
 import { RequestForm } from './attendance.component.request-form';
 import { CorrectionModal, RequestDetailModal, ReviewActions } from './attendance.component.review';
 import { ReportSummaryTiles } from './attendance.component.summary';
 import { DAY_FILTERS } from './attendance.constants';
 import { AttendanceRequest, PeriodQuery, Report, ReportDay } from './attendance.types';
-import { downloadCsv, fa } from './attendance.util';
+import { downloadCsv, errorMessage, fa } from './attendance.util';
 import {
   filterMemberDays,
   MemberDayFilter,
@@ -63,6 +64,8 @@ export function MemberReport({
   const [granting, setGranting] = useState<ReportDay | 'new' | null>(null);
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [confirmingPresence, setConfirmingPresence] = useState<string[] | null>(null);
+  const revoke = useRevokePresence(correctionBase);
   const { data, error, isLoading, refresh } = report;
 
   const scopedDays = useMemo(
@@ -71,12 +74,15 @@ export function MemberReport({
   );
   const days = useMemo(() => filterMemberDays(scopedDays, filter), [scopedDays, filter]);
   const pending = useMemo(() => pendingReportRequests(data?.days ?? []), [data]);
+  // «بدون ثبت»: past working days nobody declared — absent until confirmed.
+  const undeclared = useMemo(() => (data?.days ?? []).filter((day) => day.undeclared), [data]);
   const needsFix = data?.days.filter((day) => !day.isFuture && day.needsFix).length ?? 0;
   const futurePlanned = data?.days.filter((day) => day.isFuture && day.requests.length > 0).length ?? 0;
   const futureDays = data?.days.filter((day) => day.isFuture).length ?? 0;
   const filters: Array<{ id: MemberDayFilter; label: string }> = [
     ...DAY_FILTERS.slice(0, 2),
     { id: 'pending', label: 'در انتظار بررسی' },
+    ...(undeclared.length ? [{ id: 'undeclared' as const, label: 'اعلام‌نشده' }] : []),
     ...DAY_FILTERS.slice(2),
   ];
 
@@ -89,6 +95,16 @@ export function MemberReport({
       toast.error((exportError as Error).message);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleRevoke = async (day: ReportDay) => {
+    try {
+      await revoke.submit({ id: employee.id, date: day.date });
+      toast.success('اعلام حضور آن روز برگردانده شد');
+      refresh();
+    } catch (revokeError) {
+      toast.error(errorMessage(revokeError, 'بازگرداندن انجام نشد'));
     }
   };
 
@@ -144,6 +160,34 @@ export function MemberReport({
         {data && (
           <div className="space-y-3">
             <ReportSummaryTiles summary={data.summary} compact={managementView} />
+            {canReview && undeclared.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <IconUserCheck className="size-5 shrink-0 text-amber-700" aria-hidden="true" />
+                <span className="text-sm font-medium text-amber-800">
+                  {fa(undeclared.length)} روز اعلام‌نشده؛ تا تایید شما غیبت حساب می‌شود
+                </span>
+                <Button
+                  size="sm"
+                  className="min-h-10"
+                  onClick={() => setConfirmingPresence(undeclared.map((day) => day.date))}
+                >
+                  حاضر بود برای همه‌ی این روزها
+                </Button>
+                {managementView && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-10 border-amber-300 text-amber-800"
+                    onClick={() => {
+                      setShowFuture(false);
+                      setFilter('undeclared');
+                    }}
+                  >
+                    فقط همین روزها را نشان بده
+                  </Button>
+                )}
+              </div>
+            )}
             {managementView && (needsFix > 0 || pending.length > 0) && (
               <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
                 <IconAlertCircle className="size-5 shrink-0 text-amber-700" aria-hidden="true" />
@@ -248,6 +292,8 @@ export function MemberReport({
                 quickActions={managementView}
                 actions={{
                   onCorrect: setCorrecting,
+                  onConfirmPresence: canReview ? (day) => setConfirmingPresence([day.date]) : undefined,
+                  onRevokePresence: canReview ? handleRevoke : undefined,
                   onGrant: canGrant ? setGranting : undefined,
                   onViewRequest: setViewing,
                   renderReview: canReview
@@ -272,6 +318,16 @@ export function MemberReport({
             checkOut: correcting.checkOut,
           }}
           onClose={() => setCorrecting(null)}
+          onDone={refresh}
+        />
+      )}
+
+      {confirmingPresence && (
+        <ConfirmPresenceModal
+          employee={employee}
+          dates={confirmingPresence}
+          base={correctionBase}
+          onClose={() => setConfirmingPresence(null)}
           onDone={refresh}
         />
       )}

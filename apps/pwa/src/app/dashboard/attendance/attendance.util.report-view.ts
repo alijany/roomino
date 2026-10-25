@@ -2,9 +2,10 @@ import { DayFilter } from './attendance.constants';
 import { AttendanceRequest, ReportDay, RequestStatus } from './attendance.types';
 import { filterDays } from './attendance.util';
 
-export type MemberDayFilter = DayFilter | 'pending';
+export type MemberDayFilter = DayFilter | 'pending' | 'undeclared';
 
 export function filterMemberDays(days: ReportDay[], filter: MemberDayFilter) {
+  if (filter === 'undeclared') return days.filter((day) => day.undeclared);
   return filter === 'pending'
     ? days.filter((day) => day.requests.some((request) => request.status === RequestStatus.PENDING))
     : filterDays(days, filter);

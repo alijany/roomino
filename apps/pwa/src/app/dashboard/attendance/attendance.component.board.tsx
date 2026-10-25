@@ -1,8 +1,9 @@
 'use client';
 
+import { Badge } from '@/ui/atoms/ui.badge';
 import { PersonLabel, Table } from '@/ui/molecules';
-import { BoardStatusBadge } from './attendance.component.layout';
-import { BoardRow } from './attendance.types';
+import { AttendanceModeBadge, BoardStatusBadge } from './attendance.component.layout';
+import { AttendanceMode, BoardRow, BoardStatus } from './attendance.types';
 import { fa } from './attendance.util';
 
 /** Today's status of each person — the admin dashboard and "my team". */
@@ -34,7 +35,23 @@ export function BoardTable({
           render: (r) => r.workplace ?? r.jobGroup ?? '—',
           hideOnMobile: true,
         },
-        { key: 'status', header: 'وضعیت', render: (r) => <BoardStatusBadge status={r.status} /> },
+        {
+          key: 'mode',
+          header: 'نوع حضور',
+          hideOnMobile: true,
+          render: (r) => (r.mode === AttendanceMode.TRACKED ? <span className="text-xs text-slate-300">—</span> : <AttendanceModeBadge mode={r.mode} />),
+        },
+        {
+          key: 'status',
+          header: 'وضعیت',
+          render: (r) =>
+            // «بدون ثبت» who said they're in: say so, rather than «طبق شیفت».
+            r.presence === 'declared' && r.status === BoardStatus.BY_SCHEDULE ? (
+              <Badge tone="success" className="whitespace-nowrap">اعلام حضور شد</Badge>
+            ) : (
+              <BoardStatusBadge status={r.status} />
+            ),
+        },
         {
           key: 'shift',
           header: 'شروع شیفت',

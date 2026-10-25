@@ -81,7 +81,23 @@ export function ReportSummaryTiles({
     },
     { key: 'present', label: 'روز حضور', value: fa(summary.presentDays) },
   ];
-  const primaryKeys = ['worked', 'balance', 'absent', personal ? 'leave' : 'overtime'];
+  // «بدون ثبت»: how many working days were declared — undeclared ones count as absence.
+  if (summary.untrackedDays > 0) {
+    tiles.splice(2, 0, {
+      key: 'declared',
+      label: 'اعلام حضور',
+      value: `${fa(summary.declaredDays)} از ${fa(summary.untrackedDays)} روز`,
+      hint: summary.undeclaredDays ? `${fa(summary.undeclaredDays)} روز اعلام‌نشده (غیبت)` : undefined,
+      tone: summary.undeclaredDays ? 'warning' : 'success',
+    });
+  }
+  const primaryKeys = [
+    'worked',
+    'balance',
+    ...(summary.untrackedDays > 0 ? ['declared'] : []),
+    'absent',
+    personal ? 'leave' : 'overtime',
+  ];
   const renderTile = ({ key, ...props }: (typeof tiles)[number]) => <StatTile key={key} {...props} />;
 
   if (!compact) {

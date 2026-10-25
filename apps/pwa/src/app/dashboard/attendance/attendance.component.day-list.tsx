@@ -1,13 +1,13 @@
 'use client';
 
 import { Button } from '@/ui/atoms';
-import { IconChevronDown, IconEye, IconPencil, IconPlus } from '@tabler/icons-react';
+import { IconChevronDown, IconEye, IconPencil, IconPlus, IconUserCheck } from '@tabler/icons-react';
 import { ReactNode, useId, useState } from 'react';
 import { BadgeTone } from '@/ui/atoms/ui.badge';
 import { DayStatusBadge, RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceMap, MAP_COLORS, MapPoint } from './attendance.component.map';
-import { DAY_STATUS_META } from './attendance.constants';
-import { AttendanceRequest, DayStatus, ReportDay, WorkplacePin } from './attendance.types';
+import { ATTENDANCE_MODE_META, DAY_STATUS_META } from './attendance.constants';
+import { AttendanceMode, AttendanceRequest, DayStatus, ReportDay, WorkplacePin } from './attendance.types';
 import { fa, hm, jalaliDateTime } from './attendance.util';
 
 export interface DayActions {
@@ -17,6 +17,10 @@ export interface DayActions {
   onGrant?: (day: ReportDay) => void;
   /** Ask for a fix yourself — opens a manual-attendance request. */
   onRequestFix?: (day: ReportDay) => void;
+  /** «حاضر بود»: confirm a day a person in «بدون ثبت» didn't declare (admin, HR, team approver). */
+  onConfirmPresence?: (day: ReportDay) => void;
+  /** Take back a confirmed or declared day. */
+  onRevokePresence?: (day: ReportDay) => void;
   onViewRequest?: (request: AttendanceRequest) => void;
   /** Approve/reject controls for a pending request. */
   renderReview?: (request: AttendanceRequest) => ReactNode;
@@ -131,9 +135,13 @@ export function DayList({
         const audit = day.attendance?.editedBy;
         const tone = DAY_STATUS_META[day.status].tone;
         const quiet = OFF_STATUSES.includes(day.status) && !day.requests.length && !day.attendance;
-        const expectPresence = [DayStatus.ABSENT, DayStatus.INCOMPLETE].includes(day.status);
+        const untracked = day.mode === AttendanceMode.UNTRACKED;
+        // «بدون ثبت» has no times to expect — only a declaration.
+        const expectPresence = [DayStatus.ABSENT, DayStatus.INCOMPLETE].includes(day.status) && !untracked;
         const showCorrect = quickActions && actions.onCorrect && !day.isFuture;
-        const showRequestFix = quickActions && actions.onRequestFix && day.needsFix && !day.isFuture;
+        const showConfirm = Boolean(actions.onConfirmPresence) && day.undeclared;
+        const showRequestFix =
+          quickActions && actions.onRequestFix && day.needsFix && !day.isFuture && !untracked;
 
         return (
           <li
@@ -166,7 +174,7 @@ export function DayList({
                     </div>
                   </div>
                   <div className="ms-auto flex items-center gap-1 md:col-start-5 md:row-start-1 md:ms-0">
-                    <DayStatusBadge status={day.status} />
+                    <DayStatusBadge status={day.status} undeclared={day.undeclared} />
                   </div>
                   <IconChevronDown
                     className={`size-4 shrink-0 text-slate-400 transition-transform md:col-start-7 md:row-start-1 ${expanded ? 'rotate-180' : ''}`}
@@ -203,8 +211,19 @@ export function DayList({
                   </div>
                 )}
               </button>
-              {(showCorrect || showRequestFix) && (
+              {(showCorrect || showRequestFix || showConfirm) && (
                 <div className="flex shrink-0 items-center gap-2 pe-3 md:col-start-8 md:row-start-1 md:pe-4">
+                  {showConfirm && (
+                    <Button
+                      size="sm"
+                      className="min-h-10 gap-1"
+                      onClick={() => actions.onConfirmPresence?.(day)}
+                      aria-label={`حاضر بود، ${fa(day.jalali)}`}
+                    >
+                      <IconUserCheck className="size-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">حاضر بود</span>
+                    </Button>
+                  )}
                   {showCorrect && (
                     <Button
                       variant="outline"
@@ -257,6 +276,16 @@ export function DayList({
                   {day.attendance?.checkInDistanceM != null && (
                     <span>فاصله ورود: {fa(day.attendance.checkInDistanceM)} متر</span>
                   )}
+                  {untracked && (
+                    <span>
+                      {ATTENDANCE_MODE_META[day.mode].label}
+                      {day.declared
+                        ? ' · حضور اعلام یا تایید شده'
+                        : day.undeclared
+                          ? ' · اعلام نشده؛ تا تایید مدیر غیبت حساب می‌شود'
+                          : ''}
+                    </span>
+                  )}
                   {day.attendance?.checkInSource === 'manual' && <span>ورود دستی</span>}
                   {day.attendance?.checkOutSource === 'manual' && <span>خروج دستی</span>}
                 </div>
@@ -301,6 +330,17 @@ export function DayList({
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onCorrect?.(day)}>
                       <IconPencil className="size-4" />
                       ثبت / اصلاح تردد
+                    </Button>
+                  )}
+                  {actions.onConfirmPresence && day.undeclared && (
+                    <Button size="sm" className="gap-1" onClick={() => actions.onConfirmPresence?.(day)}>
+                      <IconUserCheck className="size-4" />
+                      حاضر بود
+                    </Button>
+                  )}
+                  {actions.onRevokePresence && day.declared && !day.isFuture && (
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onRevokePresence?.(day)}>
+                      بازگرداندن اعلام حضور
                     </Button>
                   )}
                   {actions.onGrant && (

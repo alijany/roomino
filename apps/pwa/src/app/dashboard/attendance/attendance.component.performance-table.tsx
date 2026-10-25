@@ -5,7 +5,8 @@ import { Table } from '@/ui/molecules';
 import type { TableColumn } from '@/ui/molecules/table/ui.table';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Link from 'next/link';
-import { PerformanceQuery, PerformanceRow } from './attendance.types';
+import { AttendanceModeBadge } from './attendance.component.layout';
+import { AttendanceMode, PerformanceQuery, PerformanceRow } from './attendance.types';
 import { fa, hm } from './attendance.util';
 import { performanceHref, PerformanceView } from './attendance.util.performance';
 import { Avatar } from '@/ui/atoms';
@@ -40,6 +41,11 @@ export function PerformanceTable({
             {row.workplace ?? 'بدون محل کار'}
             {row.jobGroup && ` · ${row.jobGroup}`}
           </div>
+          {row.attendanceMode !== AttendanceMode.TRACKED && (
+            <div className="mt-1.5">
+              <AttendanceModeBadge mode={row.attendanceMode} />
+            </div>
+          )}
         </div>
       ),
     },
@@ -85,6 +91,24 @@ export function PerformanceTable({
           )}
         </div>
       ),
+    },
+    {
+      key: 'undeclared',
+      header: 'اعلام‌نشده',
+      numeric: true,
+      render: (row) =>
+        row.summary.untrackedDays > 0 ? (
+          <div className="whitespace-nowrap">
+            <span className={row.summary.undeclaredDays ? 'font-semibold text-amber-700' : 'text-slate-400'}>
+              {fa(row.summary.undeclaredDays)} روز
+            </span>
+            <div className="mt-1 text-xs text-slate-400">
+              از {fa(row.summary.untrackedDays)} روز کاری
+            </div>
+          </div>
+        ) : (
+          <span className="text-xs text-slate-300">—</span>
+        ),
     },
     {
       key: 'delay',

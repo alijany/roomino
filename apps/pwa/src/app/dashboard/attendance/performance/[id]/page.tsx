@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { useEmployee, useEmployeeReport } from '../../attendance.api';
-import { PageHeader } from '../../attendance.component.layout';
+import { AttendanceModeBadge, PageHeader } from '../../attendance.component.layout';
 import { MemberReport } from '../../attendance.component.member-report';
 import { LEAVE_TYPE_LABELS, WEEKDAY_LABELS } from '../../attendance.constants';
 import { PeriodQuery } from '../../attendance.types';
@@ -108,6 +108,13 @@ function EmployeeReportContent() {
                   <dt className="text-slate-500">شیفت فعلی</dt>
                   <dd>
                     {e.currentShift ? `${e.currentShift.name} (از ${jalaliLabel(e.currentShift.startDate)})` : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">نوع حضور</dt>
+                  <dd className="flex flex-wrap items-center gap-1.5">
+                    <AttendanceModeBadge mode={e.attendanceMode} />
+                    {e.attendanceModeOverride && <span className="text-xs text-slate-400">(استثنا)</span>}
                   </dd>
                 </div>
                 <div>

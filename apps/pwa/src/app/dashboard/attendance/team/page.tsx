@@ -64,6 +64,13 @@ export default function TeamPage() {
                   <StatTile label="ورود ثبت نشده" value={fa(data.stats.missing)} tone={data.stats.missing ? 'danger' : 'neutral'} />
                   <StatTile label="مرخصی" value={fa(data.stats.onLeave)} />
                 </div>
+                {data.stats.notDeclared > 0 && !data.scheduleMode && (
+                  <p className="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs leading-6 text-slate-600">
+                    {fa(data.stats.notDeclared)} نفر از پرسنلِ «بدون ثبت» هنوز حضور امروز را اعلام نکرده‌اند. امروز هنوز
+                    تمام نشده است؛ روزی که تا پایانش اعلام نشود غیبت حساب می‌شود و در بازبینی آخر ماه از گزارش فرد
+                    می‌توانید حاضر بودنش را تایید کنید.
+                  </p>
+                )}
                 <Panel className="gap-3">
                   <div className="sm:w-72">
                     <Input
