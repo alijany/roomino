@@ -8,8 +8,8 @@ import {
   newDate as newJalaliDate,
 } from 'date-fns-jalali';
 import { API_URL } from '../../../../constants';
-import { DayFilter } from './attendance.constants';
-import { DayStatus, ManualRequestBrief, MyToday, ReportDay, RequestType } from './attendance.types';
+import { DayFilter, MINUTES_PER_WORKDAY } from './attendance.constants';
+import { AttendanceRequest, DayStatus, ManualRequestBrief, MyToday, ReportDay, RequestType } from './attendance.types';
 
 const TEHRAN_TZ = 'Asia/Tehran';
 
@@ -46,6 +46,18 @@ export function durationLabel(minutes: number | null | undefined): string {
   const m = minutes % 60;
   if (!h) return `${fa(m)} دقیقه`;
   return m ? `${fa(h)} ساعت و ${fa(m)} دقیقه` : `${fa(h)} ساعت`;
+}
+
+/**
+ * A request's length as people think of it: whole days for daily types
+ * (leave, mission, remote work), hours and minutes for everything else.
+ */
+export function requestDurationLabel(request: Pick<AttendanceRequest, 'type' | 'durationMinutes'>): string {
+  const minutes = request.durationMinutes;
+  if (minutes && shapeOf(request.type) === 'range' && minutes % MINUTES_PER_WORKDAY === 0) {
+    return `${fa(minutes / MINUTES_PER_WORKDAY)} روز`;
+  }
+  return durationLabel(minutes);
 }
 
 // --- civil dates ---------------------------------------------------------------------

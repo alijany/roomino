@@ -4,7 +4,7 @@ import { PersonLabel, Table, TableColumn } from '@/ui/molecules';
 import { ReactNode } from 'react';
 import { RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceRequest } from './attendance.types';
-import { durationLabel, fa, jalaliDateTime } from './attendance.util';
+import { requestDurationLabel, fa, jalaliDateTime } from './attendance.util';
 
 /** Requests as a table; the employee column is for review queues. */
 export function RequestTable({
@@ -41,7 +41,7 @@ export function RequestTable({
       header: 'تاریخ',
       render: (r) => <span className="tabular-nums">{fa(r.periodLabel)}</span>,
     },
-    { key: 'duration', header: 'مدت', render: (r) => durationLabel(r.durationMinutes), hideOnMobile: true },
+    { key: 'duration', header: 'مدت', render: (r) => requestDurationLabel(r), hideOnMobile: true },
     { key: 'status', header: 'وضعیت', render: (r) => <RequestStatusBadge status={r.status} /> },
     {
       key: 'created',

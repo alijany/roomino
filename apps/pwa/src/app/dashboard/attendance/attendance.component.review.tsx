@@ -7,7 +7,7 @@ import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, us
 import { RequestAttachments } from './attendance.component.attachments';
 import { FormModal, RequestStatusBadge, TimeField } from './attendance.component.layout';
 import { AttendanceRequest, RequestStatus } from './attendance.types';
-import { durationLabel, errorMessage, fa, jalaliDateTime, jalaliLabel } from './attendance.util';
+import { requestDurationLabel, errorMessage, fa, jalaliDateTime, jalaliLabel } from './attendance.util';
 import { PersonLabel } from '@/ui/molecules';
 
 /** Approve/reject buttons for one pending request, with the reject note modal. */
@@ -134,7 +134,7 @@ export function RequestDetailModal({
         ['نوع', shown.typeLabel],
         ['پرسنل', shown.employee ? `${shown.employee.name ?? ''} (${fa(shown.employee.personnelCode)})` : null],
         ['تاریخ', fa(shown.periodLabel)],
-        ['مدت', durationLabel(shown.durationMinutes)],
+        ['مدت', requestDurationLabel(shown)],
         ['وضعیت', <RequestStatusBadge key="s" status={shown.status} />],
         ['ثبت', jalaliDateTime(shown.createdAt)],
         ['توضیحات', shown.description],

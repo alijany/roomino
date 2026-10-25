@@ -136,3 +136,5 @@ export const ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,application/pd
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENT_MAX_COUNT = 5;
 
+/** A full day of leave/mission/remote work counts as this many minutes (server rule). */
+export const MINUTES_PER_WORKDAY = 480;
