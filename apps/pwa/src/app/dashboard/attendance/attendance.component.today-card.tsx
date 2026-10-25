@@ -214,15 +214,10 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
       </div>
 
       <footer className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/60 p-3">
-        <nav aria-label="میانبرهای حضور و غیاب" className="grid w-full grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+        <nav aria-label="میانبرهای حضور و غیاب" className="flex w-full gap-2 [&>*]:min-w-0 [&>*]:flex-1">
           <FooterButton icon={<IconPlus className="size-4" />} onClick={() => setFormOpen(true)}>
             درخواست جدید
           </FooterButton>
-          {!checkedOut && !scheduleMode && (
-            <FooterLink href="/dashboard/attendance/my-report" icon={<IconCalendarStats className="size-4" />}>
-              کارکرد من
-            </FooterLink>
-          )}
           {today.isApprover && (
             <FooterLink href="/dashboard/attendance/team" icon={<IconUsersGroup className="size-4" />}>
               تیم من
