@@ -2,11 +2,13 @@ import {
   EntityManager,
   UniqueConstraintViolationException,
 } from '@mikro-orm/core';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { UserEntity } from '../../user/user.entity';
 import {
+  AttendanceMode,
   AttendanceSource,
   AttendanceStatus,
+  ManualDirection,
   MINUTES_PER_WORKDAY,
   RemoteStatus,
   RequestStatus,
@@ -22,14 +24,21 @@ import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
 import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import {
+  addDays,
   clockToMinutes,
   composeInstant,
   distanceMeters,
   tehranClock,
   tehranToday,
 } from '../utils/attendance-time.util';
-import { isFixedRemoteDay } from '../utils/attendance-shift.util';
+import { isFixedRemoteDay, scheduleFor } from '../utils/attendance-shift.util';
 import { AttendanceNotificationService } from './attendance-notification.service';
+import { EmployeeService } from './employee.service';
+import { AttendanceModeService } from './attendance-mode.service';
+import {
+  OvertimeSuggestion,
+  OvertimeSuggestionService,
+} from './overtime-suggestion.service';
 import { ScheduleModeService } from './schedule-mode.service';
 
 export interface CheckInResult {
@@ -38,6 +47,8 @@ export interface CheckInResult {
   /** After an out-of-range failure: the client may offer remote check-in. */
   canRemote?: boolean;
   attendance?: AttendanceEntity;
+  /** After a check-out well past the shift's end: overtime now awaiting approval. */
+  overtimeSuggestion?: OvertimeSuggestion | null;
 }
 
 /**
@@ -45,16 +56,87 @@ export interface CheckInResult {
  * radius is an office day; outside it is only allowed as remote work, which
  * — unless already permitted — files a remote-work request for approval.
  *
- * In schedule mode (see `ScheduleModePeriodEntity`) check-in/out are
- * refused outright; corrections by reviewers still work.
+ * In schedule mode (see `ScheduleModePeriodEntity`), and for people in
+ * «بدون ثبت» (see `AttendanceMode`), check-in/out are refused outright;
+ * corrections by reviewers still work. After a check-out, time worked past
+ * the shift's end is suggested as overtime for the approver.
  */
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
   constructor(
     private readonly em: EntityManager,
     private readonly notifications: AttendanceNotificationService,
     private readonly scheduleMode: ScheduleModeService,
+    private readonly modes: AttendanceModeService,
+    private readonly overtime: OvertimeSuggestionService,
+    private readonly employees: EmployeeService,
   ) {}
+
+  /**
+   * Overtime suggested from a day's check-out, if any. A failure here is
+   * logged, never raised: the check-out or correction it follows has already
+   * been saved.
+   */
+  private async suggestOvertime(
+    profile: EmployeeProfileEntity,
+    date: string,
+  ): Promise<OvertimeSuggestion | null> {
+    try {
+      return await this.overtime.sync(profile, date);
+    } catch (error) {
+      this.logger.warn(
+        `پیشنهاد اضافه‌کار برای پرسنل ${profile.id} در ${date} ثبت نشد: ${error?.message}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * A recent day (within the last week) on which they checked in but not
+   * out — most likely forgotten — unless a manual check-out for it is
+   * already awaiting review. For the «خروج دیروز ثبت نشد» prompt.
+   */
+  async missingCheckOut(profile: EmployeeProfileEntity) {
+    const today = tehranToday();
+    const rows = await this.em.find(
+      AttendanceEntity,
+      {
+        employee: profile.id,
+        date: { $gte: addDays(today, -7), $lt: today },
+        checkInAt: { $ne: null },
+        checkOutAt: null,
+        status: AttendanceStatus.PRESENT,
+      },
+      { orderBy: { date: 'desc' } },
+    );
+
+    for (const row of rows) {
+      if (
+        (await this.modes.on(profile.id, row.date)) === AttendanceMode.UNTRACKED
+      ) {
+        continue;
+      }
+      const filed = await this.em.count(AttendanceRequestEntity, {
+        employee: profile.id,
+        type: RequestType.MANUAL_ATTENDANCE,
+        manualDirection: ManualDirection.OUT,
+        status: RequestStatus.PENDING,
+        date: row.date,
+      });
+      if (filed) continue;
+
+      const assignments = await this.employees.assignmentsFor([profile.id]);
+      const { end } = scheduleFor(assignments.get(profile.id) ?? [], row.date);
+      return {
+        date: row.date,
+        checkIn: tehranClock(row.checkInAt),
+        shiftEnd: tehranClock(end),
+      };
+    }
+    return null;
+  }
 
   findDay(profileId: number, date: string) {
     return this.em.findOne(
@@ -104,6 +186,7 @@ export class AttendanceService {
     dto: CheckInDto,
   ): Promise<CheckInResult> {
     await this.scheduleMode.assertDirectAllowed();
+    await this.modes.assertCanPunch(profile);
     const today = tehranToday();
     const workplace = profile.workplace;
     const existing = await this.findDay(profile.id, today);
@@ -222,6 +305,7 @@ export class AttendanceService {
     dto: CheckOutDto,
   ): Promise<CheckInResult> {
     await this.scheduleMode.assertDirectAllowed();
+    await this.modes.assertCanPunch(profile);
     const today = tehranToday();
     const workplace = profile.workplace;
     const attendance = await this.findDay(profile.id, today);
@@ -265,9 +349,12 @@ export class AttendanceService {
     });
     await this.em.flush();
 
+    const overtimeSuggestion = await this.suggestOvertime(profile, today);
+
     return {
       success: true,
       attendance,
+      overtimeSuggestion,
       message: 'خروج شما با موفقیت ثبت شد.',
     };
   }
@@ -321,6 +408,7 @@ export class AttendanceService {
         status: AttendanceStatus.ABSENT,
       });
       await this.em.persistAndFlush(attendance);
+      await this.suggestOvertime(profile, dto.date);
       return attendance;
     }
 
@@ -343,6 +431,7 @@ export class AttendanceService {
     }
 
     await this.em.persistAndFlush(attendance);
+    await this.suggestOvertime(profile, dto.date);
     return attendance;
   }
 }

@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CSV_BOM, csvRow, toCsv } from '../../libs/utils/csv.util';
-import { AttendanceSource, DayStatusLabels } from '../attendance.constants';
+import {
+  AttendanceMode,
+  AttendanceModeLabels,
+  AttendanceSource,
+  DayStatusLabels,
+} from '../attendance.constants';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
+import { resolveMode } from '../utils/attendance-mode.util';
 import { formatHm } from '../utils/attendance-time.util';
 import { Period, ReportService } from './report.service';
 
@@ -30,6 +36,7 @@ export class AttendanceExportService {
         { key: 'code', header: 'کد پرسنلی' },
         { key: 'name', header: 'نام' },
         { key: 'workplace', header: 'محل کار' },
+        { key: 'mode', header: 'نوع حضور' },
         { key: 'presentDays', header: 'روز حضور' },
         { key: 'worked', header: 'کارکرد' },
         { key: 'required', header: 'موظفی' },
@@ -47,6 +54,7 @@ export class AttendanceExportService {
         code: profile.personnelCode,
         name: profile.user.name,
         workplace: profile.workplace?.name,
+        mode: AttendanceModeLabels[resolveMode(profile)],
         presentDays: s.presentDays,
         worked: formatHm(s.worked),
         required: formatHm(s.required),
@@ -127,6 +135,8 @@ export class AttendanceExportService {
         { key: 'status', header: 'وضعیت' },
         { key: 'inSource', header: 'منبع ورود' },
         { key: 'outSource', header: 'منبع خروج' },
+        { key: 'mode', header: 'نوع حضور' },
+        { key: 'declared', header: 'اعلام حضور' },
       ],
       days
         .filter((d) => !d.isFuture)
@@ -147,6 +157,9 @@ export class AttendanceExportService {
           status: DayStatusLabels[d.status],
           inSource: sourceLabel(d.attendance?.checkInSource),
           outSource: sourceLabel(d.attendance?.checkOutSource),
+          mode: AttendanceModeLabels[d.mode],
+          declared:
+            d.mode === AttendanceMode.UNTRACKED && d.declared ? 'بله' : '',
         })),
     ).slice(CSV_BOM.length);
 

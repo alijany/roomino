@@ -13,9 +13,10 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { DeviceType } from '../attendance.constants';
+import { AttendanceMode, DeviceType } from '../attendance.constants';
 import { DATE_PATTERN, Digits, PageQueryDto } from './common.dto';
 
 /** Where and how someone works — shared by a single create and a batch. */
@@ -39,6 +40,11 @@ export class EmployeeAssignmentDto {
   @IsOptional() @IsBoolean() useWifi?: boolean;
   @IsOptional() @IsEnum(DeviceType) allowedDeviceType?: DeviceType;
   @IsOptional() @IsBoolean() trackingEnabled?: boolean;
+
+  /** This person's own mode; omitted or null follows the job group. */
+  @IsOptional()
+  @IsEnum(AttendanceMode, { message: 'نوع حضور نامعتبر است' })
+  attendanceMode?: AttendanceMode;
 
   @IsOptional()
   @IsArray()
@@ -115,6 +121,12 @@ export class UpdateEmployeeDto {
   @IsOptional() @IsBoolean() useWifi?: boolean;
   @IsOptional() @IsEnum(DeviceType) allowedDeviceType?: DeviceType;
   @IsOptional() @IsBoolean() trackingEnabled?: boolean;
+
+  /** `null` goes back to following the job group. */
+  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
+  @IsEnum(AttendanceMode, { message: 'نوع حضور نامعتبر است' })
+  attendanceMode?: AttendanceMode | null;
 
   @IsOptional()
   @IsArray()

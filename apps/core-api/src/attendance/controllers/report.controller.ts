@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -19,13 +20,18 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
-import { CorrectAttendanceDto } from '../dtos/attendance.dto';
+import {
+  ConfirmPresenceDto,
+  CorrectAttendanceDto,
+  RevokePresenceQueryDto,
+} from '../dtos/attendance.dto';
 import { PeriodQueryDto } from '../dtos/common.dto';
 import { PerformanceQueryDto } from '../dtos/report.dto';
 import { GrantRequestDto } from '../dtos/request.dto';
 import { AttendanceExportService } from '../services/attendance-export.service';
 import { AttendanceService } from '../services/attendance.service';
 import { EmployeeService } from '../services/employee.service';
+import { PresenceService } from '../services/presence.service';
 import { ReportService } from '../services/report.service';
 import { RequestService } from '../services/request.service';
 import {
@@ -34,6 +40,7 @@ import {
   toRequestView,
 } from '../utils/attendance-view.util';
 import { sendCsv } from '../utils/attendance-csv.util';
+import { resolveMode } from '../utils/attendance-mode.util';
 
 /** Company-wide boards and reports, plus admin/HR corrections and grants. */
 @Controller('attendance/reports')
@@ -46,6 +53,7 @@ export class ReportController {
     private readonly requests: RequestService,
     private readonly attendance: AttendanceService,
     private readonly exports: AttendanceExportService,
+    private readonly presence: PresenceService,
   ) {}
 
   /** Today's board for every active person. */
@@ -84,6 +92,7 @@ export class ReportController {
         employee: toEmployeeBrief(profile),
         workplace: profile.workplace?.name ?? null,
         jobGroup: profile.jobGroup?.name ?? null,
+        attendanceMode: resolveMode(profile),
         summary,
         pending: pending.get(profile.id) ?? 0,
       })),
@@ -130,6 +139,30 @@ export class ReportController {
       `attendance-${profile.personnelCode}-${period.from}-${period.to}.csv`,
       await this.exports.employeeCsv(profile, period),
     );
+  }
+
+  /** «حاضر بود»: confirm days a person in «بدون ثبت» didn't declare. */
+  @Post('employees/:id/presence')
+  @Roles(Role.ADMIN, Role.HR)
+  async confirmPresence(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(NormalizeNumbersPipe) dto: ConfirmPresenceDto,
+    @CurrentUser() user: UserEntity,
+  ) {
+    const profile = await this.employees.getOrFail(id);
+    return this.presence.confirm(profile, dto.dates, user, dto.note);
+  }
+
+  /** Take back a confirmed (or declared) day. */
+  @Delete('employees/:id/presence')
+  @Roles(Role.ADMIN, Role.HR)
+  async revokePresence(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: RevokePresenceQueryDto,
+  ) {
+    const profile = await this.employees.getOrFail(id);
+    await this.presence.revoke(profile, query.date);
+    return { success: true };
   }
 
   @Post('employees/:id/attendance')

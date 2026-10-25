@@ -69,4 +69,11 @@ export class AttendanceRequestEntity extends BaseEntity {
 
   @Property({ nullable: true })
   durationMinutes?: number;
+
+  /**
+   * Filed by the system, not the person: overtime suggested from a check-out
+   * well past the shift's end, for the approver to confirm or reject.
+   */
+  @Property({ default: false })
+  autoSuggested: boolean = false;
 }

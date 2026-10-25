@@ -18,6 +18,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { UserEntity } from '../../user/user.entity';
+import { AttendanceMode } from '../attendance.constants';
 import { CheckInDto, CheckOutDto } from '../dtos/attendance.dto';
 import { PeriodQueryDto } from '../dtos/common.dto';
 import { CreateRequestDto, ListRequestsDto } from '../dtos/request.dto';
@@ -25,6 +26,8 @@ import { AttendanceExportService } from '../services/attendance-export.service';
 import { AttendanceService } from '../services/attendance.service';
 import { EmployeeService } from '../services/employee.service';
 import { HolidayService } from '../services/holiday.service';
+import { OvertimeSuggestionService } from '../services/overtime-suggestion.service';
+import { PresenceService } from '../services/presence.service';
 import { ReportService } from '../services/report.service';
 import { RequestService } from '../services/request.service';
 import { ScheduleModeService } from '../services/schedule-mode.service';
@@ -55,6 +58,8 @@ export class MeController {
     private readonly requests: RequestService,
     private readonly exports: AttendanceExportService,
     private readonly scheduleMode: ScheduleModeService,
+    private readonly presence: PresenceService,
+    private readonly overtime: OvertimeSuggestionService,
   ) {}
 
   /**
@@ -77,17 +82,31 @@ export class MeController {
     }
 
     const today = tehranToday();
-    const [day, holiday, remoteStatus, report, current, pending, manual, mode] =
-      await Promise.all([
-        this.attendance.findDay(profile.id, today),
-        this.holidays.isHoliday(today),
-        this.attendance.remoteStatus(profile, today),
-        this.reports.report(profile, this.reports.periodOf({})),
-        this.employees.currentAssignment(profile.id),
-        this.requests.pendingCountByEmployee([profile.id]),
-        this.requests.manualOn(profile.id, today),
-        this.scheduleMode.on(today),
-      ]);
+    const [
+      day,
+      holiday,
+      remoteStatus,
+      report,
+      current,
+      pending,
+      manual,
+      mode,
+      declaration,
+      suggestion,
+      forgotten,
+    ] = await Promise.all([
+      this.attendance.findDay(profile.id, today),
+      this.holidays.isHoliday(today),
+      this.attendance.remoteStatus(profile, today),
+      this.reports.report(profile, this.reports.periodOf({})),
+      this.employees.currentAssignment(profile.id),
+      this.requests.pendingCountByEmployee([profile.id]),
+      this.requests.manualOn(profile.id, today),
+      this.scheduleMode.on(today),
+      this.presence.on(profile.id, today),
+      this.overtime.on(profile.id, today),
+      this.attendance.missingCheckOut(profile),
+    ]);
     const todayRow = report.days.find((d) => d.date === today);
 
     return {
@@ -117,7 +136,35 @@ export class MeController {
       todayStatus: todayRow?.status ?? null,
       /** Today's manual check-in/out requests not yet in `attendance`. */
       manualRequests: manual.map(toManualRequestBrief),
+      /** How today is measured for this person: tracked, flexible or untracked. */
+      attendanceMode: todayRow?.mode ?? AttendanceMode.TRACKED,
+      /** «امروز هستم» — only meaningful in «بدون ثبت». */
+      presence: {
+        declared: Boolean(declaration),
+        declaredAt: declaration?.declaredAt ?? null,
+      },
+      /** Overtime from today's check-out: recorded already, or awaiting approval. */
+      overtimeSuggestion: suggestion,
+      /** A recent day with a check-in and no check-out, to put right. */
+      missingCheckOut: forgotten,
     };
+  }
+
+  /** «امروز هستم»: for people in «بدون ثبت», in place of checking in. */
+  @Post('presence')
+  @HttpCode(200)
+  async declarePresence(@CurrentUser() user: UserEntity) {
+    const profile = await this.employees.requireOwn(user);
+    const row = await this.presence.declare(profile);
+    return { declared: true, declaredAt: row.declaredAt };
+  }
+
+  /** Take back today's «امروز هستم». */
+  @Delete('presence')
+  async withdrawPresence(@CurrentUser() user: UserEntity) {
+    const profile = await this.employees.requireOwn(user);
+    await this.presence.withdraw(profile);
+    return { declared: false, declaredAt: null };
   }
 
   @Post('check-in')

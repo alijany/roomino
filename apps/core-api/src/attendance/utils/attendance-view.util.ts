@@ -16,6 +16,7 @@ import { ScheduleModePeriodEntity } from '../entities/schedule-mode-period.entit
 import { ShiftEntity } from '../entities/shift.entity';
 import { WorkPolicyEntity } from '../entities/work-policy.entity';
 import { WorkplaceEntity } from '../entities/workplace.entity';
+import { resolveMode } from './attendance-mode.util';
 import { categoryOf } from './attendance-request.util';
 import { formatJalaliDate, tehranClock } from './attendance-time.util';
 
@@ -87,6 +88,7 @@ export function toJobGroupView(group: JobGroupEntity, employeeCount?: number) {
   return {
     id: group.id,
     name: group.name,
+    attendanceMode: group.attendanceMode,
     approvers: group.approvers.isInitialized()
       ? group.approvers.getItems().map(toUserBrief)
       : [],
@@ -155,6 +157,9 @@ export function toEmployeeView(
     useWifi: profile.useWifi,
     allowedDeviceType: profile.allowedDeviceType,
     trackingEnabled: profile.trackingEnabled,
+    // What the settings say now: the person's own, else the group's.
+    attendanceMode: resolveMode(profile),
+    attendanceModeOverride: profile.attendanceModeOverride ?? null,
     remoteDays: profile.remoteDays ?? [],
     active: profile.active,
     currentShift: currentShift
@@ -244,6 +249,8 @@ export function toRequestView(r: AttendanceRequestEntity) {
     manualDirection: r.manualDirection ?? null,
     periodLabel: periodLabel(r),
     durationMinutes: r.durationMinutes ?? null,
+    /** Suggested by the system from a late check-out, awaiting approval. */
+    autoSuggested: r.autoSuggested,
     description: r.description ?? null,
     reviewNote: r.reviewNote ?? null,
     reviewedBy: reviewer ? toUserBrief(reviewer) : null,

@@ -1,6 +1,7 @@
 import { EntityManager } from '@mikro-orm/core';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
+  AttendanceMode,
   AttendanceStatus,
   BoardStatus,
   DayStatus,
@@ -13,9 +14,11 @@ import { PeriodQueryDto } from '../dtos/common.dto';
 import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
 import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
+import { EmployeeModePeriodEntity } from '../entities/employee-mode-period.entity';
 import { EmployeeShiftEntity } from '../entities/employee-shift.entity';
 import { HolidayEntity } from '../entities/holiday.entity';
 import { ScheduleModePeriodEntity } from '../entities/schedule-mode-period.entity';
+import { modeOn } from '../utils/attendance-mode.util';
 import { categoryOf, isHourly } from '../utils/attendance-request.util';
 import {
   isFixedRemoteDay,
@@ -39,8 +42,10 @@ import {
   toRequestView,
   toWorkplacePin,
 } from '../utils/attendance-view.util';
+import { AttendanceModeService } from './attendance-mode.service';
 import { EmployeeService } from './employee.service';
 import { HolidayService } from './holiday.service';
+import { PresenceService } from './presence.service';
 import { RequestService } from './request.service';
 import { covers, ScheduleModeService } from './schedule-mode.service';
 
@@ -75,6 +80,12 @@ export interface ReportDay {
   overtime: number;
   leaveMinutes: number;
   status: DayStatus;
+  /** How this day was measured — the person's mode on that date. */
+  mode: AttendanceMode;
+  /** «بدون ثبت»: the day was declared (by the person, or confirmed by a reviewer). */
+  declared: boolean;
+  /** «بدون ثبت»: a past working day nobody declared — absent until a reviewer confirms it. */
+  undeclared: boolean;
   workMode: WorkMode | null;
   fixedRemote: boolean;
   hasPending: boolean;
@@ -107,6 +118,12 @@ export interface ReportSummary {
   presentDays: number;
   /** Of `presentDays`, those counted from the shift in schedule mode. */
   byScheduleDays: number;
+  /** Working days spent in «بدون ثبت» (not counting leave or missions)… */
+  untrackedDays: number;
+  /** …of which declared present… */
+  declaredDays: number;
+  /** …and of which nobody declared, so they count as absent. */
+  undeclaredDays: number;
 }
 
 interface ReportInput {
@@ -115,6 +132,10 @@ interface ReportInput {
   holidays: Map<string, HolidayEntity>;
   assignments: EmployeeShiftEntity[];
   schedulePeriods: ScheduleModePeriodEntity[];
+  /** The person's mode history, newest first. */
+  modes: EmployeeModePeriodEntity[];
+  /** Civil dates the person declared themselves present. */
+  declared: Set<string>;
 }
 
 const sum = <T>(items: T[], pick: (item: T) => number) =>
@@ -133,6 +154,8 @@ export class ReportService {
     private readonly holidays: HolidayService,
     private readonly requests: RequestService,
     private readonly scheduleMode: ScheduleModeService,
+    private readonly modes: AttendanceModeService,
+    private readonly presence: PresenceService,
   ) {}
 
   // --- period -----------------------------------------------------------------------
@@ -179,23 +202,32 @@ export class ReportService {
   ) {
     const ids = profiles.map((p) => p.id);
 
-    const [attendanceRows, requests, holidays, assignments, schedulePeriods] =
-      await Promise.all([
-        ids.length
-          ? this.em.find(
-              AttendanceEntity,
-              { employee: { $in: ids }, date: { $gte: from, $lte: to } },
-              { populate: ['editedBy', 'workplace'] },
-            )
-          : Promise.resolve([] as AttendanceEntity[]),
-        this.requests.inRange(ids, from, to, [
-          RequestStatus.APPROVED,
-          RequestStatus.PENDING,
-        ]),
-        this.holidays.between(from, to),
-        this.employees.assignmentsFor(ids),
-        this.scheduleMode.between(from, to),
-      ]);
+    const [
+      attendanceRows,
+      requests,
+      holidays,
+      assignments,
+      schedulePeriods,
+      modePeriods,
+      declarations,
+    ] = await Promise.all([
+      ids.length
+        ? this.em.find(
+            AttendanceEntity,
+            { employee: { $in: ids }, date: { $gte: from, $lte: to } },
+            { populate: ['editedBy', 'workplace'] },
+          )
+        : Promise.resolve([] as AttendanceEntity[]),
+      this.requests.inRange(ids, from, to, [
+        RequestStatus.APPROVED,
+        RequestStatus.PENDING,
+      ]),
+      this.holidays.between(from, to),
+      this.employees.assignmentsFor(ids),
+      this.scheduleMode.between(from, to),
+      this.modes.periodsFor(ids),
+      this.presence.datesBetween(ids, from, to),
+    ]);
 
     return (profileId: number): ReportInput => ({
       attendances: new Map(
@@ -207,6 +239,8 @@ export class ReportService {
       holidays,
       assignments: assignments.get(profileId) ?? [],
       schedulePeriods,
+      modes: modePeriods.get(profileId) ?? [],
+      declared: declarations.get(profileId) ?? new Set<string>(),
     });
   }
 
@@ -295,20 +329,30 @@ export class ReportService {
 
     const isToday = date === today;
     const isFuture = date > today;
+    const mode = modeOn(input.modes, date);
 
-    // Schedule mode: nobody checks in, so a missing time is taken from the
-    // shift. A recorded or approved one still counts — a late arrival filed
+    // A day nobody checks in for: company-wide schedule mode, or a person in
+    // «بدون ثبت» whose day was declared. A missing time is taken from the
+    // shift; a recorded or approved one still counts — a late arrival filed
     // as manual attendance is still late. Days already accounted for — full
     // leave, mission or remote work, or marked absent — aren't presumed.
-    const bySchedule =
-      scheduled > 0 &&
-      !isFuture &&
-      !fullDayLeave &&
-      !fullDayMission &&
-      !fullDayRemote &&
-      att?.status !== AttendanceStatus.ABSENT &&
-      att?.status !== AttendanceStatus.ON_LEAVE &&
-      input.schedulePeriods.some((p) => covers(p, date));
+    const accountedFor =
+      fullDayLeave ||
+      fullDayMission ||
+      fullDayRemote ||
+      att?.status === AttendanceStatus.ABSENT ||
+      att?.status === AttendanceStatus.ON_LEAVE;
+    const covered = scheduled > 0 && !isFuture && !accountedFor;
+    const scheduleModeDay =
+      covered && input.schedulePeriods.some((p) => covers(p, date));
+    // «بدون ثبت»: present if declared — or if a reviewer recorded times for it.
+    const untrackedDay = covered && mode === AttendanceMode.UNTRACKED;
+    const declaredDay =
+      input.declared.has(date) || Boolean(att?.checkInAt || att?.checkOutAt);
+    const bySchedule = scheduleModeDay || (untrackedDay && declaredDay);
+    // …and absent if not, once the day is over; today it is still awaited.
+    const awaitingDeclaration =
+      untrackedDay && !declaredDay && !scheduleModeDay;
     const presumedIn = bySchedule && !att?.checkInAt;
     const presumedOut = bySchedule && !att?.checkOutAt;
     const checkIn = att?.checkInAt ?? (presumedIn ? shiftStart : null);
@@ -349,6 +393,8 @@ export class ReportService {
           : isToday && presumedOut && now < checkOut
           ? DayStatus.IN_PROGRESS
           : DayStatus.PRESENT;
+    else if (awaitingDeclaration)
+      status = isToday ? DayStatus.AWAITING_DECLARATION : DayStatus.ABSENT;
     else if (remoteCheckIn && pendingRemote) status = DayStatus.REMOTE_PENDING;
     else if (remoteCheckIn)
       status = DayStatus.ABSENT; // remote request rejected
@@ -379,6 +425,9 @@ export class ReportService {
     ) {
       delay = early = 0;
     }
+    // «منعطف»: when someone arrives or leaves isn't a delay — the hours they
+    // worked, against the shift's, are what is measured.
+    if (mode === AttendanceMode.FLEXIBLE) delay = early = 0;
     if (status === DayStatus.REMOTE_PENDING || rejectedRemote) worked = 0;
 
     // Approved remote work counts as worked time: a daily one for the whole
@@ -441,6 +490,9 @@ export class ReportService {
       overtime,
       leaveMinutes,
       status,
+      mode,
+      declared: input.declared.has(date),
+      undeclared: awaitingDeclaration && !isToday,
       workMode: att?.workMode ?? null,
       fixedRemote,
       hasPending: pending.length > 0,
@@ -472,7 +524,18 @@ export class ReportService {
     );
     const worked = sum(days, (d) => d.worked);
     const absent = days.filter((d) => d.status === DayStatus.ABSENT);
-
+    // «بدون ثبت» working days that are decided: declared, or past and not.
+    const untracked = days.filter(
+      (d) =>
+        d.mode === AttendanceMode.UNTRACKED &&
+        (d.undeclared ||
+          (d.declared &&
+            [
+              DayStatus.BY_SCHEDULE,
+              DayStatus.PRESENT,
+              DayStatus.IN_PROGRESS,
+            ].includes(d.status))),
+    );
     return {
       worked,
       required,
@@ -506,6 +569,9 @@ export class ReportService {
       ).length,
       byScheduleDays: days.filter((d) => d.status === DayStatus.BY_SCHEDULE)
         .length,
+      untrackedDays: untracked.length,
+      declaredDays: untracked.filter((d) => d.declared).length,
+      undeclaredDays: untracked.filter((d) => d.undeclared).length,
     };
   }
 
@@ -517,25 +583,35 @@ export class ReportService {
     const now = new Date();
     const ids = profiles.map((p) => p.id);
 
-    const [attendances, holiday, assignments, scheduleMode] =
-      await Promise.all([
-        ids.length
-          ? this.em.find(AttendanceEntity, {
-              employee: { $in: ids },
-              date: today,
-            })
-          : Promise.resolve([] as AttendanceEntity[]),
-        this.holidays.isHoliday(today),
-        this.employees.assignmentsFor(ids),
-        this.scheduleMode.on(today),
-      ]);
+    const [
+      attendances,
+      holiday,
+      assignments,
+      scheduleMode,
+      modePeriods,
+      declared,
+    ] = await Promise.all([
+      ids.length
+        ? this.em.find(AttendanceEntity, {
+            employee: { $in: ids },
+            date: today,
+          })
+        : Promise.resolve([] as AttendanceEntity[]),
+      this.holidays.isHoliday(today),
+      this.employees.assignmentsFor(ids),
+      this.scheduleMode.on(today),
+      this.modes.periodsFor(ids),
+      this.presence.datesBetween(ids, today, today),
+    ]);
     const byProfile = new Map(attendances.map((a) => [a.employee.id, a]));
 
     const rows = profiles.map((profile) => {
       const att = byProfile.get(profile.id) ?? null;
-      const { start } = holiday
-        ? { start: null }
+      const { start, end } = holiday
+        ? { start: null, end: null }
         : scheduleFor(assignments.get(profile.id) ?? [], today);
+      const mode = modeOn(modePeriods.get(profile.id) ?? [], today);
+      const untracked = mode === AttendanceMode.UNTRACKED;
 
       let status: BoardStatus;
       if (att?.status === AttendanceStatus.ON_LEAVE)
@@ -548,12 +624,31 @@ export class ReportService {
       else if (att?.status === AttendanceStatus.ABSENT)
         status = BoardStatus.MISSING;
       else if (scheduleMode) status = BoardStatus.BY_SCHEDULE;
+      // «بدون ثبت»: present once they say so, awaited until then.
+      else if (untracked)
+        status = declared.get(profile.id)?.has(today)
+          ? BoardStatus.BY_SCHEDULE
+          : BoardStatus.AWAITING;
+      // «منعطف» may arrive any time before the shift ends.
+      else if (mode === AttendanceMode.FLEXIBLE && end && now < end)
+        status = BoardStatus.NOT_YET;
       else if (now < start) status = BoardStatus.NOT_YET;
       else status = BoardStatus.MISSING;
+
+      // For «بدون ثبت»: did they say they're in? Only while it can matter.
+      const presence =
+        untracked &&
+        [BoardStatus.BY_SCHEDULE, BoardStatus.AWAITING].includes(status)
+          ? status === BoardStatus.BY_SCHEDULE
+            ? 'declared'
+            : 'not_declared'
+          : null;
 
       return {
         profile,
         status,
+        mode,
+        presence,
         shiftStart: tehranClock(start),
         checkIn: tehranClock(att?.checkInAt),
         checkOut: tehranClock(att?.checkOutAt),
@@ -580,6 +675,8 @@ export class ReportService {
         present: rows.filter((r) => present.includes(r.status)).length,
         missing: rows.filter((r) => r.status === BoardStatus.MISSING).length,
         onLeave: rows.filter((r) => r.status === BoardStatus.ON_LEAVE).length,
+        // «بدون ثبت» who haven't said they're in — informative, never a fault.
+        notDeclared: rows.filter((r) => r.presence === 'not_declared').length,
       },
     };
   }

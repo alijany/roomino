@@ -22,6 +22,7 @@ import { ShiftEntity } from '../entities/shift.entity';
 import { WorkplaceEntity } from '../entities/workplace.entity';
 import { WorkPolicyEntity } from '../entities/work-policy.entity';
 import { tehranToday } from '../utils/attendance-time.util';
+import { AttendanceModeService } from './attendance-mode.service';
 
 const PROFILE_POPULATE = [
   'user',
@@ -45,7 +46,10 @@ function normalizeRemoteDays(days?: number[]): number[] | null {
  */
 @Injectable()
 export class EmployeeService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly modes: AttendanceModeService,
+  ) {}
 
   // --- lookups -----------------------------------------------------------------
 
@@ -374,6 +378,7 @@ export class EmployeeService {
           useWifi: shared.useWifi ?? false,
           allowedDeviceType: shared.allowedDeviceType,
           trackingEnabled: shared.trackingEnabled ?? false,
+          attendanceModeOverride: shared.attendanceMode ?? null,
           remoteDays: normalizeRemoteDays(shared.remoteDays),
           active: shared.active ?? true,
         });
@@ -389,6 +394,15 @@ export class EmployeeService {
         return profile;
       });
       await em.flush();
+      // The mode starts with the first shift day — or today, if that is
+      // still ahead — so the days since are measured the way they will be.
+      await this.modes.sync(
+        profiles.map((p) => p.id),
+        em,
+        shared.shiftStartDate < tehranToday()
+          ? shared.shiftStartDate
+          : tehranToday(),
+      );
       return profiles.map((p) => p.id);
     });
   }
@@ -422,6 +436,10 @@ export class EmployeeService {
           ? { remoteDays: normalizeRemoteDays(dto.remoteDays) }
           : {}),
         ...(dto.active !== undefined ? { active: dto.active } : {}),
+        // `null` goes back to following the job group.
+        ...(dto.attendanceMode !== undefined
+          ? { attendanceModeOverride: dto.attendanceMode }
+          : {}),
         ...relations,
       });
 
@@ -434,6 +452,8 @@ export class EmployeeService {
         );
       }
       await em.flush();
+      // A new override or job group may change the mode in force.
+      await this.modes.sync([id], em);
     });
 
     this.em.clear();

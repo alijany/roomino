@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -18,13 +19,18 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { UserEntity } from '../../user/user.entity';
-import { CorrectAttendanceDto } from '../dtos/attendance.dto';
+import {
+  ConfirmPresenceDto,
+  CorrectAttendanceDto,
+  RevokePresenceQueryDto,
+} from '../dtos/attendance.dto';
 import { PeriodQueryDto } from '../dtos/common.dto';
 import { UpdateTeamMemberDto } from '../dtos/employee.dto';
 import { ListRequestsDto, RejectRequestDto } from '../dtos/request.dto';
 import { AttendanceExportService } from '../services/attendance-export.service';
 import { AttendanceService } from '../services/attendance.service';
 import { EmployeeService } from '../services/employee.service';
+import { PresenceService } from '../services/presence.service';
 import { ReportService } from '../services/report.service';
 import { RequestService } from '../services/request.service';
 import {
@@ -50,6 +56,7 @@ export class TeamController {
     private readonly requests: RequestService,
     private readonly attendance: AttendanceService,
     private readonly exports: AttendanceExportService,
+    private readonly presence: PresenceService,
   ) {}
 
   @Get('board')
@@ -174,5 +181,29 @@ export class TeamController {
     await this.employees.requireApprover(user.id);
     const profile = await this.employees.teamMemberOrFail(user.id, id);
     return toAttendanceView(await this.attendance.correct(profile, dto, user));
+  }
+
+  /** «حاضر بود»: confirm days a team member in «بدون ثبت» didn't declare. */
+  @Post('members/:id/presence')
+  async confirmPresence(
+    @CurrentUser() user: UserEntity,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(NormalizeNumbersPipe) dto: ConfirmPresenceDto,
+  ) {
+    await this.employees.requireApprover(user.id);
+    const profile = await this.employees.teamMemberOrFail(user.id, id);
+    return this.presence.confirm(profile, dto.dates, user, dto.note);
+  }
+
+  @Delete('members/:id/presence')
+  async revokePresence(
+    @CurrentUser() user: UserEntity,
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: RevokePresenceQueryDto,
+  ) {
+    await this.employees.requireApprover(user.id);
+    const profile = await this.employees.teamMemberOrFail(user.id, id);
+    await this.presence.revoke(profile, query.date);
+    return { success: true };
   }
 }

@@ -9,7 +9,7 @@ import {
 } from '@mikro-orm/core';
 import { BaseEntity } from '../../libs/orm/orm.entity.base';
 import { UserEntity } from '../../user/user.entity';
-import { DeviceType } from '../attendance.constants';
+import { AttendanceMode, DeviceType } from '../attendance.constants';
 import { EmployeeShiftEntity } from './employee-shift.entity';
 import { JobGroupEntity } from './job-group.entity';
 import { WorkplaceEntity } from './workplace.entity';
@@ -54,6 +54,14 @@ export class EmployeeProfileEntity extends BaseEntity {
 
   @Property({ default: false })
   trackingEnabled: boolean = false;
+
+  /**
+   * This person's own attendance mode; null follows their job group's. The
+   * mode actually in force is what `AttendanceModeService` last wrote to the
+   * history — see `EmployeeModePeriodEntity`.
+   */
+  @Enum({ items: () => AttendanceMode, nullable: true })
+  attendanceModeOverride?: AttendanceMode;
 
   /** Fixed weekly remote days, 0 = شنبه … 6 = جمعه. */
   @Property({ type: 'json', nullable: true })

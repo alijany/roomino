@@ -484,6 +484,33 @@ export class RequestService {
     });
   }
 
+  /**
+   * Overtime the person files themselves replaces what the system suggested
+   * or recorded for that day: the explicit request is the real one, and two
+   * of them would clash. A suggestion someone decided on stays.
+   */
+  private async supersedeAutoOvertime(
+    em: EntityManager,
+    profileId: number,
+    fields: RequestFields,
+  ) {
+    if (fields.type !== RequestType.OVERTIME || !fields.date) return;
+
+    const auto = await em.find(AttendanceRequestEntity, {
+      employee: profileId,
+      type: RequestType.OVERTIME,
+      date: fields.date,
+      autoSuggested: true,
+    });
+    for (const row of auto) {
+      const bySystem =
+        row.status === RequestStatus.PENDING ||
+        (row.status === RequestStatus.APPROVED && !row.reviewedBy);
+      if (bySystem) em.remove(row);
+    }
+    await em.flush();
+  }
+
   /** A person's own request — validated, capped, then sent for review. */
   async submit(profile: EmployeeProfileEntity, dto: CreateRequestDto) {
     const fields = this.normalize(dto);
@@ -491,6 +518,7 @@ export class RequestService {
 
     const request = await this.em.transactional(async (em) => {
       await this.lockPerson(em, profile.id);
+      await this.supersedeAutoOvertime(em, profile.id, fields);
 
       const capError = await this.checkPolicyCap(profile, fields, duration);
       if (capError) throw new BadRequestException(capError);
@@ -524,6 +552,15 @@ export class RequestService {
       throw new ConflictException(
         'فقط درخواست‌های در دست بررسی قابل لغو هستند',
       );
+    }
+    if (request.autoSuggested) {
+      // Declining a suggestion keeps the row, as rejected: deleting it would
+      // let the next check-out or correction suggest the same hours again.
+      request.status = RequestStatus.REJECTED;
+      request.reviewNote = 'پیشنهاد خودکار توسط خود فرد رد شد';
+      request.reviewedAt = new Date();
+      await this.em.flush();
+      return;
     }
     await this.em.removeAndFlush(request);
   }

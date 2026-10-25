@@ -1,5 +1,8 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsNumber,
@@ -11,6 +14,7 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
+import { MAX_CONFIRM_DAYS } from '../attendance.constants';
 import { CLOCK_PATTERN, DATE_PATTERN, Digits } from './common.dto';
 
 export class CheckInDto {
@@ -66,4 +70,21 @@ export class CorrectAttendanceDto {
   @IsNotEmpty({ message: 'دلیل اصلاح را وارد کنید' })
   @MaxLength(500)
   note: string;
+}
+
+/** «حاضر بود»: a reviewer confirms days a person in «بدون ثبت» didn't declare. */
+export class ConfirmPresenceDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'روزی انتخاب نشده است' })
+  @ArrayMaxSize(MAX_CONFIRM_DAYS)
+  @Matches(DATE_PATTERN, { each: true, message: 'تاریخ نامعتبر است' })
+  dates: string[];
+
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
+
+export class RevokePresenceQueryDto {
+  @Digits()
+  @Matches(DATE_PATTERN, { message: 'تاریخ نامعتبر است' })
+  date: string;
 }

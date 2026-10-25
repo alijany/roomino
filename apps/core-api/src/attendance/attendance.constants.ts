@@ -174,6 +174,8 @@ export enum DayStatus {
   /** Schedule mode: no record, so the shift counts as worked. */
   BY_SCHEDULE = 'by_schedule',
   HOLIDAY = 'holiday',
+  /** «بدون ثبت», today, not declared yet — becomes absent if the day ends so. */
+  AWAITING_DECLARATION = 'awaiting',
   /** No shift assignment in force — e.g. days before the person was onboarded. */
   NO_SHIFT = 'no_shift',
   FUTURE = 'future',
@@ -190,6 +192,7 @@ export const DayStatusLabels: Record<DayStatus, string> = {
   [DayStatus.REMOTE_PENDING]: 'دورکاری (در انتظار تایید)',
   [DayStatus.BY_SCHEDULE]: 'طبق شیفت',
   [DayStatus.HOLIDAY]: 'تعطیل',
+  [DayStatus.AWAITING_DECLARATION]: 'در انتظار اعلام',
   [DayStatus.NO_SHIFT]: 'بدون شیفت',
   [DayStatus.FUTURE]: '—',
 };
@@ -201,8 +204,10 @@ export enum BoardStatus {
   REMOTE_DONE = 'remote_done',
   DONE = 'done',
   WORKING = 'working',
-  /** Schedule mode: on shift without checking in. */
+  /** Schedule mode, or «بدون ثبت» once declared: on shift without checking in. */
   BY_SCHEDULE = 'by_schedule',
+  /** «بدون ثبت» who hasn't declared yet today. */
+  AWAITING = 'awaiting',
   OFF = 'off',
   NOT_YET = 'not_yet',
   MISSING = 'missing',
@@ -229,6 +234,47 @@ export enum ResetScope {
 
 /** What the admin types to confirm a reset, compared without spaces or ZWNJ. */
 export const RESET_CONFIRMATION = 'پاکسازی';
+
+/**
+ * How a person's presence is recorded and measured — set per job group, with
+ * an override per person (see `AttendanceModeService`).
+ *
+ * - `tracked`: checks in and out; delay and early leave count; time worked
+ *   past the shift's end is suggested as overtime for the approver to confirm.
+ * - `flexible`: checks in and out, but only the hours worked count — arriving
+ *   late or leaving early isn't a delay; the balance against the shift's hours
+ *   is what is measured. No overtime unless a request is filed.
+ * - `untracked`: doesn't check in or out. A shift day with nothing recorded
+ *   counts as worked in full, as in schedule mode; leave, missions and remote
+ *   work are filed as exceptions, and "I'm here today" is a one-tap
+ *   declaration with no time.
+ */
+export enum AttendanceMode {
+  TRACKED = 'tracked',
+  FLEXIBLE = 'flexible',
+  UNTRACKED = 'untracked',
+}
+
+export const AttendanceModeLabels: Record<AttendanceMode, string> = {
+  [AttendanceMode.TRACKED]: 'ساعت‌دار',
+  [AttendanceMode.FLEXIBLE]: 'منعطف',
+  [AttendanceMode.UNTRACKED]: 'بدون ثبت',
+};
+
+/** Most days a reviewer can confirm as present in one go — two Jalali months. */
+export const MAX_CONFIRM_DAYS = 62;
+
+/** Time worked past the shift's end below this isn't overtime at all. */
+export const AUTO_OVERTIME_MIN_MINUTES = 30;
+
+/**
+ * Up to this much past the shift's end is recorded as approved overtime
+ * straight away; more than this waits for the approver.
+ */
+export const AUTO_OVERTIME_AUTO_APPROVE_MAX_MINUTES = 60;
+
+export const UNTRACKED_MESSAGE =
+  'ثبت ورود و خروج برای شما لازم نیست. هر روز «امروز هستم» را بزنید؛ روزی که اعلام نشود و مرخصی یا ماموریتی هم نباشد، غیبت حساب می‌شود.';
 
 export const SCHEDULE_MODE_MESSAGE =
   'ثبت ورود و خروج غیرفعال است؛ حضور شما طبق شیفت حساب می‌شود. برای تأخیر، خروج زودتر یا مرخصی درخواست ثبت کنید.';

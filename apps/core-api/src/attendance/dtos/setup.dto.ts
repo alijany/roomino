@@ -17,6 +17,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import {
+  AttendanceMode,
   PolicyPeriod,
   PolicyRequestType,
   ResetScope,
@@ -151,6 +152,11 @@ export class SaveJobGroupDto {
   @ArrayMaxSize(50)
   @IsInt({ each: true })
   approverIds?: number[];
+
+  /** How the group's members check in; omitted keeps it (new groups: tracked). */
+  @IsOptional()
+  @IsEnum(AttendanceMode, { message: 'نوع حضور نامعتبر است' })
+  attendanceMode?: AttendanceMode;
 }
 
 // --- work policies -----------------------------------------------------------
