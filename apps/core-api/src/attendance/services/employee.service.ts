@@ -90,7 +90,7 @@ export class EmployeeService {
     const like = { $ilike: `%${text.trim()}%` };
     return {
       $or: [
-        { personnelCode: like },
+        { user: { personnelCode: like } },
         { user: { firstName: like } },
         { user: { lastName: like } },
         { user: { phone: like } },
@@ -250,14 +250,6 @@ export class EmployeeService {
 
   // --- create / update ---------------------------------------------------------
 
-  private async assertPersonnelCodeFree(code: string, exceptId?: number) {
-    const clash = await this.em.findOne(EmployeeProfileEntity, {
-      personnelCode: code,
-      ...(exceptId ? { id: { $ne: exceptId } } : {}),
-    });
-    if (clash) throw new ConflictException('این کد پرسنلی قبلاً ثبت شده است');
-  }
-
   private async relations(
     em: EntityManager,
     dto: {
@@ -313,7 +305,6 @@ export class EmployeeService {
     shared: EmployeeAssignmentDto,
   ): Promise<number[]> {
     const userIds = people.map((p) => p.userId);
-    const codes = people.map((p) => p.personnelCode.trim());
 
     const repeated = (values: Array<string | number>) => [
       ...new Set(values.filter((v, i) => values.indexOf(v) !== i)),
@@ -321,13 +312,6 @@ export class EmployeeService {
     if (repeated(userIds).length) {
       throw new BadRequestException('یک کاربر بیش از یک بار انتخاب شده است');
     }
-    const repeatedCodes = repeated(codes);
-    if (repeatedCodes.length) {
-      throw new BadRequestException(
-        `کد پرسنلی تکراری در فهرست: ${repeatedCodes.join('، ')}`,
-      );
-    }
-
     const users = await this.em.find(UserEntity, { id: { $in: userIds } });
     if (users.length !== new Set(userIds).size) {
       throw new NotFoundException('کاربر یافت نشد');
@@ -346,17 +330,6 @@ export class EmployeeService {
       );
     }
 
-    const taken = await this.em.find(EmployeeProfileEntity, {
-      personnelCode: { $in: codes },
-    });
-    if (taken.length) {
-      throw new ConflictException(
-        `این کد پرسنلی قبلاً ثبت شده است: ${taken
-          .map((p) => p.personnelCode)
-          .join('، ')}`,
-      );
-    }
-
     return this.em.transactional(async (em) => {
       const relations = await this.relations(em, shared);
       const workPolicy =
@@ -366,11 +339,9 @@ export class EmployeeService {
       const shift = await em.findOne(ShiftEntity, { id: shared.shiftId });
       if (!shift) throw new NotFoundException('شیفت یافت نشد');
 
-      const profiles = people.map((person, i) => {
+      const profiles = people.map((person) => {
         const profile = em.create(EmployeeProfileEntity, {
           user: byId.get(person.userId)!,
-          personnelCode: codes[i],
-          jobTitle: person.jobTitle?.trim() || undefined,
           workplace: relations.workplace,
           jobGroup: relations.jobGroup ?? null,
           workPolicy: workPolicy ?? null,
@@ -408,22 +379,13 @@ export class EmployeeService {
   }
 
   async update(id: number, dto: UpdateEmployeeDto) {
-    const profile = await this.getOrFail(id);
-    if (dto.personnelCode && dto.personnelCode !== profile.personnelCode) {
-      await this.assertPersonnelCodeFree(dto.personnelCode, id);
-    }
+    await this.getOrFail(id);
 
     await this.em.transactional(async (em) => {
       const target = await em.findOneOrFail(EmployeeProfileEntity, { id });
       const relations = await this.relations(em, dto);
 
       em.assign(target, {
-        ...(dto.personnelCode !== undefined
-          ? { personnelCode: dto.personnelCode }
-          : {}),
-        ...(dto.jobTitle !== undefined
-          ? { jobTitle: dto.jobTitle || null }
-          : {}),
         ...(dto.useGps !== undefined ? { useGps: dto.useGps } : {}),
         ...(dto.useWifi !== undefined ? { useWifi: dto.useWifi } : {}),
         ...(dto.allowedDeviceType !== undefined

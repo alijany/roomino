@@ -67,6 +67,8 @@ export class UserController {
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
       phone: user.phone,
+      personnelCode: user.personnelCode ?? null,
+      jobTitle: user.jobTitle ?? null,
       profilePicture: user.profilePicture ?? null,
       isApproved: user.isApproved,
       roles: user.roles
@@ -195,7 +197,7 @@ export class UserController {
   }
 
   /**
-   * An admin renaming a user. Declared after the `profile` routes: Express
+   * An admin editing a user: name, personnel code and job title. Declared after the `profile` routes: Express
    * matches in order, and `:id` would otherwise catch `PATCH /users/profile`.
    */
   @Patch(':id')
@@ -204,15 +206,21 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserNameDto,
   ) {
-    const user = await this.userService.updateProfile(id, {
+    await this.userService.updateProfile(id, {
       firstName: dto.firstName,
       lastName: dto.lastName ?? '',
+    });
+    const user = await this.userService.updateStaffDetails(id, {
+      personnelCode: dto.personnelCode,
+      jobTitle: dto.jobTitle,
     });
     return {
       id: user.id,
       name: user.name,
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
+      personnelCode: user.personnelCode ?? null,
+      jobTitle: user.jobTitle ?? null,
     };
   }
 }

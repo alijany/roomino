@@ -55,7 +55,7 @@ export class AttendanceExportService {
         const hours = resolveMode(profile) !== AttendanceMode.UNTRACKED;
         const time = (minutes: number) => (hours ? formatHm(minutes) : '');
         return {
-          code: profile.personnelCode,
+          code: profile.user.personnelCode,
           name: profile.user.name,
           workplace: profile.workplace?.name,
           mode: AttendanceModeLabels[resolveMode(profile)],
@@ -97,7 +97,7 @@ export class AttendanceExportService {
         'پرسنل',
         profile.user.name ?? '',
         'کد پرسنلی',
-        profile.personnelCode,
+        profile.user.personnelCode,
         'دوره',
         period.label,
       ]),
@@ -193,7 +193,7 @@ export class AttendanceExportService {
         'پرسنل',
         profile.user.name ?? '',
         'کد پرسنلی',
-        profile.personnelCode,
+        profile.user.personnelCode,
         'دوره',
         period.label,
       ]),

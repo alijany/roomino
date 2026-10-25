@@ -1854,6 +1854,38 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "boolean"
+        },
+        "personnel_code": {
+          "name": "personnel_code",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "job_title": {
+          "name": "job_title",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "name": "user_entity",
@@ -1864,30 +1896,40 @@
             "chat_id"
           ],
           "composite": false,
-          "keyName": "user_entity_chat_id_unique",
           "constraint": true,
-          "primary": false,
-          "unique": true
+          "keyName": "user_entity_chat_id_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "personnel_code"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "user_entity_personnel_code_unique",
+          "unique": true,
+          "primary": false
         },
         {
           "columnNames": [
             "phone"
           ],
           "composite": false,
-          "keyName": "user_entity_phone_unique",
           "constraint": true,
-          "primary": false,
-          "unique": true
+          "keyName": "user_entity_phone_unique",
+          "unique": true,
+          "primary": false
         },
         {
-          "keyName": "user_entity_pkey",
           "columnNames": [
             "id"
           ],
           "composite": false,
-          "constraint": true,
-          "primary": true,
-          "unique": true
+          "constraint": false,
+          "keyName": "user_entity_pkey",
+          "unique": true,
+          "primary": true
         }
       ],
       "checks": [],
@@ -6108,38 +6150,6 @@
           "enumItems": [],
           "mappedType": "integer"
         },
-        "personnel_code": {
-          "name": "personnel_code",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 255,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
-        "job_title": {
-          "name": "job_title",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": 255,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
         "workplace_id": {
           "name": "workplace_id",
           "type": "int",
@@ -6314,33 +6324,23 @@
       "indexes": [
         {
           "columnNames": [
-            "user_id"
-          ],
-          "composite": false,
-          "keyName": "employee_profile_entity_user_id_unique",
-          "constraint": true,
-          "primary": false,
-          "unique": true
-        },
-        {
-          "columnNames": [
-            "personnel_code"
-          ],
-          "composite": false,
-          "keyName": "employee_profile_entity_personnel_code_unique",
-          "constraint": true,
-          "primary": false,
-          "unique": true
-        },
-        {
-          "keyName": "employee_profile_entity_pkey",
-          "columnNames": [
             "id"
           ],
           "composite": false,
+          "constraint": false,
+          "keyName": "employee_profile_entity_pkey",
+          "unique": true,
+          "primary": true
+        },
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
           "constraint": true,
-          "primary": true,
-          "unique": true
+          "keyName": "employee_profile_entity_user_id_unique",
+          "unique": true,
+          "primary": false
         }
       ],
       "checks": [],

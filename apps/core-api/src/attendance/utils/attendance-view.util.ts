@@ -125,8 +125,8 @@ export function toEmployeeBrief(profile: EmployeeProfileEntity) {
     userId: profile.user?.id,
     name: profile.user?.name ?? null,
     profilePicture: profile.user?.profilePicture ?? null,
-    personnelCode: profile.personnelCode,
-    jobTitle: profile.jobTitle ?? null,
+    personnelCode: profile.user?.personnelCode ?? null,
+    jobTitle: profile.user?.jobTitle ?? null,
   };
 }
 
@@ -148,8 +148,8 @@ export function toEmployeeView(
       nationalId: user.nationalId ?? null,
       profilePicture: user.profilePicture ?? null,
     },
-    personnelCode: profile.personnelCode,
-    jobTitle: profile.jobTitle ?? null,
+    personnelCode: user.personnelCode ?? null,
+    jobTitle: user.jobTitle ?? null,
     workplace: workplace ? { id: workplace.id, name: workplace.name } : null,
     jobGroup: jobGroup ? { id: jobGroup.id, name: jobGroup.name } : null,
     workPolicy: policy ? { id: policy.id, name: policy.name } : null,

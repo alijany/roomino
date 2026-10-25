@@ -1,6 +1,8 @@
 import {
+  BeforeCreate,
   Collection,
   Entity,
+  EventArgs,
   OneToMany,
   Property,
   Unique,
@@ -8,6 +10,7 @@ import {
 } from '@mikro-orm/core';
 import { BaseEntity } from 'src/libs/orm/orm.entity.base';
 import { RolesEntity } from 'src/roles/roles.entity';
+import { nextPersonnelCode } from './user.personnel-code';
 
 @Entity()
 export class UserEntity extends BaseEntity {
@@ -36,8 +39,23 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   profilePicture?: string;
 
+  /** Issued automatically (`T01`, …) when the user is created; HR/admin may change it. */
+  @Property({ nullable: true })
+  @Unique()
+  personnelCode?: string;
+
+  @Property({ nullable: true })
+  jobTitle?: string;
+
   @Property({ default: true })
   isApproved: boolean = true;
+
+  @BeforeCreate()
+  async issuePersonnelCode(args: EventArgs<UserEntity>) {
+    if (!this.personnelCode) {
+      this.personnelCode = await nextPersonnelCode(args.em as never);
+    }
+  }
 
   @OneToMany(() => RolesEntity, (role) => role.user)
   roles = new Collection<RolesEntity>(this);

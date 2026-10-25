@@ -321,7 +321,7 @@ export class RequestService {
       ...(like
         ? {
             $or: [
-              { employee: { personnelCode: like } },
+              { employee: { user: { personnelCode: like } } },
               { employee: { user: { firstName: like } } },
               { employee: { user: { lastName: like } } },
             ],

@@ -240,6 +240,8 @@ async function seed(em: EntityManager) {
   );
   for (const [i, user] of users.entries()) {
     if (personas[i].attendance === false) continue;
+    user.personnelCode = `DEMO-UI-${i + 1}`;
+    user.jobTitle = user.lastName;
     const profile = await ensure(
       EmployeeProfileEntity,
       { user },
@@ -248,8 +250,6 @@ async function seed(em: EntityManager) {
         workplace,
         jobGroup: group,
         workPolicy: policy,
-        personnelCode: `DEMO-UI-${i + 1}`,
-        jobTitle: user.lastName,
         useGps: false,
         remoteDays: i === 5 ? [1, 3] : [],
       },

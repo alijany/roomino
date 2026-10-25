@@ -61,11 +61,15 @@ HolidayEntity
   `EmployeeModePeriodEntity` keeps what mode a person was in on each day.
 - **Adding people.** `POST /attendance/employees` adds one profile;
   `POST /attendance/employees/batch` adds up to 100 with one shared
-  assignment (workplace, shift, group, policy, remote days) and a personnel
-  code each. Both go through `EmployeeService.createMany`: every clash —
-  repeated user or code in the list, existing profile, taken code — is
-  checked first and reported together, then all rows are written in one
+  assignment (workplace, shift, group, policy, remote days). Both go through
+  `EmployeeService.createMany`: every clash — repeated user, existing profile
+  — is checked first and reported together, then all rows are written in one
   transaction or none.
+- **Personnel code and job title are the user's.** They live on `UserEntity`
+  (`personnelCode`, unique; `jobTitle`), not on the profile. A code is issued
+  when a user is created — `T01`, `T02`, … (`user/user.personnel-code.ts`) —
+  and an admin edits code and title with `PATCH /users/:id`. The profile views
+  still return both, read from the user.
 - **Reports are derived, never stored.** `ReportService.buildDay` is a line-for-line
   port of Tesmino's `AttendanceReportService::buildDay`; it batch-loads a
   period's attendance, requests, holidays and shifts so a company-wide report

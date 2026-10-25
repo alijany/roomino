@@ -248,6 +248,7 @@ export class UserService extends BaseRepositoryService<UserEntity> {
         phone: validatedPhone.number,
         firstName: dto.firstName,
         lastName: dto.lastName,
+        jobTitle: dto.jobTitle?.trim() || undefined,
       });
     }
 
@@ -331,6 +332,40 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     }
     if (updateData.lastName !== undefined) {
       user.lastName = updateData.lastName;
+    }
+
+    await this.persistAndFlush(user);
+    return user;
+  }
+
+  /**
+   * An admin editing the HR facts of a user: the personnel code (unique) and
+   * the job title (empty clears it).
+   */
+  async updateStaffDetails(
+    userId: number,
+    details: { personnelCode?: string; jobTitle?: string },
+  ): Promise<UserEntity> {
+    const user = await this.findOne({ id: userId });
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    if (
+      details.personnelCode !== undefined &&
+      details.personnelCode !== user.personnelCode
+    ) {
+      const clash = await this.findOne({
+        personnelCode: details.personnelCode,
+        id: { $ne: userId },
+      });
+      if (clash) {
+        throw new ConflictException('این کد پرسنلی قبلاً ثبت شده است');
+      }
+      user.personnelCode = details.personnelCode;
+    }
+    if (details.jobTitle !== undefined) {
+      user.jobTitle = details.jobTitle || undefined;
     }
 
     await this.persistAndFlush(user);

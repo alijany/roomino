@@ -136,7 +136,7 @@ export class ReportController {
     const period = this.reports.periodOf(query);
     sendCsv(
       res,
-      `attendance-${profile.personnelCode}-${period.from}-${period.to}.csv`,
+      `attendance-${profile.user.personnelCode}-${period.from}-${period.to}.csv`,
       await this.exports.employeeCsv(profile, period),
     );
   }

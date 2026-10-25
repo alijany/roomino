@@ -6,12 +6,9 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
-  IsNotEmpty,
   IsOptional,
-  IsString,
   Matches,
   Max,
-  MaxLength,
   Min,
   ValidateIf,
   ValidateNested,
@@ -57,38 +54,22 @@ export class EmployeeAssignmentDto {
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
-/** The per-person part of a profile. */
+/** The per-person part of a profile: which user it is for. The code and title live on the user. */
 export class EmployeeIdentityDto {
   /** The Roomino user this profile belongs to. */
   @Type(() => Number)
   @IsInt({ message: 'کاربر را انتخاب کنید' })
   userId: number;
-
-  @Digits()
-  @IsString()
-  @IsNotEmpty({ message: 'کد پرسنلی را وارد کنید' })
-  @MaxLength(50)
-  personnelCode: string;
-
-  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
 }
 
 export class CreateEmployeeDto extends EmployeeAssignmentDto {
   @Type(() => Number)
   @IsInt({ message: 'کاربر را انتخاب کنید' })
   userId: number;
-
-  @Digits()
-  @IsString()
-  @IsNotEmpty({ message: 'کد پرسنلی را وارد کنید' })
-  @MaxLength(50)
-  personnelCode: string;
-
-  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
 }
 
 /**
- * Several profiles at once: each person brings a user and a personnel code,
+ * Several profiles at once: each person is a user,
  * everything else is shared. All or nothing.
  */
 export class BatchCreateEmployeesDto extends EmployeeAssignmentDto {
@@ -101,13 +82,6 @@ export class BatchCreateEmployeesDto extends EmployeeAssignmentDto {
 }
 
 export class UpdateEmployeeDto {
-  @IsOptional()
-  @Digits()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  personnelCode?: string;
-  @IsOptional() @IsString() @MaxLength(100) jobTitle?: string;
   @IsOptional() @Type(() => Number) @IsInt() workplaceId?: number;
 
   /** `null` clears the group/policy. */

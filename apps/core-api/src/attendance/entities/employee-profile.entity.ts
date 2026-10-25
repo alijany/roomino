@@ -27,12 +27,6 @@ export class EmployeeProfileEntity extends BaseEntity {
   @OneToOne(() => UserEntity, { owner: true, unique: true })
   user: UserEntity;
 
-  @Property({ unique: true })
-  personnelCode: string;
-
-  @Property({ nullable: true })
-  jobTitle?: string;
-
   @ManyToOne(() => WorkplaceEntity)
   workplace: WorkplaceEntity;
 

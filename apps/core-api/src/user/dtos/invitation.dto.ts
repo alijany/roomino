@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Role } from 'src/roles/roles.constants';
 
 export class InviteUserDto {
@@ -12,6 +12,11 @@ export class InviteUserDto {
   @IsString()
   @IsOptional()
   lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  jobTitle?: string;
 
   @IsEnum(Role)
   @IsOptional()
