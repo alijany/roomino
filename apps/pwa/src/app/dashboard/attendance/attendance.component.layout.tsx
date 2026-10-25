@@ -55,11 +55,14 @@ export function StatTile({
   value,
   hint,
   tone = 'neutral',
+  dense = false,
 }: {
   label: string;
   value: ReactNode;
   hint?: ReactNode;
   tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+  /** Tighter padding and type, for a row of several tiles. */
+  dense?: boolean;
 }) {
   const accent = {
     neutral: 'text-slate-800',
@@ -70,10 +73,10 @@ export function StatTile({
   }[tone];
 
   return (
-    <div className="ui-surface p-3 lg:p-4">
+    <div className={dense ? 'ui-surface p-2.5' : 'ui-surface p-3 lg:p-4'}>
       <div className="text-xs font-medium text-slate-500">{label}</div>
-      <div className={`mt-1.5 text-lg font-bold tabular-nums tracking-tight lg:text-xl ${accent}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-slate-400">{hint}</div>}
+      <div className={`mt-1 font-bold tabular-nums tracking-tight ${dense ? 'text-base' : 'mt-1.5 text-lg lg:text-xl'} ${accent}`}>{value}</div>
+      {hint && <div className={`mt-1 text-slate-400 ${dense ? 'text-[11px] leading-4' : 'text-xs'}`}>{hint}</div>}
     </div>
   );
 }

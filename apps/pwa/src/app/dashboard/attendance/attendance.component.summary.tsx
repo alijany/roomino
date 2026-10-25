@@ -158,9 +158,13 @@ function DailySummaryTiles({ summary, compact }: { summary: ReportSummary; compa
 
   return (
     <section aria-label="خلاصه حضور" className="space-y-3">
-      <div className={compact ? 'grid grid-cols-2 gap-3 md:grid-cols-4' : 'grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6'}>
+      {/* Few short tiles: all of them in one row from tablet width up. */}
+      <div
+        className="grid grid-cols-2 gap-2 md:[grid-template-columns:repeat(var(--tiles),minmax(0,1fr))]"
+        style={{ '--tiles': tiles.length } as React.CSSProperties}
+      >
         {tiles.map(({ key, ...props }) => (
-          <StatTile key={key} {...props} />
+          <StatTile key={key} {...props} dense />
         ))}
       </div>
     </section>
