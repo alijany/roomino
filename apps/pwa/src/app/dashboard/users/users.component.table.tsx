@@ -7,9 +7,9 @@ import { PersonLabel, Table } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { ResultModal } from '@/ui/molecules/result-modal';
 import { IconCheck, IconPencil, IconTrash } from '@tabler/icons-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useApproveUser, useDeleteUser } from './users.api';
-import { EditUserNameModal } from './users.component.edit-name';
 import { User } from './users.types';
 
 interface UsersTableProps {
@@ -19,7 +19,7 @@ interface UsersTableProps {
     canManageRoles: boolean;
 }
 
-/** Every user as a table row: who (code and any role beyond «کاربر» under the name), title, status and the actions. Roles are changed in the edit dialog. */
+/** Every user as a table row: who (code and any role beyond «کاربر» under the name), title, status and the actions. Everything else is edited on the user's own page. */
 export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps) {
     return (
         <Table
@@ -74,7 +74,6 @@ function UserDetail({ user }: { user: User }) {
 function ActionsCell({ user, onChanged, canManage }: { user: User; onChanged: () => void; canManage: boolean }) {
     const approve = useApproveUser();
     const deleteUser = useDeleteUser();
-    const [editing, setEditing] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [result, setResult] = useState<{ status: 'success' | 'error'; message?: string } | null>(null);
 
@@ -116,15 +115,11 @@ function ActionsCell({ user, onChanged, canManage }: { user: User; onChanged: ()
                 )}
                 {canManage && (
                     <>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="!px-2"
-                            onClick={() => setEditing(true)}
-                            aria-label={`ویرایش ${user.name ?? user.phone}`}
-                        >
-                            <IconPencil className="size-4" />
-                        </Button>
+                        <Link href={`/dashboard/users/${user.id}`} aria-label={`ویرایش ${user.name ?? user.phone}`}>
+                            <Button variant="outline" size="sm" className="!px-2" tabIndex={-1}>
+                                <IconPencil className="size-4" />
+                            </Button>
+                        </Link>
                         <Button
                             variant="outline"
                             size="sm"
@@ -137,8 +132,6 @@ function ActionsCell({ user, onChanged, canManage }: { user: User; onChanged: ()
                     </>
                 )}
             </div>
-
-            {editing && <EditUserNameModal user={user} onClose={() => setEditing(false)} onSaved={onChanged} />}
 
             <ConfirmModal
                 isOpen={confirmDelete}

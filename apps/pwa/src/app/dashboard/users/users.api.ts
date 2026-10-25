@@ -19,6 +19,11 @@ const query = new URLSearchParams(
   return useSwrHelper(swr);
 }
 
+export function useUser(id: number) {
+  const swr = useSWR<User>(Number.isFinite(id) ? `/users/${id}` : null, fetcher);
+  return useSwrHelper(swr);
+}
+
 export function useAddUser() {
   const swrMutation = useSWRMutation(
     '/users',
