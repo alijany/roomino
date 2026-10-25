@@ -433,6 +433,16 @@ export interface OvertimeSuggestion {
   status: RequestStatus.APPROVED | RequestStatus.PENDING;
 }
 
+/** The answer to «امروز هستم» — like a check-in's, it can refuse and offer remote work. */
+export interface DeclareResult {
+  success: boolean;
+  message: string;
+  canRemote?: boolean;
+  declared: boolean;
+  declaredAt: string | null;
+  workMode: 'office' | 'remote' | null;
+}
+
 export interface CheckResult {
   success: boolean;
   message: string;
@@ -472,7 +482,7 @@ export interface MyToday {
   /** How today is measured for this person. */
   attendanceMode?: AttendanceMode;
   /** «امروز هستم» — only meaningful in «بدون ثبت». */
-  presence?: { declared: boolean; declaredAt: string | null };
+  presence?: { declared: boolean; declaredAt: string | null; workMode: 'office' | 'remote' | null };
   /** Overtime from today's check-out. */
   overtimeSuggestion?: OvertimeSuggestion | null;
   /** A recent day with a check-in and no check-out, to put right. */
@@ -528,6 +538,8 @@ export interface ReportDay {
   mode: AttendanceMode;
   /** «بدون ثبت»: declared by the person, or confirmed by a reviewer. */
   declared: boolean;
+  /** …from outside the workplace, as remote work. */
+  declaredRemote: boolean;
   /** «بدون ثبت»: a past working day nobody declared — absent until confirmed. */
   undeclared: boolean;
   workMode: 'office' | 'remote' | null;
@@ -565,10 +577,15 @@ export interface ReportSummary {
   untrackedDays: number;
   declaredDays: number;
   undeclaredDays: number;
+  /** Working days so far that count either way, and those spent at work or remote — what «بدون ثبت» is measured in. */
+  requiredDays: number;
+  attendedDays: number;
 }
 
 export interface Report {
   period: Period;
+  /** The mode the period ends in; «بدون ثبت» is read in days, not hours. */
+  attendanceMode: AttendanceMode;
   days: ReportDay[];
   summary: ReportSummary;
   /** The person's workplace — the day map's fallback when a day has none. */

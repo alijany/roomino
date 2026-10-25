@@ -214,7 +214,7 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
       </div>
 
       <footer className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/60 p-3">
-        <nav aria-label="میانبرهای حضور و غیاب" className="flex w-full flex-wrap items-center gap-2">
+        <nav aria-label="میانبرهای حضور و غیاب" className="grid w-full grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
           <FooterButton icon={<IconPlus className="size-4" />} onClick={() => setFormOpen(true)}>
             درخواست جدید
           </FooterButton>

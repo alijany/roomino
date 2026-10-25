@@ -2,10 +2,12 @@
 
 import { cn } from '@/libs/style/style.util.helpers';
 import { Button } from '@/ui/atoms';
-import { IconAlertTriangle, IconCheck, IconClockPlus, IconUserOff } from '@tabler/icons-react';
+import { IconAlertTriangle, IconCheck, IconClockPlus, IconCurrentLocation, IconHome, IconUserOff } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useDeclarePresence, useWithdrawPresence } from './attendance.api';
+import { useWithdrawPresence } from './attendance.api';
+import { usePresenceFlow } from './attendance.hook.presence';
+import { LocationIssueNotice } from './attendance.component.location-issue';
 import { RequestForm, RequestPrefill } from './attendance.component.request-form';
 import { AttendanceMode, DayStatus, MyToday, OvertimeSuggestion, RequestStatus, RequestType } from './attendance.types';
 import { durationLabel, errorMessage, fa, jalaliLabel } from './attendance.util';
@@ -103,28 +105,21 @@ export function MissingCheckOutNotice({
 }
 
 /**
- * Today for someone in «بدون ثبت»: no check-in, just «امروز هستم» — one tap,
- * no time recorded — or «امروز نیستم», which opens the request form for today.
+ * Today for someone in «بدون ثبت»: no check-in, just «امروز هستم» — being at
+ * work, said the way a check-in is (from the workplace; or as remote work,
+ * which files the remote day) with no time recorded — or «امروز نیستم», which
+ * opens the request form for today. Once said, only the confirmation shows.
  */
 export function UntrackedActions({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const declare = useDeclarePresence();
+  const flow = usePresenceFlow(onChange);
   const withdraw = useWithdrawPresence();
   const [formOpen, setFormOpen] = useState(false);
 
   const away = awayLabel(today.todayStatus);
   const workingDay = Boolean(today.shiftStart) && !today.holiday;
   const declared = Boolean(today.presence?.declared);
-  const busy = declare.isLoading || withdraw.isLoading;
-
-  const handleDeclare = async () => {
-    try {
-      await declare.submit({});
-      toast.success('حضور امروز شما اعلام شد');
-      onChange();
-    } catch (error) {
-      toast.error(errorMessage(error, 'اعلام حضور انجام نشد'));
-    }
-  };
+  const remote = today.presence?.workMode === 'remote';
+  const busy = flow.busy || withdraw.isLoading;
 
   const handleWithdraw = async () => {
     try {
@@ -146,33 +141,69 @@ export function UntrackedActions({ today, onChange }: { today: MyToday; onChange
     );
   }
 
+  if (declared) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
+        <span className="flex items-center gap-2 font-medium">
+          <IconCheck className="size-4" aria-hidden="true" />
+          {remote ? 'حضور دورکاری امروز اعلام شد' : 'حضور امروز اعلام شد'}
+        </span>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleWithdraw}
+          className="text-xs text-emerald-700/80 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        >
+          بازگرداندن
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
-      {declared ? (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
-          <span className="flex items-center gap-2 font-medium">
-            <IconCheck className="size-4" aria-hidden="true" />
-            حضور امروز اعلام شد
-          </span>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={handleWithdraw}
-            className="text-xs text-emerald-700/80 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            بازگرداندن
-          </button>
-        </div>
-      ) : (
-        <Button size="lg" className="w-full gap-2 text-base" disabled={busy} aria-busy={busy} onClick={handleDeclare}>
-          <IconCheck className="size-5" aria-hidden="true" />
-          {declare.isLoading ? 'در حال ثبت...' : 'امروز هستم'}
+      {/* The two answers side by side, the same size. */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button size="lg" className="gap-2 text-base" disabled={busy} aria-busy={busy} onClick={() => flow.say()}>
+          {flow.locating ? (
+            <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
+          ) : (
+            <IconCheck className="size-5" aria-hidden="true" />
+          )}
+          {flow.locating ? 'در حال دریافت...' : 'امروز هستم'}
         </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="gap-2 text-base"
+          disabled={busy}
+          onClick={() => setFormOpen(true)}
+        >
+          <IconUserOff className="size-5" aria-hidden="true" />
+          امروز نیستم
+        </Button>
+      </div>
+
+      {flow.locationIssue && (
+        <LocationIssueNotice issue={flow.locationIssue} busy={busy} onRetry={flow.retryLocation} />
       )}
-      <Button variant="outline" className="w-full gap-2" disabled={busy} onClick={() => setFormOpen(true)}>
-        <IconUserOff className="size-4" aria-hidden="true" />
-        امروز نیستم
-      </Button>
+      {flow.lastError && (
+        <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+          <p>{fa(flow.lastError)}</p>
+          {flow.offerRemote && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button size="sm" className="gap-1" disabled={busy} onClick={() => flow.say(true)}>
+                <IconHome className="size-4" aria-hidden="true" />
+                اعلام حضور دورکاری
+              </Button>
+              <span className="text-xs text-rose-600">
+                اگر امروز دورکاری مجاز نداشته باشید، درخواست دورکاری برای تایید مدیر ارسال می‌شود.
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       <p className="text-center text-[11px] leading-5 text-slate-400">
         «امروز نیستم» فرم مرخصی، ماموریت یا درخواست دیگر را برای امروز باز می‌کند.
       </p>

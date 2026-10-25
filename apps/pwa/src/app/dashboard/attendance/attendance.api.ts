@@ -13,6 +13,7 @@ import {
   AttendanceRequest,
   Board,
   CheckResult,
+  DeclareResult,
   CorrectionInput,
   Employee,
   EmployeeDetail,
@@ -105,7 +106,7 @@ export function useDeclarePresence() {
   return useSwrMutationHelper(
     useSWRMutation(
       '/attendance/me/presence',
-      postFetcher<Record<string, never>, { declared: boolean; declaredAt: string }>,
+      postFetcher<{ lat?: number; lng?: number; remote?: boolean }, DeclareResult>,
     ),
   );
 }
