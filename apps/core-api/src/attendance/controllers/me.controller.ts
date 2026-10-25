@@ -127,6 +127,13 @@ export class MeController {
         absence: report.summary.absentMinutes,
         leave: report.summary.leaveMinutes,
         balance: report.summary.balance,
+        /** Someone in «بدون ثبت» is measured in days, not hours. */
+        daily: report.attendanceMode === AttendanceMode.UNTRACKED,
+        requiredDays: report.summary.requiredDays,
+        attendedDays: report.summary.attendedDays,
+        absentDays: report.summary.absentDays,
+        leaveDays: report.summary.leaveDays,
+        remoteDays: report.summary.remoteDays,
       },
       pendingRequests: pending.get(profile.id) ?? 0,
       /** Schedule mode: no check-in/out, the shift counts unless excepted. */

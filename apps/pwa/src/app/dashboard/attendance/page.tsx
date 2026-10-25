@@ -188,10 +188,21 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <StatTile label="کارکرد" value={hm(month.worked)} />
-              <StatTile label="اختلاف" value={hm(month.balance)} tone={month.balance < 0 ? 'danger' : 'success'} />
-              <StatTile label="اضافه کار" value={hm(month.overtime)} />
-              <StatTile label="غیبت" value={hm(month.absence)} tone={month.absence ? 'danger' : 'neutral'} />
+              {month.daily ? (
+                <>
+                  <StatTile label="حضور" value={`${fa(month.attendedDays)} از ${fa(month.requiredDays)} روز`} />
+                  <StatTile label="غیبت" value={`${fa(month.absentDays)} روز`} tone={month.absentDays ? 'danger' : 'neutral'} />
+                  <StatTile label="مرخصی" value={`${fa(month.leaveDays)} روز`} />
+                  <StatTile label="دورکاری" value={`${fa(month.remoteDays)} روز`} />
+                </>
+              ) : (
+                <>
+                  <StatTile label="کارکرد" value={hm(month.worked)} />
+                  <StatTile label="اختلاف" value={hm(month.balance)} tone={month.balance < 0 ? 'danger' : 'success'} />
+                  <StatTile label="اضافه کار" value={hm(month.overtime)} />
+                  <StatTile label="غیبت" value={hm(month.absence)} tone={month.absence ? 'danger' : 'neutral'} />
+                </>
+              )}
             </div>
             <Link
               href="/dashboard/attendance/my-requests"

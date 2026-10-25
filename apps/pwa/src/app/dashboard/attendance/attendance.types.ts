@@ -470,6 +470,13 @@ export interface MyToday {
     absence: number;
     leave: number;
     balance: number;
+    /** «بدون ثبت»: show days instead of hours. */
+    daily: boolean;
+    requiredDays: number;
+    attendedDays: number;
+    absentDays: number;
+    leaveDays: number;
+    remoteDays: number;
   };
   pendingRequests?: number;
   /** Schedule mode: no check-in/out; the shift counts unless an exception is filed. */
