@@ -41,7 +41,7 @@ export function ReviewActions({
 
   const handleReject = async () => {
     try {
-      await reject.submit({ id: request.id, note: note.trim() || undefined });
+      await reject.submit({ id: request.id, note: note.trim() });
       toast.warning('درخواست رد شد');
       setRejecting(false);
       onDone();
@@ -74,7 +74,7 @@ export function ReviewActions({
         title="رد درخواست"
         footer={
           <>
-            <Button className="flex-1 !bg-rose-600" disabled={reject.isLoading} onClick={handleReject}>
+            <Button className="flex-1 !bg-rose-600" disabled={reject.isLoading || !note.trim()} onClick={handleReject}>
               {reject.isLoading ? 'در حال ثبت...' : 'رد درخواست'}
             </Button>
             <Button variant="ghost" className="flex-1 bg-slate-100" onClick={() => setRejecting(false)}>
@@ -86,7 +86,7 @@ export function ReviewActions({
         <RequestSummary request={request} />
         <Input
           textarea
-          label="دلیل رد (اختیاری)"
+          label="دلیل و توضیحات رد"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}

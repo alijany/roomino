@@ -160,8 +160,8 @@ export function useApproveRequest(base: ReviewBase) {
 }
 
 export function useRejectRequest(base: ReviewBase) {
-  return useDynamicMutation(`${base}/reject`, ({ id, note }: { id: number; note?: string }) =>
-    postFetcher<{ note?: string }, AttendanceRequest>(`${base}/${id}/reject`, { arg: { note } }),
+  return useDynamicMutation(`${base}/reject`, ({ id, note }: { id: number; note: string }) =>
+    postFetcher<{ note: string }, AttendanceRequest>(`${base}/${id}/reject`, { arg: { note } }),
   );
 }
 

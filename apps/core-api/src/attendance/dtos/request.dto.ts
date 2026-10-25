@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
@@ -62,7 +63,11 @@ export class CreateRequestDto {
 export class GrantRequestDto extends CreateRequestDto {}
 
 export class RejectRequestDto {
-  @IsOptional() @IsString() @MaxLength(1000) note?: string;
+  /** A rejection always says why; the requester reads this. */
+  @IsString()
+  @IsNotEmpty({ message: 'دلیل رد درخواست را وارد کنید' })
+  @MaxLength(1000)
+  note: string;
 }
 
 export class ListRequestsDto extends PageQueryDto {
