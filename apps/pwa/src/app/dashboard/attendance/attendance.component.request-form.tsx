@@ -4,11 +4,11 @@ import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DatePickerField } from '@/ui/molecules';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useGrant, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
+import { useGrant, useMyToday, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
 import { AttachmentPicker } from './attendance.component.attachments';
 import { Field, FormModal, TimeField } from './attendance.component.layout';
 import { GRANT_TYPES, REQUEST_TYPE_LABELS } from './attendance.constants';
-import { RequestInput, RequestType } from './attendance.types';
+import { AttendanceMode, RequestInput, RequestType } from './attendance.types';
 import {
   errorMessage,
   fromCivilDate,
@@ -62,7 +62,19 @@ export function RequestForm({
   const [files, setFiles] = useState<File[]>([]);
 
   const shape = shapeOf(type);
-  const types = grantFor ? GRANT_TYPES : Object.values(RequestType);
+  // Someone in «بدون ثبت» doesn't check in, so there's no remote check-in to
+  // permit and no late arrival to report; the rest stays as it is.
+  const { data: me } = useMyToday();
+  const untracked = !grantFor && me?.attendanceMode === AttendanceMode.UNTRACKED;
+  const types = grantFor
+    ? GRANT_TYPES
+    : Object.values(RequestType).filter(
+        (value) =>
+          !untracked ||
+          (value !== RequestType.REMOTE_DAILY &&
+            value !== RequestType.REMOTE_HOURLY &&
+            value !== RequestType.MANUAL_ATTENDANCE),
+      );
   const busy = submit.isLoading || grant.isLoading || uploadAttachment.isLoading;
 
   const rangeInvalid = shape === 'range' && dateTo < dateFrom;

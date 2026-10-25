@@ -18,12 +18,19 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useMyToday } from './attendance.api';
 import { LocationIssueNotice } from './attendance.component.location-issue';
+import {
+  awayLabel,
+  FlexibleHint,
+  MissingCheckOutNotice,
+  OvertimeNotice,
+  UntrackedActions,
+} from './attendance.component.mode-today';
 import { RequestForm } from './attendance.component.request-form';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { useCheckInFlow } from './attendance.hook.check-in';
 import { DayState, useTodayStatus } from './attendance.hook.today-status';
-import { MyToday } from './attendance.types';
+import { AttendanceMode, MyToday } from './attendance.types';
 import { durationLabel, fa, hm } from './attendance.util';
 
 const STATE_META: Record<DayState, { label: string; className: string; dot: string }> = {
@@ -33,6 +40,9 @@ const STATE_META: Record<DayState, { label: string; className: string; dot: stri
   schedule: { label: 'طبق شیفت', className: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
   done: { label: 'تکمیل شد', className: 'bg-brand-50 text-brand-700', dot: 'bg-brand-500' },
   off: { label: 'بدون شیفت', className: 'bg-sky-50 text-sky-700', dot: 'bg-sky-500' },
+  declared: { label: 'حاضر — اعلام شد', className: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  awaiting: { label: 'در انتظار اعلام', className: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
+  away: { label: 'خارج از محل', className: 'bg-sky-50 text-sky-700', dot: 'bg-sky-500' },
 };
 
 /**
@@ -69,10 +79,15 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
   const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const status = useTodayStatus(today);
   const [formOpen, setFormOpen] = useState(false);
-  const { scheduleMode, punches, presumed, inTime, outTime, checkedIn, checkedOut, shiftMinutes, worked, progress, state, live } = status;
+  const { mode, untracked, scheduleMode, punches, presumed, inTime, outTime, checkedIn, checkedOut, shiftMinutes, worked, progress, state, live } = status;
   const att = today.attendance;
   const meta = STATE_META[state];
-  const stateLabel = state === 'off' && today.holiday ? 'تعطیل' : meta.label;
+  const stateLabel =
+    state === 'off' && today.holiday
+      ? 'تعطیل'
+      : state === 'away'
+        ? awayLabel(today.todayStatus) ?? meta.label
+        : meta.label;
   const shiftLabel = today.holiday
     ? `تعطیل — ${today.holiday}`
     : today.shiftStart
@@ -104,6 +119,9 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
       </header>
 
       <div className="space-y-3 px-4 pb-4">
+        <MissingCheckOutNotice today={today} onChange={onChange} />
+
+        {!untracked && (
         <dl className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/70 rounded-2xl bg-slate-50 py-3 text-center ring-1 ring-inset ring-slate-200/60">
           <TimeCell
             label="ورود"
@@ -113,8 +131,12 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
           <TimeCell label="خروج" value={fa(outTime) || '--:--'} hint={<PunchHint punch={punches.out} presumed={presumed} />} />
           <TimeCell label="مدت حضور" value={checkedIn ? hm(worked) : '--:--'} accent={live} />
         </dl>
+        )}
 
-        {shiftMinutes > 0 && checkedIn && (
+        {mode === AttendanceMode.FLEXIBLE && !scheduleMode && <FlexibleHint />}
+        {today.overtimeSuggestion && <OvertimeNotice suggestion={today.overtimeSuggestion} />}
+
+        {!untracked && shiftMinutes > 0 && checkedIn && (
           <div className="space-y-1">
             <div
               className="h-1.5 overflow-hidden rounded-full bg-slate-100"
@@ -144,6 +166,9 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
           </p>
         )}
 
+        {untracked ? (
+          <UntrackedActions today={today} onChange={onChange} />
+        ) : (
         <div className="w-full">
           {presumed ? (
             <ScheduleModeAction today={today} punches={punches} onChange={onChange} compact />
@@ -169,12 +194,13 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
             </Button>
           )}
         </div>
+        )}
 
-        {locationIssue && !scheduleMode && (
+        {locationIssue && !scheduleMode && !untracked && (
           <LocationIssueNotice issue={locationIssue} busy={busy} onRetry={retryLocation} />
         )}
 
-        {lastError && !scheduleMode && (
+        {lastError && !scheduleMode && !untracked && (
           <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">
             <p>{fa(lastError)}</p>
             {offerRemote && !checkedIn && (

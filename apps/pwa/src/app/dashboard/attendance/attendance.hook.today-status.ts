@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react';
-import { MyToday } from './attendance.types';
+import { AttendanceMode, DayStatus, MyToday } from './attendance.types';
 import { clockMinutes, tehranClockNow, todayPunches } from './attendance.util';
 
-export type DayState = 'out' | 'late' | 'working' | 'schedule' | 'done' | 'off';
+export type DayState =
+  | 'out'
+  | 'late'
+  | 'working'
+  | 'schedule'
+  | 'done'
+  | 'off'
+  /** «بدون ثبت»: declared today. */
+  | 'declared'
+  /** «بدون ثبت»: not declared yet. */
+  | 'awaiting'
+  /** Leave, a mission or remote work covers today. */
+  | 'away';
 
 /** Tehran wall-clock minutes, re-read every `ms` — for the live counter and the shift's end. */
 function useNowMinutes(ms = 30_000) {
@@ -22,6 +34,10 @@ function useNowMinutes(ms = 30_000) {
  */
 export function useTodayStatus(today: MyToday) {
   const scheduleMode = Boolean(today.scheduleMode);
+  const mode = today.attendanceMode ?? AttendanceMode.TRACKED;
+  // «بدون ثبت» has no punches — unless company-wide schedule mode, which
+  // already says so for everyone.
+  const untracked = mode === AttendanceMode.UNTRACKED && !scheduleMode;
   // In schedule mode a requested time (an exception) shows until it's
   // approved, and a missing one is the shift's; in direct mode only what's
   // recorded counts.
@@ -43,7 +59,18 @@ export function useTodayStatus(today: MyToday) {
   const worked = checkedIn && inTime ? Math.max(0, end - clockMinutes(inTime)) : 0;
   const progress = shiftMinutes > 0 ? Math.min(100, Math.round((worked / shiftMinutes) * 100)) : 0;
 
-  const state: DayState = scheduleMode
+  const away = [DayStatus.ON_LEAVE, DayStatus.MISSION, DayStatus.REMOTE].includes(
+    today.todayStatus as DayStatus,
+  );
+  const state: DayState = untracked
+    ? !onShift
+      ? 'off'
+      : away
+        ? 'away'
+        : today.presence?.declared
+          ? 'declared'
+          : 'awaiting'
+    : scheduleMode
     ? !onShift ? 'off' : checkedOut ? 'done' : 'schedule'
     : checkedOut
       ? 'done'
@@ -51,11 +78,14 @@ export function useTodayStatus(today: MyToday) {
         ? 'working'
         : !onShift
           ? 'off'
-          : nowMinutes > clockMinutes(today.shiftStart!)
+          : // Only «ساعت‌دار» are late; «منعطف» may still come in.
+            mode === AttendanceMode.TRACKED && nowMinutes > clockMinutes(today.shiftStart!)
             ? 'late'
             : 'out';
 
   return {
+    mode,
+    untracked,
     scheduleMode,
     punches,
     presumed,

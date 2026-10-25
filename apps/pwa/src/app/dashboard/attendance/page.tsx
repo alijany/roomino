@@ -15,12 +15,18 @@ import {
 import Link from 'next/link';
 import { useHolidays, useMyToday } from './attendance.api';
 import { LocationIssueNotice } from './attendance.component.location-issue';
+import {
+  FlexibleHint,
+  MissingCheckOutNotice,
+  OvertimeNotice,
+  UntrackedActions,
+} from './attendance.component.mode-today';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { useCheckInFlow } from './attendance.hook.check-in';
-import { MyToday } from './attendance.types';
+import { AttendanceMode, MyToday } from './attendance.types';
 import { fa, hm, jalaliLabel, todayPunches } from './attendance.util';
 
 /**
@@ -56,6 +62,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
   const att = today.attendance;
   const month = today.month;
   const scheduleMode = Boolean(today.scheduleMode);
+  // «بدون ثبت» has no check-in at all — «امروز هستم» takes its place.
+  const mode = today.attendanceMode ?? AttendanceMode.TRACKED;
+  const untracked = mode === AttendanceMode.UNTRACKED && !scheduleMode;
   const punches = todayPunches(today, scheduleMode);
   // Schedule mode: a time nobody recorded is the shift's.
   const presumed = scheduleMode && Boolean(today.shiftStart) && !today.holiday;
@@ -89,15 +98,20 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           )}
         </div>
 
+        <MissingCheckOutNotice today={today} onChange={onChange} />
+
         {scheduleMode ? (
           <ScheduleModeNotice note={today.scheduleModeNote} className="text-sm" />
-        ) : today.remoteStatus && (
+        ) : mode === AttendanceMode.FLEXIBLE ? (
+          <FlexibleHint />
+        ) : today.remoteStatus && !untracked && (
           <p className="flex items-center gap-2 rounded-xl bg-sky-50 p-3 text-sm text-sky-700">
             <IconHome className="size-4" />
             {REMOTE_STATUS_LABELS[today.remoteStatus]}
           </p>
         )}
 
+        {!untracked && (
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">ورود</div>
@@ -114,12 +128,15 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             </div>
           </div>
         </div>
+        )}
 
-        {locationIssue && !scheduleMode && (
+        {today.overtimeSuggestion && <OvertimeNotice suggestion={today.overtimeSuggestion} />}
+
+        {locationIssue && !scheduleMode && !untracked && (
           <LocationIssueNotice issue={locationIssue} busy={busy} onRetry={retryLocation} />
         )}
 
-        {lastError && !scheduleMode && (
+        {lastError && !scheduleMode && !untracked && (
           <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
             <p>{fa(lastError)}</p>
             {offerRemote && !att?.checkIn && (
@@ -136,7 +153,9 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           </div>
         )}
 
-        {scheduleMode ? (
+        {untracked ? (
+          <UntrackedActions today={today} onChange={onChange} />
+        ) : scheduleMode ? (
           presumed && <ScheduleModeAction today={today} punches={punches} onChange={onChange} />
         ) : done ? (
           <p className="rounded-xl bg-emerald-50 p-3 text-center text-sm text-emerald-700">

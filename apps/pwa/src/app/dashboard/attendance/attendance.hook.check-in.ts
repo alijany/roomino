@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useCheckIn, useCheckOut } from './attendance.api';
+import { overtimeLine } from './attendance.component.mode-today';
 import { CheckResult } from './attendance.types';
 import { errorMessage, getPosition, LocationError } from './attendance.util';
 
@@ -43,6 +44,7 @@ export function useCheckInFlow(onChange: () => void) {
   const handle = (result: CheckResult) => {
     if (result.success) {
       toast.success(result.message);
+      if (result.overtimeSuggestion) toast.info(overtimeLine(result.overtimeSuggestion));
       setOfferRemote(false);
       setLastError(null);
       onChange();
