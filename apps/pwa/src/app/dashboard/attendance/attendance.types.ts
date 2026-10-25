@@ -380,7 +380,8 @@ export interface RequestFilterDto {
   page?: number;
   limit?: number;
   text?: string;
-  status?: RequestStatus;
+  /** A status, or `all`; the server's default is what's pending. */
+  status?: RequestStatus | 'all';
   category?: RequestCategory;
   employeeId?: number;
 }

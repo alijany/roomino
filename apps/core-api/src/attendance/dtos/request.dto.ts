@@ -71,7 +71,10 @@ export class RejectRequestDto {
 }
 
 export class ListRequestsDto extends PageQueryDto {
-  @IsOptional() @IsEnum(RequestStatus) status?: RequestStatus;
+  /** A status, or `all`; without it, only what is pending. */
+  @IsOptional()
+  @IsIn([...Object.values(RequestStatus), 'all'])
+  status?: RequestStatus | 'all';
   @IsOptional()
   @IsIn([...Object.values(RequestCategory)])
   category?: RequestCategory;

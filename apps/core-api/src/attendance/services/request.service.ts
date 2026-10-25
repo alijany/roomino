@@ -332,11 +332,14 @@ export class RequestService {
     const [[items, total], ...counts] = await Promise.all([
       this.em.findAndCount(
         AttendanceRequestEntity,
-        { ...base, status } as FilterQuery<AttendanceRequestEntity>,
+        {
+          ...base,
+          ...(status === 'all' ? {} : { status }),
+        } as FilterQuery<AttendanceRequestEntity>,
         {
           populate: REQUEST_POPULATE,
           orderBy:
-            status === RequestStatus.PENDING
+            status === RequestStatus.PENDING || status === 'all'
               ? { created_at: QueryOrder.DESC }
               : { updated_at: QueryOrder.DESC },
           limit,

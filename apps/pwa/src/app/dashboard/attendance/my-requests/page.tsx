@@ -32,7 +32,7 @@ export default function MyRequestsPage() {
 }
 
 function MyRequestsContent() {
-  const [filters, setFilters] = useState<RequestFilterDto>({ limit: 10 });
+  const [filters, setFilters] = useState<RequestFilterDto>({ status: 'all', limit: 10 });
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [cancelling, setCancelling] = useState<AttendanceRequest | null>(null);
@@ -81,7 +81,7 @@ function MyRequestsContent() {
           <Tabs
             tabs={tabs}
             defaultTab="all"
-            onTabChange={(id) => setFilters((prev) => ({ ...prev, status: id === 'all' ? undefined : (id as RequestStatus), page: 0 }))}
+            onTabChange={(id) => setFilters((prev) => ({ ...prev, status: id as RequestStatus | 'all', page: 0 }))}
           />
           <div className="overflow-auto pt-2">
             <DataView
