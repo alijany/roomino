@@ -7,7 +7,7 @@ import { IconCopy, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useDeleteShift, useSaveShift, useShifts } from './attendance.api';
-import { FormModal } from './attendance.component.layout';
+import { FormModal, TimeInput } from './attendance.component.layout';
 import { WEEKDAY_LABELS } from './attendance.constants';
 import { Shift, ShiftDay } from './attendance.types';
 import { currentJalaliMonth, errorMessage, fa, latin } from './attendance.util';
@@ -152,7 +152,7 @@ export function ShiftsSettings() {
 }
 
 const timeInput =
-  'w-32 rounded-lg border border-slate-200 px-2 py-1 text-left tabular-nums focus:border-slate-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-300';
+  'w-28 !rounded-lg !px-1';
 
 /** An active day needs both ends of each part it uses. */
 const dayComplete = (d: DayDraft) =>
@@ -261,9 +261,9 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
               />
             </div>
             <div className="flex items-center gap-1">
-              <input type="time" dir="ltr" aria-label={`شروع ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(e) => setDay(i, { startTime: e.target.value })} />
+              <TimeInput aria-label={`شروع ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(v) => setDay(i, { startTime: v })} />
               <span className="text-slate-400">تا</span>
-              <input type="time" dir="ltr" aria-label={`پایان ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(e) => setDay(i, { endTime: e.target.value })} />
+              <TimeInput aria-label={`پایان ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(v) => setDay(i, { endTime: v })} />
             </div>
             {day.isActive && (
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500">
@@ -273,9 +273,9 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
             )}
             {day.isActive && day.hasSecondPart && (
               <div className="flex items-center gap-1">
-                <input type="time" dir="ltr" aria-label={`شروع پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondStartTime} onChange={(e) => setDay(i, { secondStartTime: e.target.value })} />
+                <TimeInput aria-label={`شروع پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondStartTime} onChange={(v) => setDay(i, { secondStartTime: v })} />
                 <span className="text-slate-400">تا</span>
-                <input type="time" dir="ltr" aria-label={`پایان پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondEndTime} onChange={(e) => setDay(i, { secondEndTime: e.target.value })} />
+                <TimeInput aria-label={`پایان پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondEndTime} onChange={(v) => setDay(i, { secondEndTime: v })} />
               </div>
             )}
             {day.isActive && (

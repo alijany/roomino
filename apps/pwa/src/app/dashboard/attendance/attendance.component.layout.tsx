@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Modal } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { IconX } from '@tabler/icons-react';
@@ -163,7 +164,71 @@ export function Field({
   );
 }
 
-/** `<input type="time">`, LTR, styled like the other inputs. */
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const selectClass =
+  'min-w-0 grow cursor-pointer appearance-none bg-transparent px-1 py-2 text-center tabular-nums focus:outline-none disabled:cursor-default disabled:text-slate-300';
+
+/**
+ * A 24-hour `"HH:mm"` picker. The native `<input type="time">` follows the
+ * browser's locale and shows AM/PM, which a 24-hour workplace can't use.
+ */
+export function TimeInput({
+  value,
+  onChange,
+  disabled,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+  'aria-label'?: string;
+}) {
+  const [h = '', m = ''] = value ? value.split(':') : [];
+
+  return (
+    <div
+      dir="ltr"
+      role="group"
+      aria-label={ariaLabel}
+      className={cn(
+        'flex items-center rounded-xl border border-slate-200 bg-white px-2 text-slate-700 focus-within:border-slate-400',
+        disabled && 'bg-slate-50',
+        className,
+      )}
+    >
+      <select
+        aria-label="ساعت"
+        className={selectClass}
+        disabled={disabled}
+        value={h}
+        onChange={(e) => onChange(e.target.value ? `${e.target.value}:${m || '00'}` : '')}
+      >
+        <option value="">--</option>
+        {HOURS.map((hour) => (
+          <option key={hour} value={hour}>{hour}</option>
+        ))}
+      </select>
+      <span aria-hidden="true" className="text-slate-400">:</span>
+      <select
+        aria-label="دقیقه"
+        className={selectClass}
+        disabled={disabled}
+        value={m}
+        onChange={(e) => onChange(e.target.value ? `${h || '00'}:${e.target.value}` : '')}
+      >
+        <option value="">--</option>
+        {MINUTES.map((minute) => (
+          <option key={minute} value={minute}>{minute}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** A labelled 24-hour time field. */
 export function TimeField({
   label,
   value,
@@ -175,13 +240,7 @@ export function TimeField({
 }) {
   return (
     <Field label={label}>
-      <input
-        type="time"
-        dir="ltr"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left tabular-nums text-slate-700 focus:border-slate-400 focus:outline-none"
-      />
+      <TimeInput value={value} onChange={onChange} />
     </Field>
   );
 }

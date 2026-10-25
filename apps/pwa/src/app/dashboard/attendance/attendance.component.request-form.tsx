@@ -54,12 +54,13 @@ export function RequestForm({
   const [dateTo, setDateTo] = useState(start);
   const [date, setDate] = useState(start);
   const [timeFrom, setTimeFrom] = useState('');
-  const [timeTo, setTimeTo] = useState('');
+  // Our working day ends at 17:00, which is when hourly requests usually stop.
+  const [timeTo, setTimeTo] = useState('17:00');
   const [manualTime, setManualTime] = useState(prefill?.time ?? '');
   const [direction, setDirection] = useState<'in' | 'out'>(prefill?.direction ?? 'in');
   const [description, setDescription] = useState('');
-
   const [files, setFiles] = useState<File[]>([]);
+
   const shape = shapeOf(type);
   const types = grantFor ? GRANT_TYPES : Object.values(RequestType);
   const busy = submit.isLoading || grant.isLoading || uploadAttachment.isLoading;
@@ -96,10 +97,10 @@ export function RequestForm({
           }
         }
         toast.success('درخواست شما ثبت شد و در انتظار بررسی است');
-      }
         if (failed.length) {
           toast.warn(`بارگذاری پیوست ناموفق بود: ${failed.join('، ')} — از جزئیات درخواست دوباره اضافه کنید`);
         }
+      }
       onSuccess();
       onClose();
     } catch (error) {
@@ -200,8 +201,8 @@ export function RequestForm({
           rows={3}
         />
       )}
-    </FormModal>
 
       {shape && !grantFor && <AttachmentPicker files={files} onChange={setFiles} disabled={busy} />}
+    </FormModal>
   );
 }
