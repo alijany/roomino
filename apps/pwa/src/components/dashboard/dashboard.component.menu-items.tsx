@@ -1,8 +1,8 @@
 'use client';
 
 import { cn } from "@/libs/style/style.util.helpers";
-import { Avatar, Dropdown, Input } from "@/ui/atoms";
-import { IconChevronDown, IconLogout, IconReplace, IconSearch, IconUserFilled, IconX } from "@tabler/icons-react";
+import { Avatar, Dropdown } from "@/ui/atoms";
+import { IconChevronDown, IconLogout, IconReplace, IconUserFilled } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -11,7 +11,7 @@ import { getRoleName } from "../auth/auth.constants.roles";
 import { useAuth } from "../auth/auth.context.provider";
 import { RouteItems, routeGroups } from "./dashboard.constants.route-groups";
 import type { RouteItem } from "./dashboard.constants.route-groups";
-import { getActiveRoute, normalizeNavigationSearch } from "./dashboard.util.navigation";
+import { getActiveRoute } from "./dashboard.util.navigation";
 
 interface MenuItemsProps {
   className?: string;
@@ -25,7 +25,6 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
   const pathname = usePathname();
   const { logout, hasAnyRole, user, selectedRole, setSelectedRole } = useAuth();
   const { data: attendance } = useMyToday();
-  const [search, setSearch] = React.useState("");
   const [expandedGroup, setExpandedGroup] = React.useState<{
     pathname: string;
     id: string | null;
@@ -60,27 +59,10 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
   const expandedGroupId = expandedGroup?.pathname === pathname
     ? expandedGroup.id
     : activeGroup?.id ?? null;
-  const query = normalizeNavigationSearch(search);
-  const matchesSearch = (route: RouteItem) =>
-    !query || normalizeNavigationSearch(route.label).includes(query);
-  // Search both areas so a management tool can always be found from My work.
   const visiblePrimaryRoutes = primaryRoutes.filter(route =>
-    matchesSearch(route) && (query || route.href === (
-      workspace === "management" ? RouteItems.management.href : RouteItems.dashboard.href
-    ))
+    route.href === (workspace === "management" ? RouteItems.management.href : RouteItems.dashboard.href)
   );
-  const visibleAccountRoutes = accountRoutes.filter(matchesSearch);
-  const visibleGroups = accessibleGroups
-    .filter(group => query || group.workspace === workspace)
-    .map(group => ({
-      ...group,
-      routes: normalizeNavigationSearch(group.label).includes(query)
-        ? group.routes
-        : group.routes.filter(matchesSearch),
-    }))
-    .filter(group => group.routes.length > 0);
-  const resultCount = visiblePrimaryRoutes.length + visibleAccountRoutes.length +
-    visibleGroups.reduce((count, group) => count + group.routes.length, 0);
+  const visibleGroups = accessibleGroups.filter(group => group.workspace === workspace);
 
   const userRoles = user?.roles?.map(r => ({
     label: getRoleName(r.role),
@@ -169,44 +151,11 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
         </div>
       )}
 
-      <div className="relative shrink-0">
-        <Input
-          type="search"
-          value={search}
-          onChange={event => setSearch(event.target.value)}
-          placeholder={canManage ? "جستجو در همه بخش‌ها…" : "جستجو در منو…"}
-          aria-label="جستجو در منوی پیشخوان"
-          icon={<IconSearch className="size-4 text-slate-400" />}
-          className="pl-7 [&::-webkit-search-cancel-button]:appearance-none"
-          autoComplete="off"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            aria-label="پاک کردن جستجو"
-            className="absolute inset-y-0 left-1 flex w-8 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            <IconX className="size-4" aria-hidden="true" />
-          </button>
-        )}
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {query && (
-          <p role="status" className="px-3 pb-2 text-xs text-slate-500">
-            {resultCount > 0 ? `${resultCount} مورد یافت شد` : "موردی یافت نشد؛ عبارت دیگری جستجو کنید."}
-          </p>
-        )}
         <div className="space-y-1">
           {visiblePrimaryRoutes.map(renderRoute)}
-          {!query && (
-            <p className="px-3 pt-3 pb-2 text-xs font-medium text-slate-500">
-              {workspace === "management" ? "ابزارهای مدیریت" : "داشبورد من"}
-            </p>
-          )}
           {visibleGroups.map(group => {
-            const isExpanded = Boolean(query) || expandedGroupId === group.id;
+            const isExpanded = expandedGroupId === group.id;
             const isActiveGroup = activeGroup?.id === group.id;
             const panelId = `${menuId}-${group.id}`;
             const headingId = `${panelId}-heading`;
@@ -218,7 +167,6 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
                   type="button"
                   aria-expanded={isExpanded}
                   aria-controls={panelId}
-                  disabled={Boolean(query)}
                   onClick={() => setExpandedGroup({
                     pathname,
                     id: isExpanded ? null : group.id,
@@ -229,17 +177,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
                   )}
                 >
                   <span className="shrink-0" aria-hidden="true">{group.icon}</span>
-                  <span className="grow">
-                    {group.label}
-                    {query && canManage && (
-                      <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                        {group.workspace === "management" ? "مدیریت" : "کارهای من"}
-                      </span>
-                    )}
-                  </span>
-                  <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-500">
-                    {group.routes.length}
-                  </span>
+                  <span className="grow">{group.label}</span>
                   <IconChevronDown
                     className={cn("size-4 shrink-0 transition-transform motion-reduce:transition-none", isExpanded && "rotate-180")}
                     aria-hidden="true"
@@ -255,7 +193,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
       </div>
 
       <div className="shrink-0 space-y-1 border-t border-neutral-100 pt-3">
-        {visibleAccountRoutes.map(renderRoute)}
+        {accountRoutes.map(renderRoute)}
         <button
           type="button"
           onClick={() => {
