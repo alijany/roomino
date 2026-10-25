@@ -6,6 +6,7 @@ import { IconChevronDown, IconLogout, IconReplace, IconSearch, IconUserFilled, I
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
+import { useMyToday } from "@/app/dashboard/attendance/attendance.api";
 import { getRoleName } from "../auth/auth.constants.roles";
 import { useAuth } from "../auth/auth.context.provider";
 import { RouteItems, routeGroups } from "./dashboard.constants.route-groups";
@@ -23,6 +24,7 @@ const accountRoutes = [RouteItems.profile, RouteItems.notifications];
 export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps) {
   const pathname = usePathname();
   const { logout, hasAnyRole, user, selectedRole, setSelectedRole } = useAuth();
+  const { data: attendance } = useMyToday();
   const [search, setSearch] = React.useState("");
   const [expandedGroup, setExpandedGroup] = React.useState<{
     pathname: string;
@@ -37,7 +39,11 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
   const accessibleGroups = routeGroups
     .map(group => ({
       ...group,
-      routes: group.routes.filter(route => !route.roles || hasAnyRole(route.roles)),
+      routes: [
+        ...group.routes.filter(route => !route.roles || hasAnyRole(route.roles)),
+        // "My team" is an approver assignment, not a role — the server knows.
+        ...(group.id === "attendance" && attendance?.isApprover ? [RouteItems.attendanceTeam] : []),
+      ],
     }))
     .filter(group => group.routes.length > 0);
   const activeRoute = getActiveRoute(pathname, [

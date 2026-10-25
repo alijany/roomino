@@ -25,6 +25,7 @@ import {
   IconTool,
   IconUser,
   IconUsers,
+  IconUsersGroup,
 } from "@tabler/icons-react";
 import { Role } from "../auth/auth.constants.roles";
 
@@ -154,16 +155,18 @@ export const RouteItems = {
   },
   attendanceMyRequests: {
     href: "/dashboard/attendance/my-requests",
-    label: "درخواست‌های مرخصی و تردد",
+    label: "درخواست‌ها",
     roles: false as const,
     icon: <IconMailbox className="size-5" />
   },
-  // "My team" is not listed: it belongs to job-group approvers, which is an
-  // assignment rather than a role — the attendance home links to it instead.
+  // Not in a group's `routes`: it belongs to job-group approvers, which is an
+  // assignment rather than a role, so the menu adds it once the server says
+  // the user approves for a team.
   attendanceTeam: {
     href: "/dashboard/attendance/team",
     label: "تیم من",
     roles: false as const,
+    icon: <IconUsersGroup className="size-5" />
   },
   attendanceBoard: {
     href: "/dashboard/attendance/board",
