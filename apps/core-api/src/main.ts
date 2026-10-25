@@ -17,7 +17,9 @@ async function bootstrap() {
 
   // Seeding of production personas now happens in PersonaService's lifecycle hook
 
-  await app.listen(4000);
+  // PORT from the environment (4000 by default), so a second instance — the
+  // end-to-end suites run against a database of their own — can sit beside it.
+  await app.listen(Number(process.env.PORT) || 4000);
   return app;
 }
 

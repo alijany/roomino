@@ -191,8 +191,10 @@ async function main() {
   const team = await must(APR, 'GET', `/attendance/team/members/${p1.id}/report?y=${py}&m=${pm}`);
   check('team report = self report', team.summary, report.summary);
 
-  const range = await must(EMP, 'GET', `/attendance/me/report?from=${D.delay}&to=${D.early}`);
-  check('a custom range covers exactly its days', [range.days[0].date, range.days.at(-1).date], [D.delay, D.early]);
+  // Whichever of the two falls first — it depends on the weekday the month starts on.
+  const [rangeFrom, rangeTo] = [D.delay, D.early].sort();
+  const range = await must(EMP, 'GET', `/attendance/me/report?from=${rangeFrom}&to=${rangeTo}`);
+  check('a custom range covers exactly its days', [range.days[0].date, range.days.at(-1).date], [rangeFrom, rangeTo]);
 
   console.log('== CSV export');
   const csv = await (await fetch(`${API}/attendance/me/report/export?y=${py}&m=${pm}`, { headers: { Authorization: `Bearer ${EMP}` } })).text();
@@ -253,8 +255,9 @@ async function main() {
   const switchDay = days[15];
   await must(HR, 'PATCH', `/attendance/employees/${p5.id}`, { shiftId: short.id, shiftStartDate: switchDay });
   const r5 = await must(HR, 'GET', `/attendance/reports/employees/${p5.id}?y=${py}&m=${pm}`);
-  const before = r5.days.find((d) => d.date < switchDay && util.iranWeekday(d.date) === SAT);
-  const after = r5.days.find((d) => d.date >= switchDay && util.iranWeekday(d.date) === SAT);
+  const before = r5.days.find((d) => d.date < switchDay && util.iranWeekday(d.date) === SAT && d.date !== D.holiday);
+  // Skip the suite's own test holiday, which can fall on the first Saturday after the change.
+  const after = r5.days.find((d) => d.date >= switchDay && util.iranWeekday(d.date) === SAT && d.date !== D.holiday);
   check('days before a shift change keep the old schedule', [before.scheduled, before.shiftStart], [480, '08:00']);
   check('days after it use the new one', [after.scheduled, after.shiftStart], [240, '10:00']);
   const hist = await must(HR, 'GET', `/attendance/employees/${p5.id}`);
