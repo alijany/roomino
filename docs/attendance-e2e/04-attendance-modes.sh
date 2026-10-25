@@ -130,6 +130,8 @@ expect "a member following the group moves with it, from today" 200 '.attendance
 call "$HR" PATCH "/attendance/job-groups/$GF" "{\"name\":\"منعطف‌ها\",\"attendanceMode\":\"flexible\"}"
 call "$FLEX" GET /attendance/me
 expect "…and moves back" 200 '.attendanceMode == "flexible"'
+[[ "$($PSQL "select count(*) from employee_mode_period_entity where employee_id=$P6")" == "1" ]] \
+  && ok "…without leaving a redundant row behind" || bad "redundant history row" "$($PSQL "select mode,start_date from employee_mode_period_entity where employee_id=$P6")"
 
 echo "== «منعطف»: when you arrive isn't a delay, the hours are"
 call "$HR" POST "/attendance/reports/employees/$P6/attendance" "{\"date\":\"$D2\",\"checkIn\":\"10:30\",\"checkOut\":\"19:00\",\"note\":\"آزمون\"}"

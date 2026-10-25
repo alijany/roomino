@@ -115,10 +115,17 @@ export class AttendanceModeService {
       const startDate =
         current === AttendanceMode.UNTRACKED ? tomorrow : from ?? today;
 
-      // Two changes on one day: the later one replaces the earlier.
+      // Two changes on one day: the later one replaces the earlier — and if
+      // that puts the person back in the mode before it, there is nothing
+      // left to record.
       const sameDay = periods.find((p) => p.startDate === startDate);
       if (sameDay) {
-        sameDay.mode = desired;
+        const before = periods[periods.indexOf(sameDay) + 1];
+        if ((before?.mode ?? AttendanceMode.TRACKED) === desired) {
+          em.remove(sameDay);
+        } else {
+          sameDay.mode = desired;
+        }
       } else {
         em.persist(
           em.create(EmployeeModePeriodEntity, {
