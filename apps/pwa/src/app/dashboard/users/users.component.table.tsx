@@ -1,6 +1,6 @@
 'use client';
 
-import { getRoleName } from '@/components/auth/auth.constants.roles';
+import { Role, getRoleName } from '@/components/auth/auth.constants.roles';
 import { Button } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { PersonLabel, Table } from '@/ui/molecules';
@@ -10,7 +10,7 @@ import { IconCheck, IconPencil, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useApproveUser, useDeleteUser } from './users.api';
 import { EditUserNameModal } from './users.component.edit-name';
-import { User, UserRole } from './users.types';
+import { User } from './users.types';
 
 interface UsersTableProps {
     users: User[];
@@ -19,7 +19,7 @@ interface UsersTableProps {
     canManageRoles: boolean;
 }
 
-/** Every user as a table row: who (code under the name), title, roles, status and the actions. Roles are changed in the edit dialog. */
+/** Every user as a table row: who (code and any role beyond «کاربر» under the name), title, status and the actions. Roles are changed in the edit dialog. */
 export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps) {
     return (
         <Table
@@ -34,22 +34,11 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
                             name={user.name}
                             picture={user.profilePicture}
                             fallback="بدون نام"
-                            detail={user.personnelCode ? <bdi dir="ltr">{user.personnelCode}</bdi> : undefined}
+                            detail={<UserDetail user={user} />}
                         />
                     ),
                 },
                 { key: 'title', header: 'عنوان شغلی', render: (user) => user.jobTitle ?? '—', hideOnMobile: true },
-                {
-                    key: 'roles',
-                    header: 'نقش‌ها',
-                    render: (user) => (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            {user.roles.map((role) => (
-                                <RoleBadge key={role.id} role={role} />
-                            ))}
-                        </div>
-                    ),
-                },
                 {
                     key: 'status',
                     header: 'وضعیت',
@@ -69,10 +58,15 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
     );
 }
 
-function RoleBadge({ role }: { role: UserRole }) {
+/** `T01 | ادمین، تأییدکننده` — every user is a «کاربر», so only the other roles are named. */
+function UserDetail({ user }: { user: User }) {
+    const others = user.roles.filter((r) => r.role !== Role.USER).map((r) => getRoleName(r.role));
+    if (!user.personnelCode && !others.length) return null;
     return (
-        <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
-            {getRoleName(role.role)}
+        <span>
+            {user.personnelCode && <bdi dir="ltr">{user.personnelCode}</bdi>}
+            {user.personnelCode && others.length > 0 && <span className="px-1.5 text-slate-300">|</span>}
+            {others.join('، ')}
         </span>
     );
 }
