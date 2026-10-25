@@ -113,7 +113,7 @@ async function main() {
   const shift = await must(HR, 'POST', '/attendance/shifts', { name: 'دوپاره', year: py, days: SHIFT_DAYS });
   const group = await must(HR, 'POST', '/attendance/job-groups', { name: 'آزمون', approverIds: [2] });
   const p1 = await must(HR, 'POST', '/attendance/employees', {
-    userId: 1, personnelCode: 'C-1', workplaceId: wp.id, jobGroupId: group.id, shiftId: shift.id, shiftStartDate: shiftStart,
+    userId: 1, workplaceId: wp.id, jobGroupId: group.id, shiftId: shift.id, shiftStartDate: shiftStart,
   });
   check('profile has no work policy (none exists yet)', p1.workPolicy, null);
 
@@ -251,7 +251,7 @@ async function main() {
 
   console.log('== shift history');
   const short = await must(HR, 'POST', '/attendance/shifts', { name: 'کوتاه', year: py, days: [0, 1, 2, 3, 4, 5].map((d) => ({ dayOfWeek: d, isActive: true, startTime: '10:00', endTime: '14:00' })) });
-  const p5 = await must(HR, 'POST', '/attendance/employees', { userId: 5, personnelCode: 'C-5', workplaceId: wp.id, shiftId: shift.id, shiftStartDate: monthFrom });
+  const p5 = await must(HR, 'POST', '/attendance/employees', { userId: 5, workplaceId: wp.id, shiftId: shift.id, shiftStartDate: monthFrom });
   const switchDay = days[15];
   await must(HR, 'PATCH', `/attendance/employees/${p5.id}`, { shiftId: short.id, shiftStartDate: switchDay });
   const r5 = await must(HR, 'GET', `/attendance/reports/employees/${p5.id}?y=${py}&m=${pm}`);

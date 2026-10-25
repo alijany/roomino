@@ -16,10 +16,10 @@ PSQL=${PSQL:-psql -h 127.0.0.1 -U postgres -d roomino -tAc}
 [[ -n "${JWT_SECRET:-}" ]] || { echo "JWT_SECRET is not set — export the API's secret first."; exit 1; }
 
 # Personas 7–9 are extra users, added here so the suite stands on its own.
-$PSQL "insert into user_entity (created_at,updated_at,first_name,last_name,phone,national_id,is_approved) values
- (now(),now(),'نیما','بدون‌ثبت','+989120000017','0077777777',true),
- (now(),now(),'مینا','لغوکننده','+989120000018','0088888888',true),
- (now(),now(),'کامران','ساعت‌دار','+989120000019','0099999999',true)" >/dev/null
+$PSQL "insert into user_entity (created_at,updated_at,first_name,last_name,phone,national_id,personnel_code,is_approved) values
+ (now(),now(),'نیما','بدون‌ثبت','+989120000017','0077777777','1007',true),
+ (now(),now(),'مینا','لغوکننده','+989120000018','0088888888','1008',true),
+ (now(),now(),'کامران','ساعت‌دار','+989120000019','0099999999','1009',true)" >/dev/null
 $PSQL "insert into roles_entity (created_at,updated_at,role,user_id,invitation_status)
  select now(),now(),'user',id,'accepted' from user_entity where id in (7,8,9)" >/dev/null
 for i in 7 8 9; do node "$HERE/mint-token.js" $i +9891200000$((10+i)) > "$TOK/at_$i"; done
@@ -91,8 +91,8 @@ call "$EMP" GET /attendance/job-groups
 expect "an employee cannot read job groups" 403
 
 echo "== profiles follow their group, or override it"
-mk() { # token-less: userId code group shift  [mode]
-  call "$HR" POST /attendance/employees "{\"userId\":$1,\"personnelCode\":\"$2\",\"workplaceId\":$WP,\"jobGroupId\":$3,\"shiftId\":$4,\"shiftStartDate\":\"$D6\",\"useGps\":false${5:+,\"attendanceMode\":\"$5\"}}"
+mk() { # userId code group shift  [mode] — the code is the user's own, set when the persona was added
+  call "$HR" POST /attendance/employees "{\"userId\":$1,\"workplaceId\":$WP,\"jobGroupId\":$3,\"shiftId\":$4,\"shiftStartDate\":\"$D6\",\"useGps\":false${5:+,\"attendanceMode\":\"$5\"}}"
 }
 mk 1 1001 "$GT" "$SR";  P1=$(echo "$BODY" | jq .id)
 expect "a member of a «ساعت‌دار» group is ساعت‌دار" 201 '.attendanceMode == "tracked" and .attendanceModeOverride == null'
@@ -108,7 +108,7 @@ expect "a member of a «بدون ثبت» group is بدون ثبت" 201 '.attend
   && ok "«بدون ثبت» is in the history from the first shift day" || bad "history row" "$($PSQL 'select * from employee_mode_period_entity')"
 [[ "$($PSQL "select count(*) from employee_mode_period_entity where employee_id=$P1")" == "0" ]] \
   && ok "a «ساعت‌دار» person needs no history rows" || bad "tracked history" ""
-call "$HR" POST /attendance/employees "{\"userId\":3,\"personnelCode\":\"1003\",\"workplaceId\":$WP,\"shiftId\":$SR,\"shiftStartDate\":\"$D6\",\"attendanceMode\":\"sometimes\"}"
+call "$HR" POST /attendance/employees "{\"userId\":3,\"workplaceId\":$WP,\"shiftId\":$SR,\"shiftStartDate\":\"$D6\",\"attendanceMode\":\"sometimes\"}"
 expect "an unknown mode on a profile is refused" 400
 
 echo "== changing a person's mode keeps the past"

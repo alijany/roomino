@@ -76,21 +76,30 @@ expect "HR creates the default policy: 16h entitled leave, hard cap" 201 '.isDef
 call "$HR" GET "/attendance/employees/candidates"
 expect "every user is a candidate before profiles exist" 200 '.items | length == 6'
 
-call "$HR" POST /attendance/employees "{\"userId\":1,\"personnelCode\":\"1001\",\"workplaceId\":$WP,\"jobGroupId\":$DEV,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
+call "$HR" POST /attendance/employees "{\"userId\":1,\"workplaceId\":$WP,\"jobGroupId\":$DEV,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
 expect "profile for سارا, default policy applied" 201 '.workPolicy.name == "پیش‌فرض" and .currentShift.id != null'
 P1=$(echo "$BODY" | jq .id)
-call "$HR" POST /attendance/employees "{\"userId\":2,\"personnelCode\":\"1002\",\"workplaceId\":$WP,\"jobGroupId\":$DEV,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
+call "$HR" POST /attendance/employees "{\"userId\":2,\"workplaceId\":$WP,\"jobGroupId\":$DEV,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
 expect "profile for رضا" 201
 P2=$(echo "$BODY" | jq .id)
-call "$HR" POST /attendance/employees "{\"userId\":5,\"personnelCode\":\"1005\",\"workplaceId\":$WP,\"jobGroupId\":$SUP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\",\"remoteDays\":[$WEEKDAY]}"
+call "$HR" POST /attendance/employees "{\"userId\":5,\"workplaceId\":$WP,\"jobGroupId\":$SUP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\",\"remoteDays\":[$WEEKDAY]}"
 expect "profile for علی with today as a fixed remote day" 201 ".remoteDays == [$WEEKDAY]"
 P5=$(echo "$BODY" | jq .id)
 
-call "$HR" POST /attendance/employees "{\"userId\":3,\"personnelCode\":\"1001\",\"workplaceId\":$WP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
-expect "a duplicate personnel code is refused" 409
-call "$HR" POST /attendance/employees "{\"userId\":1,\"personnelCode\":\"9999\",\"workplaceId\":$WP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
+call "$ADM" PATCH /users/3 '{"firstName":"نگار","personnelCode":"1001"}'
+expect "a personnel code already held by another user is refused" 409
+call "$ADM" PATCH /users/3 '{"firstName":"نگار","personnelCode":"۱۰۰۳","jobTitle":"مسئول منابع انسانی"}'
+expect "an admin edits a user's code (Persian digits normalised) and title" 200 '.personnelCode == "1003" and .jobTitle == "مسئول منابع انسانی"'
+call "$ADM" POST /users '{"phone":"09120000091","firstName":"تازه","lastName":"وارد"}'
+expect "a new user is invited" 201
+NEWUSER=$(echo "$BODY" | jq .user.id)
+[[ "$($PSQL "select personnel_code from user_entity where id=$NEWUSER")" =~ ^T[0-9]+$ ]] \
+  && ok "…and gets a personnel code of its own" || bad "auto code" "$($PSQL "select personnel_code from user_entity where id=$NEWUSER")"
+call "$HR" GET /attendance/employees/$P1
+expect "the profile reads the code and title from the user" 200 '.personnelCode == "1001" and .user.id == 1'
+call "$HR" POST /attendance/employees "{\"userId\":1,\"workplaceId\":$WP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
 expect "a second profile for the same user is refused" 409
-call "$HR" POST /attendance/employees "{\"userId\":3,\"personnelCode\":\"1003\",\"workplaceId\":$WP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
+call "$HR" POST /attendance/employees "{\"userId\":3,\"workplaceId\":$WP,\"shiftId\":$SHIFT,\"shiftStartDate\":\"2026-01-01\"}"
 expect "HR gets a profile too (used for the self-review check)" 201
 P3=$(echo "$BODY" | jq .id)
 
