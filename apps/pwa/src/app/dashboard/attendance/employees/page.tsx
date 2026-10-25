@@ -20,10 +20,11 @@ import {
   useWorkPolicies,
   useWorkplaces,
 } from '../attendance.api';
-import { Field, FormModal, PageHeader, Panel } from '../attendance.component.layout';
+import { AttendanceModeBadge, Field, FormModal, PageHeader, Panel } from '../attendance.component.layout';
+import { AttendanceModePicker } from '../attendance.component.mode-picker';
 import { WeekdayPicker } from '../attendance.component.weekday-picker';
 import { WEEKDAY_LABELS } from '../attendance.constants';
-import { Employee, EmployeeFilterDto, EmployeeInput, UserBrief } from '../attendance.types';
+import { AttendanceMode, Employee, EmployeeFilterDto, EmployeeInput, UserBrief } from '../attendance.types';
 import { errorMessage, fa, fromCivilDate, latin, tehranToday, toCivilDate } from '../attendance.util';
 
 /**
@@ -91,6 +92,16 @@ export default function EmployeesPage() {
                     { key: 'workplace', header: 'محل کار', render: (e) => e.workplace?.name ?? '—', hideOnMobile: true },
                     { key: 'group', header: 'گروه شغلی', render: (e) => e.jobGroup?.name ?? '—' },
                     { key: 'shift', header: 'شیفت', render: (e) => e.currentShift?.name ?? '—', hideOnMobile: true },
+                    {
+                      key: 'mode',
+                      header: 'نوع حضور',
+                      render: (e) => (
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <AttendanceModeBadge mode={e.attendanceMode} />
+                          {e.attendanceModeOverride && <span className="text-xs text-slate-400">(استثنا)</span>}
+                        </span>
+                      ),
+                    },
                     {
                       key: 'remote',
                       header: 'دورکاری ثابت',
@@ -172,6 +183,7 @@ function AssignmentFields({
   const { data: policies } = useWorkPolicies();
   const { data: shifts } = useShifts();
   const noPolicy = isNew ? 'سیاست پیش‌فرض' : 'بدون سیاست';
+  const groupOfPerson = (groups?.items ?? []).find((g) => g.id === value.jobGroupId);
 
   return (
     <>
@@ -217,6 +229,20 @@ function AssignmentFields({
         </Field>
       </div>
 
+      <Field
+        label="نوع حضور"
+        hint="به‌طور پیش‌فرض از گروه شغلی می‌آید؛ برای این فرد می‌توانید استثنا بگذارید. «بدون ثبت» از امروز شروع می‌شود و بازگشت از آن از فردا."
+      >
+        <AttendanceModePicker
+          value={value.attendanceMode ?? null}
+          onChange={(attendanceMode) => onChange({ attendanceMode })}
+          inherit={{
+            groupName: groupOfPerson?.name ?? null,
+            mode: groupOfPerson?.attendanceMode ?? AttendanceMode.TRACKED,
+          }}
+        />
+      </Field>
+
       <Field label="شروع شیفت" hint="تغییر شیفت از این تاریخ اعمال می‌شود و روزهای قبل با شیفت قبلی محاسبه می‌مانند.">
         <DatePickerField
           label="از تاریخ"
@@ -245,6 +271,7 @@ const assignmentReady = (a: Assignment) => Boolean(a.workplaceId && a.shiftId &&
 
 const newAssignment = (): Assignment => ({
   jobGroupId: null,
+  attendanceMode: null,
   shiftStartDate: tehranToday(),
   useGps: true,
   remoteDays: [],
@@ -301,6 +328,7 @@ function EmployeeForm({
           shiftId: employee.currentShift?.id,
           shiftStartDate: employee.currentShift?.startDate ?? tehranToday(),
           useGps: employee.useGps,
+          attendanceMode: employee.attendanceModeOverride,
           remoteDays: employee.remoteDays,
           active: employee.active,
         }

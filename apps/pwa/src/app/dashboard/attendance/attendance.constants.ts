@@ -1,5 +1,6 @@
 import { BadgeTone } from '@/ui/atoms/ui.badge';
 import {
+  AttendanceMode,
   BoardStatus,
   DayStatus,
   LeaveType,
@@ -76,6 +77,7 @@ export const DAY_STATUS_META: Record<DayStatus, { label: string; tone: BadgeTone
   [DayStatus.REMOTE_PENDING]: { label: 'دورکاری (در انتظار تایید)', tone: 'warning' },
   [DayStatus.BY_SCHEDULE]: { label: 'طبق شیفت', tone: 'success' },
   [DayStatus.HOLIDAY]: { label: 'تعطیل', tone: 'muted' },
+  [DayStatus.AWAITING_DECLARATION]: { label: 'در انتظار اعلام', tone: 'warning' },
   [DayStatus.NO_SHIFT]: { label: 'بدون شیفت', tone: 'muted' },
   [DayStatus.FUTURE]: { label: '—', tone: 'neutral' },
 };
@@ -87,6 +89,7 @@ export const BOARD_STATUS_META: Record<BoardStatus, { label: string; tone: Badge
   [BoardStatus.REMOTE_DONE]: { label: 'دورکاری (پایان)', tone: 'neutral' },
   [BoardStatus.ON_LEAVE]: { label: 'مرخصی', tone: 'info' },
   [BoardStatus.BY_SCHEDULE]: { label: 'طبق شیفت', tone: 'success' },
+  [BoardStatus.AWAITING]: { label: 'در انتظار اعلام', tone: 'warning' },
   [BoardStatus.NOT_YET]: { label: 'هنوز شروع نشده', tone: 'muted' },
   [BoardStatus.OFF]: { label: 'بدون شیفت', tone: 'muted' },
   [BoardStatus.MISSING]: { label: 'ورود ثبت نشده', tone: 'danger' },
@@ -138,3 +141,37 @@ export const ATTACHMENT_MAX_COUNT = 5;
 
 /** A full day of leave/mission/remote work counts as this many minutes (server rule). */
 export const MINUTES_PER_WORKDAY = 480;
+
+/** The three ways presence is recorded, with what each one means for the person. */
+export const ATTENDANCE_MODE_META: Record<
+  AttendanceMode,
+  { label: string; tone: BadgeTone; summary: string; detail: string }
+> = {
+  [AttendanceMode.TRACKED]: {
+    label: 'ساعت‌دار',
+    tone: 'info',
+    summary: 'ورود و خروج، تاخیر و اضافه‌کار',
+    detail:
+      'ورود و خروج را ثبت می‌کند و تاخیر و تعجیل حساب می‌شود. اگر بعد از پایان شیفت بماند: زیر ۳۰ دقیقه حساب نمی‌شود، تا ۶۰ دقیقه اضافه‌کار خودکار ثبت می‌شود و بیشتر از آن برای تایید مدیر پیشنهاد می‌شود.',
+  },
+  [AttendanceMode.FLEXIBLE]: {
+    label: 'منعطف',
+    tone: 'success',
+    summary: 'فقط مجموع ساعت کار',
+    detail:
+      'ورود و خروج را ثبت می‌کند ولی ساعت آمدن و رفتن مهم نیست: تاخیر و تعجیل ندارد و فقط مجموع ساعت کارش با ساعت شیفت سنجیده می‌شود. اضافه‌کار فقط با درخواست.',
+  },
+  [AttendanceMode.UNTRACKED]: {
+    label: 'بدون ثبت',
+    tone: 'muted',
+    summary: 'هر روز «امروز هستم» را می‌زند',
+    detail:
+      'ورود و خروج ندارد. هر روز کاری «امروز هستم» را می‌زند. روزی که اعلام نشود و مرخصی یا ماموریتی هم نباشد غیبت حساب می‌شود، مگر مدیر در بازبینی آخر ماه «حاضر بود» را ثبت کند.',
+  },
+};
+
+export const ATTENDANCE_MODES = [
+  AttendanceMode.TRACKED,
+  AttendanceMode.FLEXIBLE,
+  AttendanceMode.UNTRACKED,
+] as const;

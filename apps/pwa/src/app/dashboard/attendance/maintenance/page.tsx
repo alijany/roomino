@@ -19,7 +19,9 @@ import { errorMessage, fa, tehranToday } from '../attendance.util';
 const RECORD_LABELS: Partial<Record<AttendanceTable, string>> = {
   attendance: 'روزهای ثبت‌شده ورود و خروج',
   requests: 'درخواست‌های مرخصی و تردد',
+  requestAttachments: 'پیوست‌های درخواست‌ها',
   leaveBalances: 'دفتر مانده مرخصی',
+  presenceDeclarations: 'اعلام حضور «بدون ثبت»',
 };
 
 const SETUP_LABELS: Partial<Record<AttendanceTable, string>> = {
@@ -35,7 +37,7 @@ const SCOPES: Array<{ value: ResetScope; title: string; description: string }> =
   {
     value: 'records',
     title: 'فقط سوابق',
-    description: 'ورود و خروج‌ها، درخواست‌ها و مانده مرخصی پاک می‌شوند. پرسنل، شیفت‌ها و تنظیمات می‌مانند تا حضور و غیاب از صفر ادامه پیدا کند.',
+    description: 'ورود و خروج‌ها، درخواست‌ها، اعلام‌های حضور و مانده مرخصی پاک می‌شوند. پرسنل، شیفت‌ها و تنظیمات می‌مانند تا حضور و غیاب از صفر ادامه پیدا کند.',
   },
   {
     value: 'all',

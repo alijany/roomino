@@ -47,6 +47,8 @@ export enum DayStatus {
   /** Schedule mode: nothing recorded, so the shift counts. */
   BY_SCHEDULE = 'by_schedule',
   HOLIDAY = 'holiday',
+  /** «بدون ثبت», today, not declared yet. */
+  AWAITING_DECLARATION = 'awaiting',
   NO_SHIFT = 'no_shift',
   FUTURE = 'future',
 }
@@ -58,9 +60,18 @@ export enum BoardStatus {
   DONE = 'done',
   WORKING = 'working',
   BY_SCHEDULE = 'by_schedule',
+  /** «بدون ثبت» who hasn't declared yet today. */
+  AWAITING = 'awaiting',
   OFF = 'off',
   NOT_YET = 'not_yet',
   MISSING = 'missing',
+}
+
+/** How a person's presence is recorded — see the attendance README. */
+export enum AttendanceMode {
+  TRACKED = 'tracked',
+  FLEXIBLE = 'flexible',
+  UNTRACKED = 'untracked',
 }
 
 export enum RemoteStatus {
@@ -169,6 +180,7 @@ export interface ShiftInput {
 export interface JobGroup {
   id: number;
   name: string;
+  attendanceMode: AttendanceMode;
   approvers: UserBrief[];
   employeeCount: number | null;
 }
@@ -176,6 +188,7 @@ export interface JobGroup {
 export interface JobGroupInput {
   name: string;
   approverIds?: number[];
+  attendanceMode?: AttendanceMode;
 }
 
 export interface PolicyRule {
@@ -250,6 +263,10 @@ export interface Employee {
   useWifi: boolean;
   allowedDeviceType: 'any' | 'web' | 'android';
   trackingEnabled: boolean;
+  /** What the settings say now: the person's own, else the group's. */
+  attendanceMode: AttendanceMode;
+  /** The person's own choice; null follows the job group. */
+  attendanceModeOverride: AttendanceMode | null;
   remoteDays: number[];
   active: boolean;
   currentShift: { id: number; name: string; startDate: string } | null;
@@ -285,6 +302,8 @@ export interface EmployeeInput {
   shiftId?: number;
   shiftStartDate?: string;
   useGps?: boolean;
+  /** `null` goes back to following the job group. */
+  attendanceMode?: AttendanceMode | null;
   remoteDays?: number[];
   active?: boolean;
 }
@@ -346,6 +365,8 @@ export interface AttendanceRequest {
   manualDirection: 'in' | 'out' | null;
   periodLabel: string;
   durationMinutes: number | null;
+  /** Suggested or recorded by the system from a check-out past the shift's end. */
+  autoSuggested: boolean;
   description: string | null;
   reviewNote: string | null;
   reviewedBy: UserBrief | null;
@@ -401,11 +422,21 @@ export interface CorrectionInput {
   note: string;
 }
 
+/** Overtime from a check-out past the shift's end: recorded, or awaiting approval. */
+export interface OvertimeSuggestion {
+  id: number;
+  minutes: number;
+  timeFrom: string;
+  timeTo: string;
+  status: RequestStatus.APPROVED | RequestStatus.PENDING;
+}
+
 export interface CheckResult {
   success: boolean;
   message: string;
   canRemote?: boolean;
   attendance: AttendanceRecord | null;
+  overtimeSuggestion?: OvertimeSuggestion | null;
 }
 
 export interface MyToday {
@@ -436,6 +467,14 @@ export interface MyToday {
   todayStatus?: DayStatus | null;
   /** Today's manual check-in/out requests that aren't in `attendance` yet. */
   manualRequests?: ManualRequestBrief[];
+  /** How today is measured for this person. */
+  attendanceMode?: AttendanceMode;
+  /** «امروز هستم» — only meaningful in «بدون ثبت». */
+  presence?: { declared: boolean; declaredAt: string | null };
+  /** Overtime from today's check-out. */
+  overtimeSuggestion?: OvertimeSuggestion | null;
+  /** A recent day with a check-in and no check-out, to put right. */
+  missingCheckOut?: { date: string; checkIn: string | null; shiftEnd: string | null } | null;
 }
 
 export interface ManualRequestBrief {
@@ -483,6 +522,12 @@ export interface ReportDay {
   overtime: number;
   leaveMinutes: number;
   status: DayStatus;
+  /** How this day was measured. */
+  mode: AttendanceMode;
+  /** «بدون ثبت»: declared by the person, or confirmed by a reviewer. */
+  declared: boolean;
+  /** «بدون ثبت»: a past working day nobody declared — absent until confirmed. */
+  undeclared: boolean;
   workMode: 'office' | 'remote' | null;
   fixedRemote: boolean;
   hasPending: boolean;
@@ -514,6 +559,10 @@ export interface ReportSummary {
   presentDays: number;
   /** Of `presentDays`, counted from the shift in schedule mode. */
   byScheduleDays?: number;
+  /** «بدون ثبت» working days (not leave or missions), of which declared and undeclared. */
+  untrackedDays: number;
+  declaredDays: number;
+  undeclaredDays: number;
 }
 
 export interface Report {
@@ -531,6 +580,9 @@ export interface BoardRow {
   workplace?: string | null;
   jobGroup?: string | null;
   status: BoardStatus;
+  mode: AttendanceMode;
+  /** «بدون ثبت» only: did they say they're in today? */
+  presence: 'declared' | 'not_declared' | null;
   shiftStart: string | null;
   checkIn: string | null;
   checkOut: string | null;
@@ -550,6 +602,8 @@ export interface Board {
     missing: number;
     onLeave: number;
     pending: number;
+    /** «بدون ثبت» who haven't declared today — informative, never a fault. */
+    notDeclared: number;
   };
   pendingRequests?: AttendanceRequest[];
 }
@@ -558,6 +612,7 @@ export interface PerformanceRow {
   employee: EmployeeBrief;
   workplace: string | null;
   jobGroup: string | null;
+  attendanceMode: AttendanceMode;
   summary: ReportSummary;
   pending: number;
 }
@@ -581,8 +636,8 @@ export interface HolidaySyncResult {
 export type ResetScope = 'records' | 'all';
 
 export type AttendanceTable =
-  | 'attendance' | 'requests' | 'leaveBalances'
-  | 'employees' | 'employeeShifts' | 'jobGroups' | 'workPolicies' | 'workPolicyRules'
+  | 'attendance' | 'requests' | 'requestAttachments' | 'leaveBalances' | 'presenceDeclarations'
+  | 'employees' | 'employeeShifts' | 'employeeModes' | 'jobGroups' | 'workPolicies' | 'workPolicyRules'
   | 'shifts' | 'shiftDays' | 'workplaces' | 'holidays';
 
 export interface ScheduleModePeriod {

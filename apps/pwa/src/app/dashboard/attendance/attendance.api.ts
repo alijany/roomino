@@ -100,6 +100,22 @@ export function useSubmitRequest() {
   );
 }
 
+/** «امروز هستم» — the one tap that replaces check-in in «بدون ثبت». */
+export function useDeclarePresence() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/attendance/me/presence',
+      postFetcher<Record<string, never>, { declared: boolean; declaredAt: string }>,
+    ),
+  );
+}
+
+export function useWithdrawPresence() {
+  return useDynamicMutation('/attendance/me/presence/withdraw', () =>
+    deleteFetcher<{ declared: boolean }>('/attendance/me/presence'),
+  );
+}
+
 export function useCancelRequest() {
   return useDynamicMutation('/attendance/me/requests/cancel', (id: number) =>
     deleteFetcher<{ success: boolean }>(`/attendance/me/requests/${id}`),
@@ -200,6 +216,26 @@ export function useCorrectAttendance(base: CorrectionBase) {
     `${base}/attendance`,
     ({ id, data }: { id: number; data: CorrectionInput }) =>
       postFetcher<CorrectionInput, AttendanceRecord>(`${base}/${id}/attendance`, { arg: data }),
+  );
+}
+
+/** «حاضر بود»: confirm days a person in «بدون ثبت» didn't declare. */
+export function useConfirmPresence(base: CorrectionBase) {
+  return useDynamicMutation(
+    `${base}/presence`,
+    ({ id, dates, note }: { id: number; dates: string[]; note?: string }) =>
+      postFetcher<{ dates: string[]; note?: string }, { confirmed: number }>(
+        `${base}/${id}/presence`,
+        { arg: { dates, note } },
+      ),
+  );
+}
+
+export function useRevokePresence(base: CorrectionBase) {
+  return useDynamicMutation(
+    `${base}/presence/revoke`,
+    ({ id, date }: { id: number; date: string }) =>
+      deleteFetcher<{ success: boolean }>(`${base}/${id}/presence?date=${date}`),
   );
 }
 

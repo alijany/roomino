@@ -8,8 +8,9 @@ import { IconPencil, IconPlus, IconSearch, IconTrash, IconX } from '@tabler/icon
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useApproverCandidates, useDeleteJobGroup, useJobGroups, useSaveJobGroup } from './attendance.api';
-import { Field, FormModal } from './attendance.component.layout';
-import { JobGroup, UserBrief } from './attendance.types';
+import { AttendanceModeBadge, Field, FormModal } from './attendance.component.layout';
+import { AttendanceModePicker } from './attendance.component.mode-picker';
+import { AttendanceMode, JobGroup, UserBrief } from './attendance.types';
 import { errorMessage, fa } from './attendance.util';
 
 export function JobGroupsSettings() {
@@ -56,7 +57,10 @@ export function JobGroupsSettings() {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-medium text-slate-800">{group.name}</div>
-                  <div className="text-xs text-slate-500">{fa(group.employeeCount ?? 0)} عضو</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    {fa(group.employeeCount ?? 0)} عضو
+                    <AttendanceModeBadge mode={group.attendanceMode} />
+                  </div>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="outline" size="sm" className="!px-2" onClick={() => setEditing(group)} aria-label="ویرایش">
@@ -115,6 +119,7 @@ export function JobGroupsSettings() {
 function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onClose: () => void; onSaved: () => void }) {
   const save = useSaveJobGroup();
   const [name, setName] = useState(group?.name ?? '');
+  const [mode, setMode] = useState<AttendanceMode>(group?.attendanceMode ?? AttendanceMode.TRACKED);
   const [approvers, setApprovers] = useState<UserBrief[]>(group?.approvers ?? []);
   const [search, setSearch] = useState('');
   const candidates = useApproverCandidates(search, search.trim().length > 0);
@@ -126,7 +131,7 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
 
   const handleSave = async () => {
     try {
-      await save.submit({ id: group?.id, data: { name: name.trim(), approverIds: approvers.map((a) => a.id) } });
+      await save.submit({ id: group?.id, data: { name: name.trim(), approverIds: approvers.map((a) => a.id), attendanceMode: mode } });
       toast.success(group ? 'گروه شغلی ویرایش شد' : 'گروه شغلی ایجاد شد');
       onSaved();
       onClose();
@@ -152,6 +157,16 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
       }
     >
       <Input label="نام گروه" value={name} onChange={(e) => setName(e.target.value)} />
+      <Field
+        label="نوع حضور اعضا"
+        hint={
+          group && mode !== group.attendanceMode
+            ? 'اعضایی که نوع حضور جداگانه ندارند از این تغییر پیروی می‌کنند. «بدون ثبت» از امروز شروع می‌شود، بازگشت از آن از فردا؛ روزهای گذشته عوض نمی‌شوند.'
+            : 'هر عضو را می‌توان در فرم پرسنل استثنا کرد.'
+        }
+      >
+        <AttendanceModePicker value={mode} onChange={(next) => next && setMode(next)} />
+      </Field>
       <Field label="تاییدکنندگان">
         <div className="mb-2 flex flex-wrap gap-1">
           {approvers.map((a) => (

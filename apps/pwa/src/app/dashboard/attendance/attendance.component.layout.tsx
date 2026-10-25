@@ -6,11 +6,12 @@ import { Badge } from '@/ui/atoms/ui.badge';
 import { IconX } from '@tabler/icons-react';
 import { ReactNode } from 'react';
 import {
+  ATTENDANCE_MODE_META,
   BOARD_STATUS_META,
   DAY_STATUS_META,
   REQUEST_STATUS_META,
 } from './attendance.constants';
-import { BoardStatus, DayStatus, RequestStatus } from './attendance.types';
+import { AttendanceMode, BoardStatus, DayStatus, RequestStatus } from './attendance.types';
 
 /** The header card every dashboard page opens with. */
 export function PageHeader({
@@ -86,8 +87,19 @@ export function RequestStatusBadge({ status }: { status: RequestStatus }) {
   );
 }
 
-export function DayStatusBadge({ status }: { status: DayStatus }) {
+export function DayStatusBadge({ status, undeclared }: { status: DayStatus; undeclared?: boolean }) {
   const meta = DAY_STATUS_META[status];
+  return (
+    <Badge tone={meta.tone} className="whitespace-nowrap">
+      {/* «بدون ثبت», a past day nobody declared: absent until a reviewer confirms it. */}
+      {undeclared ? 'غایب (اعلام نشده)' : meta.label}
+    </Badge>
+  );
+}
+
+/** Small badge of a person's attendance mode — shown only where it isn't the default. */
+export function AttendanceModeBadge({ mode }: { mode: AttendanceMode }) {
+  const meta = ATTENDANCE_MODE_META[mode];
   return (
     <Badge tone={meta.tone} className="whitespace-nowrap">
       {meta.label}
