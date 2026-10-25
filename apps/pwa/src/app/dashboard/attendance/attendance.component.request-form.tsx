@@ -2,6 +2,7 @@
 
 import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DatePickerField } from '@/ui/molecules';
+import { IconBeach, IconClockHour4, IconHome, IconStethoscope } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useGrant, useMyToday, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
@@ -16,6 +17,14 @@ import {
   tehranToday,
   toCivilDate,
 } from './attendance.util';
+
+/** The requests people file most, one tap each; the rest stay in the list. */
+const QUICK_TYPES: Array<{ type: RequestType; label: string; icon: typeof IconBeach }> = [
+  { type: RequestType.LEAVE_ENTITLED_DAILY, label: 'مرخصی استحقاقی', icon: IconBeach },
+  { type: RequestType.LEAVE_SICK_DAILY, label: 'مرخصی استعلاجی', icon: IconStethoscope },
+  { type: RequestType.REMOTE_DAILY, label: 'دورکاری', icon: IconHome },
+  { type: RequestType.LEAVE_ENTITLED_HOURLY, label: 'مرخصی ساعتی', icon: IconClockHour4 },
+];
 
 export interface RequestPrefill {
   type?: RequestType;
@@ -141,13 +150,33 @@ export function RequestForm({
       )}
 
       <Field label="نوع درخواست">
-        <Dropdown
-          items={types.map((value) => ({ label: REQUEST_TYPE_LABELS[value], value }))}
-          value={type || null}
-          onChange={(value) => setType((value as RequestType) ?? '')}
-          placeholder="انتخاب کنید"
-          variant="outline"
-        />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label="درخواست‌های پرکاربرد">
+            {QUICK_TYPES.filter((q) => types.includes(q.type)).map(({ type: value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={type === value}
+                onClick={() => setType(value)}
+                className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                  type === value
+                    ? 'border-brand-500 bg-brand-50 font-medium text-brand-700'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className="size-5 shrink-0" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
+          <Dropdown
+            items={types.map((value) => ({ label: REQUEST_TYPE_LABELS[value], value }))}
+            value={type || null}
+            onChange={(value) => setType((value as RequestType) ?? '')}
+            placeholder="سایر موارد را از لیست انتخاب کنید"
+            variant="outline"
+          />
+        </div>
       </Field>
 
       {shape === 'range' && (
