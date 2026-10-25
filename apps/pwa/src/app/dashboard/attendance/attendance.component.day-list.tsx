@@ -7,7 +7,7 @@ import { BadgeTone } from '@/ui/atoms/ui.badge';
 import { DayStatusBadge, RequestStatusBadge } from './attendance.component.layout';
 import { AttendanceMap, MAP_COLORS, MapPoint } from './attendance.component.map';
 import { ATTENDANCE_MODE_META, DAY_STATUS_META } from './attendance.constants';
-import { AttendanceMode, AttendanceRequest, DayStatus, ReportDay, WorkplacePin } from './attendance.types';
+import { AttendanceMode, AttendanceRequest, DayStatus, ReportDay, RequestStatus, WorkplacePin } from './attendance.types';
 import { fa, hm, jalaliDateTime } from './attendance.util';
 
 export interface DayActions {
@@ -369,7 +369,7 @@ export function DayList({
                       حاضر بود
                     </Button>
                   )}
-                  {actions.onRequestForDay && day.undeclared && (
+                  {actions.onRequestForDay && day.undeclared && !day.requests.some((r) => r.status !== RequestStatus.REJECTED) && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onRequestForDay?.(day)}>
                       <IconPlus className="size-4" />
                       ثبت درخواست برای این روز

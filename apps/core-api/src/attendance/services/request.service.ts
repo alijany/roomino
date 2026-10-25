@@ -438,8 +438,16 @@ export class RequestService {
     const to = fields.dateTo ?? fields.date;
     if (!from || !to) return;
 
-    const types = Object.values(RequestType).filter(
-      (t) => categoryOf(t) === category,
+    // Leave, a mission and a remote day all take the person away from the
+    // desk, so a full day of one rules out a full day of another.
+    const away = [
+      RequestCategory.LEAVE,
+      RequestCategory.MISSION,
+      RequestCategory.REMOTE,
+    ];
+    const crossCategory = away.includes(category);
+    const types = Object.values(RequestType).filter((t) =>
+      crossCategory ? away.includes(categoryOf(t)) : categoryOf(t) === category,
     );
     const candidates = await this.em.find(AttendanceRequestEntity, {
       employee: profileId,
@@ -460,6 +468,10 @@ export class RequestService {
       }
       if (fields.timeFrom && fields.timeTo && other.timeFrom && other.timeTo) {
         return fields.timeFrom < other.timeTo && other.timeFrom < fields.timeTo;
+      }
+      // An hourly request of one kind may sit inside a full day of another.
+      if (categoryOf(other.type) !== category) {
+        return !fields.timeFrom && !other.timeFrom;
       }
       return true;
     });
