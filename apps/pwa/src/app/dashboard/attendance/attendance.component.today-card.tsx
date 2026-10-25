@@ -254,7 +254,7 @@ const footerItemClass = (primary?: boolean) =>
       : 'grow border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800',
   );
 
-function FooterButton({
+export function FooterButton({
   icon,
   onClick,
   children,
@@ -271,7 +271,7 @@ function FooterButton({
   );
 }
 
-function FooterLink({
+export function FooterLink({
   href,
   icon,
   primary,

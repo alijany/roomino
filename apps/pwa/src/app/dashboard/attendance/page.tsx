@@ -10,9 +10,13 @@ import {
   IconFingerprint,
   IconHome,
   IconLogin,
+  IconCalendarStats,
   IconLogout,
+  IconPlus,
+  IconUsersGroup,
 } from '@tabler/icons-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useHolidays, useMyToday } from './attendance.api';
 import { LocationIssueNotice } from './attendance.component.location-issue';
 import {
@@ -22,6 +26,8 @@ import {
   UntrackedActions,
 } from './attendance.component.mode-today';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
+import { RequestForm } from './attendance.component.request-form';
+import { FooterButton, FooterLink } from './attendance.component.today-card';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
@@ -58,6 +64,7 @@ export default function AttendanceHomePage() {
 function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
   const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const { data: holidays } = useHolidays({ upcoming: 3 });
+  const [formOpen, setFormOpen] = useState(false);
 
   const att = today.attendance;
   const month = today.month;
@@ -172,7 +179,27 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             {locating ? 'در حال دریافت موقعیت...' : 'ثبت خروج'}
           </Button>
         )}
+
+        {/* Shortcuts under the main action, as on the dashboard card. */}
+        <nav
+          aria-label="میانبرهای حضور و غیاب"
+          className="-mx-3 -mb-3 mt-1 flex gap-2 rounded-b-2xl border-t border-slate-100 bg-slate-50/60 p-3 lg:-mx-4 lg:-mb-4 lg:p-4 [&>*]:min-w-0 [&>*]:flex-1"
+        >
+          <FooterButton icon={<IconPlus className="size-4" />} onClick={() => setFormOpen(true)}>
+            درخواست جدید
+          </FooterButton>
+          <FooterLink href="/dashboard/attendance/my-report" icon={<IconCalendarStats className="size-4" />}>
+            کارکرد من
+          </FooterLink>
+          {today.isApprover && (
+            <FooterLink href="/dashboard/attendance/team" icon={<IconUsersGroup className="size-4" />}>
+              تیم من
+            </FooterLink>
+          )}
+        </nav>
       </Panel>
+
+      <RequestForm key={String(formOpen)} isOpen={formOpen} onClose={() => setFormOpen(false)} onSuccess={onChange} />
 
       </div>
 
