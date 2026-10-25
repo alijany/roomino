@@ -68,6 +68,9 @@ export class TeamController {
       : [];
     const board = await this.reports.board(profiles);
     const pending = await this.requests.pendingCountByEmployee(ids);
+    const latest = ids.length
+      ? await this.requests.list({ limit: 5 }, ids)
+      : null;
 
     return {
       ...board,
@@ -80,6 +83,8 @@ export class TeamController {
         ...board.stats,
         pending: [...pending.values()].reduce((a, b) => a + b, 0),
       },
+      // The newest pending requests of the team, to review right there.
+      pendingRequests: (latest?.items ?? []).map(toRequestView),
     };
   }
 

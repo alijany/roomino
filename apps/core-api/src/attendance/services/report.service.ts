@@ -590,6 +590,7 @@ export class ReportService {
       scheduleMode,
       modePeriods,
       declared,
+      approved,
     ] = await Promise.all([
       ids.length
         ? this.em.find(AttendanceEntity, {
@@ -602,8 +603,29 @@ export class ReportService {
       this.scheduleMode.on(today),
       this.modes.periodsFor(ids),
       this.presence.datesBetween(ids, today, today),
+      this.requests.inRange(ids, today, today, [RequestStatus.APPROVED]),
     ]);
     const byProfile = new Map(attendances.map((a) => [a.employee.id, a]));
+
+    // What each person has approved for the whole of today, even before they
+    // have done anything: leave, a mission, remote work.
+    const planned = new Map<
+      number,
+      { leave: boolean; mission: boolean; remote: boolean }
+    >();
+    for (const request of approved) {
+      if (isHourly(request.type)) continue;
+      const entry = planned.get(request.employee.id) ?? {
+        leave: false,
+        mission: false,
+        remote: false,
+      };
+      const category = categoryOf(request.type);
+      if (category === RequestCategory.LEAVE) entry.leave = true;
+      if (category === RequestCategory.MISSION) entry.mission = true;
+      if (category === RequestCategory.REMOTE) entry.remote = true;
+      planned.set(request.employee.id, entry);
+    }
 
     const rows = profiles.map((profile) => {
       const att = byProfile.get(profile.id) ?? null;
@@ -613,9 +635,18 @@ export class ReportService {
       const mode = modeOn(modePeriods.get(profile.id) ?? [], today);
       const untracked = mode === AttendanceMode.UNTRACKED;
 
+      const plan = planned.get(profile.id);
+      // Only a working day can be given to leave, a mission or remote work.
+      const onLeave = Boolean(start && plan?.leave);
+      const onMission = Boolean(start && plan?.mission);
+      const remoteDay = Boolean(
+        start && (plan?.remote || isFixedRemoteDay(profile, today)),
+      );
+
       let status: BoardStatus;
-      if (att?.status === AttendanceStatus.ON_LEAVE)
+      if (att?.status === AttendanceStatus.ON_LEAVE || onLeave)
         status = BoardStatus.ON_LEAVE;
+      else if (onMission) status = BoardStatus.MISSION;
       else if (att?.checkInAt && att.workMode === WorkMode.REMOTE) {
         status = att.checkOutAt ? BoardStatus.REMOTE_DONE : BoardStatus.REMOTE;
       } else if (att?.checkOutAt) status = BoardStatus.DONE;
@@ -623,6 +654,8 @@ export class ReportService {
       else if (!start) status = BoardStatus.OFF;
       else if (att?.status === AttendanceStatus.ABSENT)
         status = BoardStatus.MISSING;
+      // Working remotely today, by an approved day or a fixed weekly one.
+      else if (remoteDay) status = BoardStatus.REMOTE;
       else if (scheduleMode) status = BoardStatus.BY_SCHEDULE;
       // «بدون ثبت»: present once they say so, awaited until then.
       else if (untracked)
@@ -675,6 +708,11 @@ export class ReportService {
         present: rows.filter((r) => present.includes(r.status)).length,
         missing: rows.filter((r) => r.status === BoardStatus.MISSING).length,
         onLeave: rows.filter((r) => r.status === BoardStatus.ON_LEAVE).length,
+        mission: rows.filter((r) => r.status === BoardStatus.MISSION).length,
+        // Working remotely: checked in from outside, or a remote day today.
+        remote: rows.filter((r) =>
+          [BoardStatus.REMOTE, BoardStatus.REMOTE_DONE].includes(r.status),
+        ).length,
         // «بدون ثبت» who haven't said they're in — informative, never a fault.
         notDeclared: rows.filter((r) => r.presence === 'not_declared').length,
       },

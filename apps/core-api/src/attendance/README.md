@@ -121,6 +121,12 @@ admin switches it on with `PATCH /attendance/maintenance/schedule-mode`
   `absent: true`, which clears the times and marks the day absent (in any
   mode).
 - The board shows `by_schedule` instead of «ورود ثبت نشده».
+- **Board** — each person's status today also reflects what is *approved* for
+  the day before they do anything: full-day leave (`on_leave`), a full-day
+  mission (`mission`), a remote day or their fixed weekly remote day
+  (`remote`); an actual check-in wins. `stats` counts `present` (everyone
+  working, remote included), `remote`, `onLeave`, `mission`, `missing`,
+  `pending`. «تیم من»'s board also returns the team's newest pending requests.
 
 It's stored as periods (`ScheduleModePeriodEntity`), not a flag, so switching
 it off doesn't turn the days it covered into absences. On covers today at

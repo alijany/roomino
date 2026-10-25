@@ -303,6 +303,33 @@ expect "HR records times for a day he hadn't declared" 201
 report "$P7" "$D2" "$D2"
 [[ "$(day "$D2" | jq '.status == "present" and .undeclared == false')" == "true" ]] && ok "the day is present, not undeclared" || bad "recorded day" "$(day "$D2")"
 
+echo "== the board counts leave, missions and remote days — before anyone checks in"
+call "$CAP" POST /attendance/me/requests "{\"type\":\"mission_daily\",\"dateFrom\":\"$TODAY\",\"dateTo\":\"$TODAY\"}"
+expect "a mission for today is filed" 201
+MISSION=$(echo "$BODY" | jq .id)
+call "$HR" POST "/attendance/requests/$MISSION/approve"
+expect "…and approved" 200
+call "$HR" POST "/attendance/reports/employees/$P9/grants" "{\"type\":\"remote_daily\",\"dateFrom\":\"$TODAY\",\"dateTo\":\"$TODAY\"}"
+expect "HR grants a remote day for today" 201
+call "$HR" POST "/attendance/reports/employees/$P8/grants" "{\"type\":\"leave_entitled_daily\",\"dateFrom\":\"$TODAY\",\"dateTo\":\"$TODAY\"}"
+expect "HR grants a day of leave for today" 201
+call "$HR" GET /attendance/reports/board
+expect "the board lists each by what they are doing" 200 '
+  (.rows[] | select(.employee.personnelCode == "1005") | .status == "mission") and
+  (.rows[] | select(.employee.personnelCode == "1009") | .status == "remote") and
+  (.rows[] | select(.employee.personnelCode == "1008") | .status == "on_leave")'
+expect "…and counts them" 200 '.stats.mission >= 1 and .stats.remote >= 1 and .stats.onLeave >= 2'
+
+call "$UNT" POST /attendance/me/requests "{\"type\":\"leave_entitled_daily\",\"dateFrom\":\"$TOMORROW\",\"dateTo\":\"$TOMORROW\"}"
+expect "نیما files a leave request for tomorrow" 201
+LEAVE_REQ=$(echo "$BODY" | jq .id)
+call "$APR" GET /attendance/team/board
+expect "his approver's team board shows it to handle in place" 200 ".stats.pending >= 1 and (.pendingRequests | any(.id == $LEAVE_REQ))"
+call "$APR" POST "/attendance/team/requests/$LEAVE_REQ/approve"
+expect "…and he approves it from there" 200 '.status == "approved"'
+call "$APR" GET /attendance/team/board
+expect "…after which it is no longer pending" 200 "(.pendingRequests | any(.id == $LEAVE_REQ) | not)"
+
 echo "== exports and maintenance know the modes"
 CSV=$(curl -s "$API/attendance/reports/performance/export" -H "Authorization: Bearer $HR")
 [[ "$CSV" == *"نوع حضور"* && "$CSV" == *"بدون ثبت"* ]] && ok "performance CSV has the mode" || bad "performance CSV" "${CSV:0:200}"
