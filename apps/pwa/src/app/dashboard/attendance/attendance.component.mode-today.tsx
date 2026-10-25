@@ -162,9 +162,9 @@ export function UntrackedActions({ today, onChange }: { today: MyToday; onChange
 
   return (
     <div className="space-y-2">
-      {/* The two answers side by side, the same size. */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button size="lg" className="gap-2 text-base" disabled={busy} aria-busy={busy} onClick={() => flow.say()}>
+      {/* The answers side by side, the same size. */}
+      <div className="grid grid-cols-3 gap-2">
+        <Button size="lg" className="gap-1.5 !px-2 text-sm sm:text-base" disabled={busy} aria-busy={busy} onClick={() => flow.say()}>
           {flow.locating ? (
             <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
           ) : (
@@ -175,7 +175,17 @@ export function UntrackedActions({ today, onChange }: { today: MyToday; onChange
         <Button
           size="lg"
           variant="outline"
-          className="gap-2 text-base"
+          className="gap-1.5 !px-2 text-sm sm:text-base"
+          disabled={busy}
+          onClick={() => flow.say(true)}
+        >
+          <IconHome className="size-5" aria-hidden="true" />
+          دورکاری
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="gap-1.5 !px-2 text-sm sm:text-base"
           disabled={busy}
           onClick={() => setFormOpen(true)}
         >
@@ -205,7 +215,7 @@ export function UntrackedActions({ today, onChange }: { today: MyToday; onChange
       )}
 
       <p className="text-center text-[11px] leading-5 text-slate-400">
-        «امروز نیستم» فرم مرخصی، ماموریت یا درخواست دیگر را برای امروز باز می‌کند.
+        «دورکاری» حضور امروز را از بیرون محل کار اعلام می‌کند و برای تایید مدیر ارسال می‌شود؛ «امروز نیستم» فرم مرخصی، ماموریت یا درخواست دیگر را باز می‌کند.
       </p>
       <RequestForm
         key={String(formOpen)}
