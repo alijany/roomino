@@ -13,16 +13,55 @@
 | `/board` | admin, hr | today's board for everyone, latest pending requests (refreshes every minute) |
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
-| `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift) |
+| `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift); attendance mode per person |
 | `/maintenance` | admin | schedule-mode switch (with a note for staff, and its history); wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
-| `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups & approvers, work policies, holidays & official sync |
+| `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups (approvers and attendance mode), work policies, holidays & official sync |
 
-The dashboard home (`/dashboard`) opens with `AttendanceTodayWidget`
-(`attendance.component.today-widget.tsx`): today's status, the next action
-(check in / check out), time present so far and shortcuts. It shares
-`useCheckInFlow` (`attendance.hook.check-in.ts`) with the attendance home, so
-GPS, the remote fallback and errors behave the same in both. People without
-a profile don't see it.
+The dashboard home (`/dashboard`) is a 12-column row of widgets: today's
+attendance (`AttendanceTodayCard`, `attendance.component.today-card.tsx`, half
+the row) and room booking (`ReservationsWidget`). The card has the status and
+shift on top, the day's times in the middle, the check-in/out button above a
+footer of shortcuts (new request opens the form in place, my report, my team
+for approvers, details). It shares `useCheckInFlow`
+(`attendance.hook.check-in.ts`) and `useTodayStatus`
+(`attendance.hook.today-status.ts`) with the attendance home, so GPS, the
+remote fallback and errors behave the same in both. People without a profile
+don't see it. The older full-width strip (`AttendanceTodayWidget`) is kept but
+no longer used.
+
+**Attendance modes.** `/attendance/me` returns `attendanceMode`, and the
+card and the home change with it:
+
+- **ساعت‌دار** — as above. After a check-out past the shift's end a toast says
+  what became of the overtime (recorded, or sent to the approver), and a
+  notice stays on the day. A check-in with no check-out in the last week shows
+  `MissingCheckOutNotice`: one button opens the manual-attendance request
+  pre-filled with that day and the shift's end.
+- **منعطف** — the same, with a line saying only the hours count; no «late».
+- **بدون ثبت** — no times and no check-in button. `UntrackedActions`
+  (`attendance.component.mode-today.tsx`) offers «امروز هستم» (one tap, can be
+  taken back) and «امروز نیستم» (opens the request form for today). The request
+  form drops remote work and manual attendance for them. Leave or a mission
+  already on file says so instead of asking.
+
+Modes are chosen in the job-group form and, per person, in the employee form
+(`AttendanceModePicker`: three cards with a plain explanation of each, and a
+«طبق گروه شغلی» card for a person).
+
+**Month-end for «بدون ثبت».** A past working day nobody declared is absent
+(`ReportDay.undeclared`, badge «غایب (اعلام نشده)»). In a person's report the
+amber bar «N روز اعلام‌نشده» offers «حاضر بود برای همه‌ی این روزها» and each such
+day has its own «حاضر بود» (`ConfirmPresenceModal`, with a note); a confirmed day
+has «بازگرداندن اعلام حضور». The performance list has an «اعلام‌نشده» column so
+the review knows where to start, and the summary has «اعلام حضور X از Y روز».
+The boards show «در انتظار اعلام» / «اعلام حضور شد» and a note that today is
+not over — informational, never a fault.
+
+**Location trouble.** `getPosition` throws a `LocationError` (blocked,
+unavailable, timeout, insecure, unsupported) after trying GPS accuracy and
+then the coarser network position. `LocationIssueNotice` shows the reason,
+how to allow it again (Safari/iPhone steps), the browser's own message and a
+retry button.
 
 **Schedule mode (حضور طبق شیفت).** When `/attendance/me` says
 `scheduleMode`, the widget and the attendance home drop check-in/out: times
@@ -35,10 +74,9 @@ overtime. `todayPunches` merges what's recorded with today's
 The board and «تیم من» explain the mode; reviewers record an absence with
 «غایب بود» in the correction form.
 
-«تیم من» is deliberately not in the sidebar: it belongs to whoever an admin
-assigned as a job-group approver, which is not a role, so `RouteItem.roles`
-can't express it. The attendance home links to it when `/attendance/me` says
-`isApprover`.
+«تیم من» is not a role, so `RouteItem.roles` can't express it: the sidebar adds
+it to the attendance group when `/attendance/me` says `isApprover`, and the
+attendance home and the dashboard card link to it too.
 
 ## Files
 
@@ -47,11 +85,17 @@ can't express it. The attendance home links to it when `/attendance/me` says
 | `attendance.types.ts` | wire types |
 | `attendance.api.ts` | every SWR hook; review and correction hooks take a base path (`/attendance/requests` vs `/attendance/team/requests`) because the server checks a different rule on each |
 | `attendance.constants.ts` | labels, badge tones, weekday names, day filters |
-| `attendance.util.ts` | Persian digits (`fa`), minutes (`hm`), civil-date ↔ picker conversion, geolocation, authenticated CSV download |
+| `attendance.util.ts` | Persian digits (`fa`), minutes (`hm`), request duration in days for daily types, civil-date ↔ picker conversion, geolocation (`LocationError`), authenticated CSV download |
 | `attendance.component.layout.tsx` | header, panel, stat tile, badges, modal shell, field wrappers |
 | `attendance.component.day-list.tsx` | the expandable day list shared by every report |
 | `attendance.component.member-report.tsx` | a managed person's report — used by admin and team pages |
-| `attendance.component.request-form.tsx` | type-aware request form; also the admin "grant" form |
+| `attendance.component.request-form.tsx` | type-aware request form with attachments; also the admin "grant" form |
+| `attendance.component.attachments.tsx` | pick files in the form; list, add and remove them on a request |
+| `attendance.component.mode-picker.tsx` | the attendance-mode radio cards (job group and employee forms) |
+| `attendance.component.mode-today.tsx` | «امروز هستم / نیستم», the forgotten check-out notice, overtime notice, flexible hint |
+| `attendance.component.presence-review.tsx` | «حاضر بود» — confirm undeclared days |
+| `attendance.component.location-issue.tsx` | what to do when the position can't be read |
+| `attendance.component.today-card.tsx`, `attendance.hook.today-status.ts` | the dashboard card and the state it derives |
 | `attendance.component.review.tsx` | approve/reject, request details, correction modal |
 | `attendance.component.settings-*.tsx` | the five settings tabs |
 | `attendance.component.map.tsx` | Leaflet map: workplace radius, points, location picker |

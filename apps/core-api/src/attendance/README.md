@@ -43,8 +43,10 @@ WorkplaceEntity ──< EmployeeProfileEntity >── UserEntity (1:1)
 ShiftEntity ──< ShiftDayEntity            │  >── JobGroupEntity >──< UserEntity (approvers)
 ShiftEntity ──< EmployeeShiftEntity >─────┤  >── WorkPolicyEntity ──< WorkPolicyRuleEntity
                 AttendanceEntity >────────┤
-         AttendanceRequestEntity >────────┤
-              LeaveBalanceEntity >────────┘
+         AttendanceRequestEntity >────────┤  ──< AttendanceRequestAttachmentEntity
+              LeaveBalanceEntity >────────┤
+          EmployeeModePeriodEntity >──────┤
+        PresenceDeclarationEntity >───────┘
 HolidayEntity
 ```
 
@@ -55,6 +57,8 @@ HolidayEntity
 - **Weekdays** are Iranian order everywhere: 0 = شنبه … 6 = جمعه.
 - **Shift history.** Changing someone's shift opens a new `EmployeeShiftEntity`
   period, so past days keep being measured against the old schedule.
+- **Mode history.** Likewise for the attendance mode (see below):
+  `EmployeeModePeriodEntity` keeps what mode a person was in on each day.
 - **Adding people.** `POST /attendance/employees` adds one profile;
   `POST /attendance/employees/batch` adds up to 100 with one shared
   assignment (workplace, shift, group, policy, remote days) and a personnel
@@ -77,6 +81,8 @@ HolidayEntity
 - **Requests** — daily types use `dateFrom..dateTo`, hourly types and
   overtime `date + timeFrom..timeTo`, manual attendance `date + manualTime +
   manualDirection`. Fields a type doesn't use are dropped.
+- **Listing** — `status` is one of `pending` (the default), `approved`,
+  `rejected` or `all`.
 - **Overlap** — a request is refused (409) when a pending or approved one of
   the same category covers the same time: same dates for daily types,
   intersecting hours for timed ones on one day, the same direction for manual
@@ -126,6 +132,89 @@ lock. A reset never touches the periods.
 `GET /attendance/me` returns `scheduleMode`, the admin's note, `todayStatus`
 and `manualRequests` (today's manual requests still pending or rejected).
 
+## Attendance modes (نوع حضور)
+
+How a person's presence is recorded and measured. Set per **job group**
+(`JobGroupEntity.attendanceMode`, default `tracked`), with an optional
+override on the person (`EmployeeProfileEntity.attendanceModeOverride`, null =
+follow the group). Whoever has no group is `tracked`, which is how every
+profile began — no data had to change.
+
+| | ساعت‌دار `tracked` | منعطف `flexible` | بدون ثبت `untracked` |
+|---|---|---|---|
+| check-in/out | yes | yes | refused (403) |
+| delay / early leave | counted | never — only the hours count | n/a |
+| overtime | automatic, see below | request only | request only |
+| a working day counts as | worked time | worked time | present only if declared |
+
+**History, not a flag.** The report reads `EmployeeModePeriodEntity`, never the
+live settings, so switching someone to «بدون ثبت» doesn't turn last month's
+absences into presence. `AttendanceModeService.sync` keeps it in step after
+anything that can change a person's mode (override, job group, a group's mode
+or deletion). Starting «بدون ثبت» covers today; leaving it takes effect
+tomorrow (nobody checked in this morning), unless it only began today — then
+it is simply undone. A new profile's mode starts with its first shift day.
+Company-wide schedule mode stays as it was and overrides every person's mode
+for the days it covers.
+
+### «ساعت‌دار»: overtime from the check-out
+
+After a check-out (and after a reviewer's correction), time worked past the
+shift's end is handled by `OvertimeSuggestionService.sync`:
+
+- under 30 minutes: nothing;
+- 30–60 minutes: recorded as **approved** overtime at once — an overtime
+  request with `autoSuggested = true`, no reviewer;
+- more than 60 minutes: a **pending** request, `autoSuggested = true`, for the
+  approver (job-group approvers, else HR, else admins) to confirm or reject.
+  It counts for nothing until approved.
+
+The shift's `dailyOvertimeCapMinutes` caps the amount. `sync` is idempotent:
+it creates, moves to new times, flips between approved and pending as the
+minutes cross 60, or removes the row — but never touches one a person decided
+on, never undoes a rejection (the person declining it counts: `cancelOwn` on
+a suggestion keeps the row, rejected, so it isn't suggested again), and
+overtime the person files themselves **replaces** the system's row for that
+day (`RequestService.supersedeAutoOvertime`).
+
+### «بدون ثبت»: «امروز هستم»
+
+No check-in; the day counts as present only if it was **declared**:
+
+- the person taps «امروز هستم» — `POST /attendance/me/presence`, today only,
+  no time recorded, idempotent, taken back with `DELETE`; refused when the
+  day isn't a working day, is already leave or a mission, or the person isn't
+  «بدون ثبت»;
+- or a reviewer later confirms it — «حاضر بود», `POST
+  /attendance/reports/employees/:id/presence` (admin/HR) or
+  `/attendance/team/members/:id/presence` (approvers, own team, never
+  yourself): up to 62 dates, all or nothing, with a note; `DELETE …?date=`
+  takes one back;
+- or a reviewer recorded check-in/out times for the day.
+
+A past working day with none of these, and no leave or mission, is
+**absent** (`undeclared: true` on the report day) until it is confirmed —
+the month-end clean-up. **Today** is `awaiting` and not absent until the day
+ends. Declarations live in `PresenceDeclarationEntity` (`declaredBy` and
+`note` are set when a reviewer confirmed). The board shows `presence:
+declared | not_declared` and `stats.notDeclared`, purely informational.
+
+### Forgotten check-out
+
+`GET /attendance/me` returns `missingCheckOut` — the latest day in the last
+week with a check-in and no check-out, unless a manual check-out for it is
+already waiting — so the UI can offer the manual-attendance request
+pre-filled with that day and the shift's end.
+
+## Request attachments
+
+Up to five images or PDFs (10 MB each) per request, kept private in storage and
+read through short-lived presigned URLs. `GET|POST
+/attendance/request-attachments/:requestId` and `DELETE …/:requestId/:id`:
+anyone who may see the request can read them (its owner, admin/HR, the team's
+approvers); only the owner adds or removes, and only while it is pending. A
+reset removes the files from storage as well as the rows.
+
 ## Reset
 
 `POST /attendance/maintenance/reset` `{ scope, confirm }` wipes the module in
@@ -159,8 +248,8 @@ Deliberate — each fixes something that was wrong or unenforced there.
    leave twice and, approved, drew it twice.
 
 Stored but, as in Tesmino, not enforced: `allowedDeviceType`, `useWifi`,
-`trackingEnabled`, `flexMinutes`, `dailyOvertimeCapMinutes`,
-`restrictApprovalTime`.
+`trackingEnabled`, `flexMinutes`, `restrictApprovalTime`. (`dailyOvertimeCapMinutes`
+now caps the suggested overtime of «ساعت‌دار».)
 
 ## Verifying
 

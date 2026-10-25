@@ -7,12 +7,18 @@ a real Postgres, like the finance suites.
 |---|---|---|
 | `01-attendance.sh` | flows and access — who can do what | `curl` + `jq` + `psql` |
 | `03-maintenance.sh` | admin maintenance — reset (validation, both scopes) and schedule mode; run right after `01`, on its database | `curl` + `jq` + `psql` |
+| `04-attendance-modes.sh` | the three attendance modes — mode per group and per person and its history, «منعطف» without delay, overtime from the check-out (nothing / recorded / awaiting approval, caps, supersede, decline), the forgotten check-out prompt, «بدون ثبت» (refused check-in, «امروز هستم», undeclared days absent, «حاضر بود» by HR and by team approvers, leave and recorded times, CSV, reset); run on its own fresh database | `curl` + `jq` + `psql`, Node 18+ |
 | `02-calculations.mjs` | the arithmetic — every day of a planted month, the summary, caps, shift history; and races (double taps, two reviewers at once) | Node 18+, `psql` |
 
 ## Prerequisites
 
 - The API on `127.0.0.1:4000` against a database you are willing to drop.
-- `jq`, and `psql` reachable as `postgres` (two checks read columns directly).
+- `jq`, `psql` reachable as `postgres` (a few checks read columns directly), and
+  for `01` and `03` GNU `date` (`date -d yesterday`). On macOS put a small
+  `date`/`psql` shim first on `PATH` (the second runs `docker exec … psql`).
+- The API reads its port from `PORT` (default 4000), so a second instance can
+  run on its own database beside a dev one: `PORT=4100 POSTGRES_DB=roomino
+  REDIS_PORT=6380 ADMIN_PHONE= node dist/src/main`, then `API=http://127.0.0.1:4100/api/v1`.
 - The six personas from `seed-users.sql`.
 
 ## Running it
@@ -33,6 +39,10 @@ bash 03-maintenance.sh                         # same database, straight after 0
 If `ADMIN_PHONE` is set in `apps/core-api/.env`, start the API with
 `ADMIN_PHONE=` — otherwise the bootstrap admin takes user id 1 and every
 persona below is off by one.
+
+`04-attendance-modes.sh` also needs a fresh database of its own (it adds
+three personas, ids 7–9, so `JWT_SECRET` must be exported); run it after
+loading `seed-users.sql` and minting tokens 1–6, with nothing else run first.
 
 `02-calculations.mjs` needs a fresh database of its own (same steps, then
 `node 02-calculations.mjs`) and a built API (`pnpm --filter core-api build`):
