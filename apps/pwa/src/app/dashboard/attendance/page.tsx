@@ -15,7 +15,6 @@ import {
 import Link from 'next/link';
 import { useHolidays, useMyToday } from './attendance.api';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
-import { AttendanceMap, MAP_COLORS } from './attendance.component.map';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
@@ -50,7 +49,7 @@ export default function AttendanceHomePage() {
 }
 
 function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, me, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const { locating, busy, offerRemote, lastError, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const { data: holidays } = useHolidays({ upcoming: 3 });
 
   const att = today.attendance;
@@ -63,8 +62,6 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
   const outTime = punches.out.time ?? (presumed ? today.shiftEnd : null);
 
   const done = Boolean(att?.checkIn && att?.checkOut);
-
-  const workplace = today.workplace;
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
@@ -107,9 +104,6 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             <div className="text-xs">
               <PunchHint punch={punches.in} presumed={presumed} remote={att?.workMode === 'remote' && Boolean(att.checkIn)} />
             </div>
-            {att?.checkInDistanceM != null && (
-              <div className="text-xs text-slate-400">{fa(att.checkInDistanceM)} متر از محل کار</div>
-            )}
           </div>
           <div className="rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-inset ring-slate-200/60">
             <div className="text-xs text-slate-500">خروج</div>
@@ -156,23 +150,6 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
         )}
       </Panel>
 
-      {workplace && (
-        <Panel className="gap-2">
-          <AttendanceMap
-            label={`نقشه ${workplace.name}`}
-            className="h-56 sm:h-72 lg:h-[420px]"
-            circle={{ lat: workplace.lat, lng: workplace.lng, radius: workplace.radiusMeters, label: workplace.name }}
-            points={me ? [{ ...me, label: 'موقعیت شما', color: MAP_COLORS.me, permanent: true }] : []}
-          />
-          <p className="text-xs text-slate-400">
-            {scheduleMode
-              ? `محل کار شما: ${workplace.name}`
-              : me
-              ? '«موقعیت شما» جایی است که GPS هنگام آخرین ثبت نشان داد؛ ورود و خروج داخل دایره پذیرفته می‌شود.'
-              : 'ورود و خروج داخل دایره پذیرفته می‌شود؛ موقعیت شما هنگام ثبت روی نقشه نشان داده می‌شود.'}
-          </p>
-        </Panel>
-      )}
       </div>
 
       <div className="space-y-3">
