@@ -129,7 +129,11 @@ function MyRequestsContent() {
       </div>
 
       <RequestForm key={String(formOpen)} isOpen={formOpen} onClose={() => setFormOpen(false)} onSuccess={refresh} />
-      <RequestDetailModal request={viewing} onClose={() => setViewing(null)} />
+      <RequestDetailModal
+        request={viewing}
+        onClose={() => setViewing(null)}
+        canEditAttachments={viewing?.status === RequestStatus.PENDING}
+      />
       <ConfirmModal
         isOpen={cancelling !== null}
         onClose={() => setCancelling(null)}

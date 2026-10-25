@@ -232,3 +232,18 @@ export const RESET_CONFIRMATION = 'پاکسازی';
 
 export const SCHEDULE_MODE_MESSAGE =
   'ثبت ورود و خروج غیرفعال است؛ حضور شما طبق شیفت حساب می‌شود. برای تأخیر، خروج زودتر یا مرخصی درخواست ثبت کنید.';
+
+/** Documents a person attaches to a leave/mission/overtime request. */
+export const ATTENDANCE_ATTACHMENT_FOLDER = 'attendance-attachments';
+
+export const MAX_REQUEST_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+export const MAX_REQUEST_ATTACHMENTS = 5;
+
+export const ALLOWED_REQUEST_ATTACHMENT_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+];

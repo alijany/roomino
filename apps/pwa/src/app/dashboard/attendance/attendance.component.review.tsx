@@ -4,6 +4,7 @@ import { Button, Input, ToggleSwitch } from '@/ui/atoms';
 import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, useRejectRequest } from './attendance.api';
+import { RequestAttachments } from './attendance.component.attachments';
 import { FormModal, RequestStatusBadge, TimeField } from './attendance.component.layout';
 import { AttendanceRequest, RequestStatus } from './attendance.types';
 import { durationLabel, errorMessage, fa, jalaliDateTime, jalaliLabel } from './attendance.util';
@@ -114,10 +115,13 @@ export function RequestDetailModal({
   request,
   onClose,
   actions,
+  canEditAttachments = false,
 }: {
   request: AttendanceRequest | null;
   onClose: () => void;
   actions?: React.ReactNode;
+  /** The caller's own pending request: they may add and remove documents. */
+  canEditAttachments?: boolean;
 }) {
   // The caller clears `request` to close; keep showing the last one while
   // the modal fades out instead of collapsing to an empty sheet.
@@ -157,6 +161,7 @@ export function RequestDetailModal({
             </div>
           ))}
       </dl>
+      {shown && <RequestAttachments requestId={shown.id} canEdit={canEditAttachments} />}
     </FormModal>
   );
 }

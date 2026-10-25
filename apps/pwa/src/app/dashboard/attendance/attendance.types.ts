@@ -354,6 +354,16 @@ export interface AttendanceRequest {
   employee: EmployeeBrief | null;
 }
 
+/** A supporting document on a request; `url` is a short-lived signed link. */
+export interface RequestAttachment {
+  id: number;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  url: string | null;
+}
+
 export interface RequestInput {
   type: RequestType;
   dateFrom?: string;

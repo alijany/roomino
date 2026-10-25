@@ -7,11 +7,13 @@ import { JobGroupController } from './controllers/job-group.controller';
 import { MaintenanceController } from './controllers/maintenance.controller';
 import { MeController } from './controllers/me.controller';
 import { ReportController } from './controllers/report.controller';
+import { RequestAttachmentController } from './controllers/request-attachment.controller';
 import { RequestController } from './controllers/request.controller';
 import { ShiftController } from './controllers/shift.controller';
 import { TeamController } from './controllers/team.controller';
 import { WorkPolicyController } from './controllers/work-policy.controller';
 import { WorkplaceController } from './controllers/workplace.controller';
+import { AttendanceRequestAttachmentEntity } from './entities/attendance-request-attachment.entity';
 import { AttendanceRequestEntity } from './entities/attendance-request.entity';
 import { AttendanceEntity } from './entities/attendance.entity';
 import { EmployeeProfileEntity } from './entities/employee-profile.entity';
@@ -25,6 +27,7 @@ import { ShiftEntity } from './entities/shift.entity';
 import { WorkPolicyRuleEntity } from './entities/work-policy-rule.entity';
 import { WorkPolicyEntity } from './entities/work-policy.entity';
 import { WorkplaceEntity } from './entities/workplace.entity';
+import { S3StorageModule } from '../storage/s3-storage.module';
 import { AttendanceExportService } from './services/attendance-export.service';
 import { AttendanceMaintenanceService } from './services/attendance-maintenance.service';
 import { AttendanceNotificationService } from './services/attendance-notification.service';
@@ -34,6 +37,7 @@ import { EmployeeService } from './services/employee.service';
 import { HolidayService } from './services/holiday.service';
 import { JobGroupService } from './services/job-group.service';
 import { ReportService } from './services/report.service';
+import { RequestAttachmentService } from './services/request-attachment.service';
 import { RequestService } from './services/request.service';
 import { ScheduleModeService } from './services/schedule-mode.service';
 import { ShiftService } from './services/shift.service';
@@ -62,11 +66,13 @@ import { WorkplaceService } from './services/workplace.service';
       EmployeeShiftEntity,
       AttendanceEntity,
       AttendanceRequestEntity,
+      AttendanceRequestAttachmentEntity,
       HolidayEntity,
       LeaveBalanceEntity,
       ScheduleModePeriodEntity,
     ]),
     NotificationModule,
+    S3StorageModule,
   ],
   providers: [
     WorkplaceService,
@@ -78,6 +84,7 @@ import { WorkplaceService } from './services/workplace.service';
     AttendanceNotificationService,
     AttendanceService,
     RequestService,
+    RequestAttachmentService,
     ReportService,
     AttendanceExportService,
     AttendanceScheduleService,
@@ -92,6 +99,7 @@ import { WorkplaceService } from './services/workplace.service';
     EmployeeController,
     MeController,
     RequestController,
+    RequestAttachmentController,
     HolidayController,
     ReportController,
     TeamController,

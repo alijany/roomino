@@ -33,6 +33,7 @@ import {
   Period,
   PeriodQuery,
   Report,
+  RequestAttachment,
   RequestFilterDto,
   RequestInput,
   RequestListResponse,
@@ -102,6 +103,41 @@ export function useSubmitRequest() {
 export function useCancelRequest() {
   return useDynamicMutation('/attendance/me/requests/cancel', (id: number) =>
     deleteFetcher<{ success: boolean }>(`/attendance/me/requests/${id}`),
+  );
+}
+
+// --- request attachments ------------------------------------------------------------------
+
+/** Pass `null` to skip the fetch (no request open). */
+export function useRequestAttachments(requestId: number | null) {
+  return useSwrHelper(
+    useSWR<{ items: RequestAttachment[] }>(
+      requestId ? `/attendance/request-attachments/${requestId}` : null,
+      fetcher,
+    ),
+  );
+}
+
+export function useUploadRequestAttachment() {
+  return useDynamicMutation(
+    '/attendance/request-attachments/upload',
+    ({ requestId, file }: { requestId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      // Not postFetcher: multipart must not carry a JSON content-type header.
+      return fetcher<RequestAttachment>(`/attendance/request-attachments/${requestId}`, {
+        method: 'POST',
+        body: formData,
+      });
+    },
+  );
+}
+
+export function useDeleteRequestAttachment() {
+  return useDynamicMutation(
+    '/attendance/request-attachments/delete',
+    ({ requestId, id }: { requestId: number; id: number }) =>
+      deleteFetcher<{ success: boolean }>(`/attendance/request-attachments/${requestId}/${id}`),
   );
 }
 

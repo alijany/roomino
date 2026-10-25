@@ -4,7 +4,8 @@ import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DatePickerField } from '@/ui/molecules';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useGrant, useSubmitRequest } from './attendance.api';
+import { useGrant, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
+import { AttachmentPicker } from './attendance.component.attachments';
 import { Field, FormModal, TimeField } from './attendance.component.layout';
 import { GRANT_TYPES, REQUEST_TYPE_LABELS } from './attendance.constants';
 import { RequestInput, RequestType } from './attendance.types';
@@ -45,6 +46,7 @@ export function RequestForm({
 }) {
   const submit = useSubmitRequest();
   const grant = useGrant();
+  const uploadAttachment = useUploadRequestAttachment();
   const start = prefill?.date ?? tehranToday();
 
   const [type, setType] = useState<RequestType | ''>(prefill?.type ?? '');
@@ -57,9 +59,10 @@ export function RequestForm({
   const [direction, setDirection] = useState<'in' | 'out'>(prefill?.direction ?? 'in');
   const [description, setDescription] = useState('');
 
+  const [files, setFiles] = useState<File[]>([]);
   const shape = shapeOf(type);
   const types = grantFor ? GRANT_TYPES : Object.values(RequestType);
-  const busy = submit.isLoading || grant.isLoading;
+  const busy = submit.isLoading || grant.isLoading || uploadAttachment.isLoading;
 
   const rangeInvalid = shape === 'range' && dateTo < dateFrom;
   const ready =
@@ -82,9 +85,21 @@ export function RequestForm({
         await grant.submit({ id: grantFor.id, data: body });
         toast.success(`${REQUEST_TYPE_LABELS[type]} برای ${grantFor.name ?? 'پرسنل'} ثبت شد`);
       } else {
-        await submit.submit(body);
+        const created = await submit.submit(body);
+        // The request exists now; a failed file shouldn't undo it.
+        const failed: string[] = [];
+        for (const file of files) {
+          try {
+            await uploadAttachment.submit({ requestId: created.id, file });
+          } catch {
+            failed.push(file.name);
+          }
+        }
         toast.success('درخواست شما ثبت شد و در انتظار بررسی است');
       }
+        if (failed.length) {
+          toast.warn(`بارگذاری پیوست ناموفق بود: ${failed.join('، ')} — از جزئیات درخواست دوباره اضافه کنید`);
+        }
       onSuccess();
       onClose();
     } catch (error) {
@@ -186,5 +201,7 @@ export function RequestForm({
         />
       )}
     </FormModal>
+
+      {shape && !grantFor && <AttachmentPicker files={files} onChange={setFiles} disabled={busy} />}
   );
 }

@@ -130,3 +130,9 @@ export const DAY_FILTERS = [
 ] as const;
 
 export type DayFilter = (typeof DAY_FILTERS)[number]['id'];
+
+/** Supporting documents on a request — mirrors the server's limits. */
+export const ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const ATTACHMENT_MAX_COUNT = 5;
+
