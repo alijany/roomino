@@ -135,8 +135,7 @@ export function FormModal({
         </div>
         <div className="min-h-0 grow space-y-4 overflow-y-auto p-5">{children}</div>
         {footer && (
-          // Bottom sheet on phones: keep the actions clear of the home indicator.
-          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-slate-100 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-slate-100 p-5">
             {footer}
           </div>
         )}
