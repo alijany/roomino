@@ -25,7 +25,7 @@ import { AttendanceModePicker } from '../attendance.component.mode-picker';
 import { WeekdayPicker } from '../attendance.component.weekday-picker';
 import { WEEKDAY_LABELS } from '../attendance.constants';
 import { AttendanceMode, Employee, EmployeeFilterDto, EmployeeInput, UserBrief } from '../attendance.types';
-import { errorMessage, fa, fromCivilDate, latin, tehranToday, toCivilDate } from '../attendance.util';
+import { errorMessage, fa, fromCivilDate, tehranToday, toCivilDate } from '../attendance.util';
 
 /**
  * پرسنل — attendance profiles. A profile is added to an existing Roomino
@@ -165,7 +165,7 @@ export default function EmployeesPage() {
   );
 }
 
-type Assignment = Omit<EmployeeInput, 'userId' | 'personnelCode' | 'jobTitle'>;
+type Assignment = Omit<EmployeeInput, 'userId'>;
 type Candidate = UserBrief & { nationalId: string | null };
 
 /** Where, when and how someone works — the part the single and batch forms share. */
@@ -317,8 +317,6 @@ function EmployeeForm({
   const [user, setUser] = useState<Candidate | null>(null);
   const candidates = useEmployeeCandidates(search, !employee);
 
-  const [personnelCode, setPersonnelCode] = useState(employee?.personnelCode ?? '');
-  const [jobTitle, setJobTitle] = useState(employee?.jobTitle ?? '');
   const [assignment, setAssignment] = useState<Assignment>(
     employee
       ? {
@@ -335,7 +333,7 @@ function EmployeeForm({
       : newAssignment(),
   );
 
-  const ready = (employee || user) && personnelCode.trim() && assignmentReady(assignment);
+  const ready = (employee || user) && assignmentReady(assignment);
 
   const handleSave = async () => {
     try {
@@ -344,8 +342,6 @@ function EmployeeForm({
         data: {
           ...assignment,
           ...(employee ? {} : { userId: user?.id }),
-          personnelCode: latin(personnelCode.trim()),
-          jobTitle: jobTitle.trim() || undefined,
           // A new profile with no policy chosen gets the default one.
           workPolicyId: assignment.workPolicyId ?? (employee ? null : undefined),
         },
@@ -401,21 +397,23 @@ function EmployeeForm({
         </Field>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="کد پرسنلی" dir="ltr" className="text-left" value={personnelCode} onChange={(e) => setPersonnelCode(e.target.value)} />
-        <Input label="عنوان شغلی (اختیاری)" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
-      </div>
+      {employee && (
+        <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+          کد پرسنلی <bdi dir="ltr" className="font-semibold">{fa(employee.personnelCode)}</bdi>
+          {employee.jobTitle ? ` · ${employee.jobTitle}` : ''} — از صفحه «کاربران» ویرایش می‌شود.
+        </p>
+      )}
 
       <AssignmentFields value={assignment} onChange={(patch) => setAssignment((prev) => ({ ...prev, ...patch }))} isNew={!employee} />
     </FormModal>
   );
 }
 
-type BatchRow = { user: Candidate; personnelCode: string; jobTitle: string };
+type BatchRow = { user: Candidate };
 
 /**
- * Several users at once: pick them, give each a personnel code (or number
- * them in order), and set one shared workplace/shift/group for all.
+ * Several users at once: pick them and set one shared workplace/shift/group
+ * for all. Their codes and titles are the users' own.
  * The server adds all of them or none.
  */
 function BatchEmployeeForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
@@ -423,39 +421,20 @@ function BatchEmployeeForm({ onClose, onSaved }: { onClose: () => void; onSaved:
   const [search, setSearch] = useState('');
   const candidates = useEmployeeCandidates(search, true, 100);
   const [rows, setRows] = useState<BatchRow[]>([]);
-  const [startCode, setStartCode] = useState('');
   const [assignment, setAssignment] = useState<Assignment>(newAssignment);
 
   const chosen = new Set(rows.map((r) => r.user.id));
   const available = (candidates.data?.items ?? []).filter((u) => !chosen.has(u.id));
 
   const add = (users: Candidate[]) =>
-    setRows((prev) => [...prev, ...users.map((user) => ({ user, personnelCode: '', jobTitle: '' }))]);
-  const setRow = (id: number, patch: Partial<BatchRow>) =>
-    setRows((prev) => prev.map((r) => (r.user.id === id ? { ...r, ...patch } : r)));
-
-  const start = latin(startCode.trim());
-  /** `0045` → `0045, 0046, …` — the width of the first code is kept. */
-  const numberRows = () =>
-    setRows((prev) =>
-      prev.map((r, i) => ({ ...r, personnelCode: String(Number(start) + i).padStart(start.length, '0') })),
-    );
-
-  const codes = rows.map((r) => latin(r.personnelCode.trim()));
-  const isDuplicate = (code: string) => Boolean(code) && codes.indexOf(code) !== codes.lastIndexOf(code);
-  const missing = codes.filter((c) => !c).length;
-  const duplicates = codes.some(isDuplicate);
-  const ready = rows.length > 0 && !missing && !duplicates && assignmentReady(assignment);
+    setRows((prev) => [...prev, ...users.map((user) => ({ user }))]);
+  const ready = rows.length > 0 && assignmentReady(assignment);
 
   const handleSave = async () => {
     try {
       const result = await batch.submit({
         ...assignment,
-        items: rows.map((r, i) => ({
-          userId: r.user.id,
-          personnelCode: codes[i],
-          jobTitle: r.jobTitle.trim() || undefined,
-        })),
+        items: rows.map((r) => ({ userId: r.user.id })),
       });
       toast.success(`${fa(result.created)} نفر به پرسنل اضافه شدند`);
       onSaved();
@@ -513,64 +492,22 @@ function BatchEmployeeForm({ onClose, onSaved }: { onClose: () => void; onSaved:
       </section>
 
       <section className="space-y-2 border-t border-slate-100 pt-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <h4 className="font-medium text-slate-700">
-            ۲. کد پرسنلی {rows.length > 0 && <span className="text-sm font-normal text-slate-400">({fa(rows.length)} نفر)</span>}
-          </h4>
-          {rows.length > 1 && (
-            <div className="flex items-center gap-2">
-              <div className="w-32">
-                <Input
-                  dir="ltr"
-                  inputMode="numeric"
-                  className="text-left"
-                  placeholder="1001"
-                  aria-label="شروع شماره‌گذاری"
-                  value={startCode}
-                  onChange={(e) => setStartCode(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="sm" disabled={!/^\d+$/.test(start)} onClick={numberRows}>
-                شماره‌گذاری به ترتیب
-              </Button>
-            </div>
-          )}
-        </div>
-
+        <h4 className="font-medium text-slate-700">
+          ۲. افراد انتخاب‌شده {rows.length > 0 && <span className="text-sm font-normal text-slate-400">({fa(rows.length)} نفر)</span>}
+        </h4>
         {rows.length ? (
           <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-            {rows.map((row, i) => (
-              <div key={row.user.id} className="flex flex-wrap items-start gap-2 p-3">
-                <div className="flex min-w-0 basis-full items-center gap-2 sm:basis-40 sm:pt-1.5">
-                  <Avatar src={row.user.profilePicture} name={row.user.name} className="size-8" />
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-slate-800">{row.user.name ?? 'بدون نام'}</div>
-                    <div dir="ltr" className="text-right text-xs text-slate-400">{fa(row.user.phone)}</div>
-                  </div>
-                </div>
-                <div className="w-32">
-                  <Input
-                    dir="ltr"
-                    className="text-left"
-                    placeholder="کد پرسنلی"
-                    aria-label={`کد پرسنلی ${row.user.name ?? ''}`}
-                    value={row.personnelCode}
-                    onChange={(e) => setRow(row.user.id, { personnelCode: e.target.value })}
-                    error={isDuplicate(codes[i]) ? 'تکراری' : undefined}
-                  />
-                </div>
-                <div className="min-w-0 grow sm:basis-40">
-                  <Input
-                    placeholder="عنوان شغلی (اختیاری)"
-                    aria-label={`عنوان شغلی ${row.user.name ?? ''}`}
-                    value={row.jobTitle}
-                    onChange={(e) => setRow(row.user.id, { jobTitle: e.target.value })}
-                  />
+            {rows.map((row) => (
+              <div key={row.user.id} className="flex items-center gap-2 p-3">
+                <Avatar src={row.user.profilePicture} name={row.user.name} className="size-8" />
+                <div className="min-w-0 grow">
+                  <div className="truncate text-sm font-medium text-slate-800">{row.user.name ?? 'بدون نام'}</div>
+                  <div dir="ltr" className="text-right text-xs text-slate-400">{fa(row.user.phone)}</div>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-1.5 !px-2 border-none text-rose-500"
+                  className="!px-2 border-none text-rose-500"
                   onClick={() => setRows((prev) => prev.filter((r) => r.user.id !== row.user.id))}
                   aria-label={`حذف ${row.user.name ?? ''} از فهرست`}
                 >
@@ -583,9 +520,6 @@ function BatchEmployeeForm({ onClose, onSaved }: { onClose: () => void; onSaved:
           <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
             هنوز کسی انتخاب نشده است.
           </p>
-        )}
-        {missing > 0 && rows.length > 0 && (
-          <p className="text-xs text-amber-600">کد پرسنلی {fa(missing)} نفر خالی است.</p>
         )}
       </section>
 

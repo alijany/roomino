@@ -296,8 +296,6 @@ export interface EmployeeDetail extends Employee {
 
 export interface EmployeeInput {
   userId?: number;
-  personnelCode?: string;
-  jobTitle?: string;
   workplaceId?: number;
   jobGroupId?: number | null;
   workPolicyId?: number | null;
@@ -312,8 +310,8 @@ export interface EmployeeInput {
 
 /** Several profiles with one shared assignment — `POST /attendance/employees/batch`. */
 export interface EmployeeBatchInput
-  extends Omit<EmployeeInput, 'userId' | 'personnelCode' | 'jobTitle'> {
-  items: Array<{ userId: number; personnelCode: string; jobTitle?: string }>;
+  extends Omit<EmployeeInput, 'userId'> {
+  items: Array<{ userId: number }>;
 }
 
 export interface EmployeeFilterDto {
