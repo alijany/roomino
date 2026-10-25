@@ -1,8 +1,10 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { S3StorageService } from '../../storage/s3-storage.service';
 import { UserEntity } from '../../user/user.entity';
 import { RESET_CONFIRMATION, ResetScope } from '../attendance.constants';
 import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
+import { AttendanceRequestAttachmentEntity } from '../entities/attendance-request-attachment.entity';
 import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeShiftEntity } from '../entities/employee-shift.entity';
@@ -16,6 +18,7 @@ import { WorkPolicyEntity } from '../entities/work-policy.entity';
 import { WorkplaceEntity } from '../entities/workplace.entity';
 
 const RECORD_ENTITIES = {
+  requestAttachments: AttendanceRequestAttachmentEntity,
   attendance: AttendanceEntity,
   requests: AttendanceRequestEntity,
   leaveBalances: LeaveBalanceEntity,
@@ -50,7 +53,10 @@ const normalize = (value: string) =>
 export class AttendanceMaintenanceService {
   private readonly logger = new Logger(AttendanceMaintenanceService.name);
 
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly storage: S3StorageService,
+  ) {}
 
   private tableOf(key: AttendanceTable) {
     return this.em.getMetadata().get(ENTITIES[key].name).tableName;
@@ -74,6 +80,13 @@ export class AttendanceMaintenanceService {
    * reset fail loudly instead of silently emptying that table too.
    */
   async reset(scope: ResetScope, confirm: string, by: UserEntity) {
+    // The documents attached to requests live in storage, not the database.
+    const files = await this.em.find(
+      AttendanceRequestAttachmentEntity,
+      {},
+      { fields: ['storageKey'] },
+    );
+
     if (normalize(confirm ?? '') !== normalize(RESET_CONFIRMATION)) {
       throw new BadRequestException(
         `برای تایید، عبارت «${RESET_CONFIRMATION}» را وارد کنید`,
@@ -85,6 +98,18 @@ export class AttendanceMaintenanceService {
     ) as AttendanceTable[];
     const tables = keys.map((key) => this.tableOf(key));
     if (scope === ResetScope.ALL) tables.push(APPROVER_PIVOT);
+
+    // The rows are gone for good; a file that can't be removed only costs
+    // storage, so it is logged and left.
+    for (const { storageKey } of files) {
+      try {
+        await this.storage.deleteObject(storageKey);
+      } catch (error) {
+        this.logger.warn(
+          `حذف فایل ${storageKey} از فضای ذخیره‌سازی ناموفق بود: ${error?.message}`,
+        );
+      }
+    }
 
     const deleted = await this.em.transactional(async (em) => {
       const before = await this.summary(em);
