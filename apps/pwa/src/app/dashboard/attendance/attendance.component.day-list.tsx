@@ -19,6 +19,8 @@ export interface DayActions {
   onRequestFix?: (day: ReportDay) => void;
   /** «حاضر بود»: confirm a day a person in «بدون ثبت» didn't declare (admin, HR, team approver). */
   onConfirmPresence?: (day: ReportDay) => void;
+  /** A person's own undeclared day: file leave, a mission or remote work for it. */
+  onRequestForDay?: (day: ReportDay) => void;
   /** Take back a confirmed or declared day. */
   onRevokePresence?: (day: ReportDay) => void;
   onViewRequest?: (request: AttendanceRequest) => void;
@@ -365,6 +367,12 @@ export function DayList({
                     <Button size="sm" className="gap-1" onClick={() => actions.onConfirmPresence?.(day)}>
                       <IconUserCheck className="size-4" />
                       حاضر بود
+                    </Button>
+                  )}
+                  {actions.onRequestForDay && day.undeclared && (
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onRequestForDay?.(day)}>
+                      <IconPlus className="size-4" />
+                      ثبت درخواست برای این روز
                     </Button>
                   )}
                   {actions.onRevokePresence && day.declared && !day.isFuture && (

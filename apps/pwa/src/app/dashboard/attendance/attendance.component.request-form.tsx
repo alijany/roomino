@@ -62,8 +62,8 @@ export function RequestForm({
   const [files, setFiles] = useState<File[]>([]);
 
   const shape = shapeOf(type);
-  // Someone in «بدون ثبت» doesn't check in, so there's no remote check-in to
-  // permit and no late arrival to report; the rest stays as it is.
+  // Someone in «بدون ثبت» doesn't check in, so there's no hourly remote work
+  // and no late arrival to report; a remote day, leave and missions stay.
   const { data: me } = useMyToday();
   const untracked = !grantFor && me?.attendanceMode === AttendanceMode.UNTRACKED;
   const types = grantFor
@@ -71,9 +71,7 @@ export function RequestForm({
     : Object.values(RequestType).filter(
         (value) =>
           !untracked ||
-          (value !== RequestType.REMOTE_DAILY &&
-            value !== RequestType.REMOTE_HOURLY &&
-            value !== RequestType.MANUAL_ATTENDANCE),
+          (value !== RequestType.REMOTE_HOURLY && value !== RequestType.MANUAL_ATTENDANCE),
       );
   const busy = submit.isLoading || grant.isLoading || uploadAttachment.isLoading;
 

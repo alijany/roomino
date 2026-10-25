@@ -274,6 +274,7 @@ function MyReportContent() {
                       onRequestFix: (day) =>
                         setForm({ type: RequestType.MANUAL_ATTENDANCE, date: day.date, direction: day.fixDirection }),
                       onViewRequest: setViewing,
+                      onRequestForDay: (day) => setForm({ date: day.date }),
                     }}
                   />
                 )}
