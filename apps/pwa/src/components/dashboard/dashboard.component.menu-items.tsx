@@ -121,7 +121,11 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
             >
               <Avatar src={user?.profilePicture} name={user?.name} className="size-10 rounded-xl" />
               <span className="flex min-w-0 grow flex-col items-start gap-1">
-                <span dir="ltr" className="text-sm text-slate-700">{user?.phone}</span>
+                {user?.name?.trim() ? (
+                  <span className="max-w-full truncate text-sm text-slate-700">{user.name}</span>
+                ) : (
+                  <span dir="ltr" className="text-sm text-slate-700">{user?.phone}</span>
+                )}
                 <span className="max-w-full truncate text-xs text-slate-500">
                   {getRoleName(selectedRole.role)}
                 </span>
