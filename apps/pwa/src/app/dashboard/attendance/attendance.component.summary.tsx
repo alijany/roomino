@@ -18,7 +18,7 @@ export function ReportSummaryTiles({
   /** «بدون ثبت»: days, not hours — nothing here is a time of day or an hour count. */
   daily?: boolean;
 }) {
-  if (daily) return <DailySummaryTiles summary={summary} compact={compact} />;
+  if (daily) return <DailySummaryTiles summary={summary} />;
 
   const personalBalanceHint =
     summary.balance < 0
@@ -134,7 +134,7 @@ export function ReportSummaryTiles({
 }
 
 /** The summary for someone in «بدون ثبت»: how many days, never how many hours. */
-function DailySummaryTiles({ summary, compact }: { summary: ReportSummary; compact: boolean }) {
+function DailySummaryTiles({ summary }: { summary: ReportSummary }) {
   const days = (value: number) => `${fa(value)} روز`;
   const tiles: Array<ComponentProps<typeof StatTile> & { key: string }> = [
     {
