@@ -90,6 +90,7 @@ export const BOARD_STATUS_META: Record<BoardStatus, { label: string; tone: Badge
   [BoardStatus.ON_LEAVE]: { label: 'مرخصی', tone: 'info' },
   [BoardStatus.BY_SCHEDULE]: { label: 'طبق شیفت', tone: 'success' },
   [BoardStatus.AWAITING]: { label: 'در انتظار اعلام', tone: 'warning' },
+  [BoardStatus.MISSION]: { label: 'ماموریت', tone: 'info' },
   [BoardStatus.NOT_YET]: { label: 'هنوز شروع نشده', tone: 'muted' },
   [BoardStatus.OFF]: { label: 'بدون شیفت', tone: 'muted' },
   [BoardStatus.MISSING]: { label: 'ورود ثبت نشده', tone: 'danger' },

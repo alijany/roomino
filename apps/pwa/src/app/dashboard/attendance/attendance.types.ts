@@ -62,6 +62,8 @@ export enum BoardStatus {
   BY_SCHEDULE = 'by_schedule',
   /** «بدون ثبت» who hasn't declared yet today. */
   AWAITING = 'awaiting',
+  /** A full-day mission is approved for today. */
+  MISSION = 'mission',
   OFF = 'off',
   NOT_YET = 'not_yet',
   MISSING = 'missing',
@@ -601,6 +603,9 @@ export interface Board {
     present: number;
     missing: number;
     onLeave: number;
+    mission: number;
+    /** Working remotely — checked in from outside, or a remote day today. */
+    remote: number;
     pending: number;
     /** «بدون ثبت» who haven't declared today — informative, never a fault. */
     notDeclared: number;

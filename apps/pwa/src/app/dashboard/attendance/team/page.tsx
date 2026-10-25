@@ -10,9 +10,8 @@ import { useRouter } from 'next/navigation';
 import { ApiError } from '@/libs/api/api.types.error';
 import { useState } from 'react';
 import { useTeamBoard } from '../attendance.api';
-import { BoardTable } from '../attendance.component.board';
-import { ScheduleModeBoardNotice } from '../attendance.component.schedule-mode';
-import { PageHeader, Panel, StatTile } from '../attendance.component.layout';
+import { BoardOverview } from '../attendance.component.board-overview';
+import { PageHeader } from '../attendance.component.layout';
 import { fa, jalaliLabel } from '../attendance.util';
 
 /**
@@ -56,22 +55,14 @@ export default function TeamPage() {
             errorMessage={forbidden ? (error as ApiError).message : undefined}
           >
             {data && (
-              <div className="space-y-3">
-                {data.scheduleMode && <ScheduleModeBoardNotice />}
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <StatTile label="اعضای فعال" value={fa(data.stats.employees)} />
-                  <StatTile label="حاضر" value={fa(data.stats.present)} tone="success" />
-                  <StatTile label="ورود ثبت نشده" value={fa(data.stats.missing)} tone={data.stats.missing ? 'danger' : 'neutral'} />
-                  <StatTile label="مرخصی" value={fa(data.stats.onLeave)} />
-                </div>
-                {data.stats.notDeclared > 0 && !data.scheduleMode && (
-                  <p className="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs leading-6 text-slate-600">
-                    {fa(data.stats.notDeclared)} نفر از پرسنلِ «بدون ثبت» هنوز حضور امروز را اعلام نکرده‌اند. امروز هنوز
-                    تمام نشده است؛ روزی که تا پایانش اعلام نشود غیبت حساب می‌شود و در بازبینی آخر ماه از گزارش فرد
-                    می‌توانید حاضر بودنش را تایید کنید.
-                  </p>
-                )}
-                <Panel className="gap-3">
+              <BoardOverview
+                data={data}
+                groupLabel="گروه شغلی"
+                onOpenRow={(row) => router.push(`/dashboard/attendance/team/${row.employee.id}`)}
+                requests={{ base: '/attendance/team/requests', href: '/dashboard/attendance/team/requests' }}
+                onChanged={refresh}
+                emptyMessage="عضو فعالی در گروه‌های شما نیست."
+                toolbar={
                   <div className="sm:w-72">
                     <Input
                       icon={<IconSearch className="size-4 text-slate-400" />}
@@ -80,17 +71,8 @@ export default function TeamPage() {
                       onChange={(e) => setText(e.target.value)}
                     />
                   </div>
-                  {data.rows.length ? (
-                    <BoardTable
-                      rows={data.rows}
-                      groupLabel="گروه شغلی"
-                      onOpen={(row) => router.push(`/dashboard/attendance/team/${row.employee.id}`)}
-                    />
-                  ) : (
-                    <p className="py-10 text-center text-sm text-slate-400">عضو فعالی در گروه‌های شما نیست.</p>
-                  )}
-                </Panel>
-              </div>
+                }
+              />
             )}
           </DataView>
         </div>

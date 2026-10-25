@@ -9,8 +9,8 @@
 | `/` | anyone with a profile | check in/out with GPS (remote fallback), today's shift, month at a glance, link to «تیم من» for approvers |
 | `/my-report` | profile | day-by-day report, filters, leave balance, CSV; a day needing a fix offers a pre-filled manual-attendance request |
 | `/my-requests` | profile | requests by status, new request, withdraw a pending one |
-| `/team`, `/team/requests`, `/team/[id]` | job-group approvers | today's board, the team queue, a member's report with corrections and schedule (shift from a date, remote days, active) |
-| `/board` | admin, hr | today's board for everyone, latest pending requests (refreshes every minute) |
+| `/team`, `/team/requests`, `/team/[id]` | job-group approvers | today's board of the team (same overview as `/board`, with the team's newest pending requests to open and approve/reject in place), the team queue, a member's report with corrections and schedule (shift from a date, remote days, active) |
+| `/board` | admin, hr | today's board for everyone: tiles for who is at work, remote, on leave, not in yet or missing — each filters the table — and the newest pending requests to open and decide right there (refreshes every minute) |
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
 | `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift); attendance mode per person |
@@ -93,6 +93,7 @@ attendance home and the dashboard card link to it too.
 | `attendance.component.attachments.tsx` | pick files in the form; list, add and remove them on a request |
 | `attendance.component.mode-picker.tsx` | the attendance-mode radio cards (job group and employee forms) |
 | `attendance.component.mode-today.tsx` | «امروز هستم / نیستم», the forgotten check-out notice, overtime notice, flexible hint |
+| `attendance.component.board-overview.tsx` | the board for admin/HR and for «تیم من»: filter tiles, table, pending requests with approve/reject |
 | `attendance.component.presence-review.tsx` | «حاضر بود» — confirm undeclared days |
 | `attendance.component.location-issue.tsx` | what to do when the position can't be read |
 | `attendance.component.today-card.tsx`, `attendance.hook.today-status.ts` | the dashboard card and the state it derives |
