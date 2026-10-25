@@ -50,24 +50,29 @@ export class AttendanceExportService {
         { key: 'overtime', header: 'اضافه کار' },
         { key: 'pending', header: 'درخواست در انتظار' },
       ],
-      rows.map(({ profile, summary: s }) => ({
-        code: profile.personnelCode,
-        name: profile.user.name,
-        workplace: profile.workplace?.name,
-        mode: AttendanceModeLabels[resolveMode(profile)],
-        presentDays: s.presentDays,
-        worked: formatHm(s.worked),
-        required: formatHm(s.required),
-        balance: formatHm(s.balance),
-        delay: formatHm(s.delayMinutes),
-        early: formatHm(s.earlyMinutes),
-        absentDays: s.absentDays,
-        incompleteDays: s.incompleteDays,
-        leave: formatHm(s.leaveMinutes),
-        remote: formatHm(s.remoteMinutes),
-        overtime: formatHm(s.overtime),
-        pending: pending.get(profile.id) ?? 0,
-      })),
+      rows.map(({ profile, summary: s }) => {
+        // «بدون ثبت» has no hours — those cells stay empty.
+        const hours = resolveMode(profile) !== AttendanceMode.UNTRACKED;
+        const time = (minutes: number) => (hours ? formatHm(minutes) : '');
+        return {
+          code: profile.personnelCode,
+          name: profile.user.name,
+          workplace: profile.workplace?.name,
+          mode: AttendanceModeLabels[resolveMode(profile)],
+          presentDays: s.presentDays,
+          worked: time(s.worked),
+          required: time(s.required),
+          balance: time(s.balance),
+          delay: time(s.delayMinutes),
+          early: time(s.earlyMinutes),
+          absentDays: s.absentDays,
+          incompleteDays: s.incompleteDays,
+          leave: formatHm(s.leaveMinutes),
+          remote: formatHm(s.remoteMinutes),
+          overtime: formatHm(s.overtime),
+          pending: pending.get(profile.id) ?? 0,
+        };
+      }),
     );
   }
 
@@ -76,7 +81,17 @@ export class AttendanceExportService {
     profile: EmployeeProfileEntity,
     period: Period,
   ): Promise<string> {
-    const { days, summary: s } = await this.reports.report(profile, period);
+    const {
+      days,
+      summary: s,
+      attendanceMode,
+    } = await this.reports.report(profile, period);
+
+    // «بدون ثبت» has no times: the period is counted in days, one row each.
+    if (attendanceMode === AttendanceMode.UNTRACKED) {
+      return this.dailyCsv(profile, period, days, s);
+    }
+
     const header = [
       csvRow([
         'پرسنل',
@@ -160,6 +175,63 @@ export class AttendanceExportService {
           mode: AttendanceModeLabels[d.mode],
           declared:
             d.mode === AttendanceMode.UNTRACKED && d.declared ? 'بله' : '',
+        })),
+    ).slice(CSV_BOM.length);
+
+    return `${CSV_BOM}${header}\r\n${table}`;
+  }
+
+  /** The same, for someone in «بدون ثبت»: days present, absent, away — no times. */
+  private dailyCsv(
+    profile: EmployeeProfileEntity,
+    period: Period,
+    days: Awaited<ReturnType<ReportService['report']>>['days'],
+    s: Awaited<ReturnType<ReportService['report']>>['summary'],
+  ): string {
+    const header = [
+      csvRow([
+        'پرسنل',
+        profile.user.name ?? '',
+        'کد پرسنلی',
+        profile.personnelCode,
+        'دوره',
+        period.label,
+      ]),
+      csvRow([
+        'حضور',
+        `${s.attendedDays} از ${s.requiredDays} روز`,
+        'غیبت',
+        s.absentDays,
+        'اعلام‌نشده',
+        s.undeclaredDays,
+      ]),
+      csvRow([
+        'مرخصی (روز)',
+        s.leaveDays,
+        'ماموریت (روز)',
+        s.missionDays,
+        'دورکاری (روز)',
+        s.remoteDays,
+      ]),
+      '',
+    ].join('\r\n');
+
+    const table = toCsv(
+      [
+        { key: 'date', header: 'تاریخ' },
+        { key: 'weekday', header: 'روز' },
+        { key: 'status', header: 'وضعیت' },
+        { key: 'declared', header: 'اعلام حضور' },
+      ],
+      days
+        .filter((d) => !d.isFuture)
+        .map((d) => ({
+          date: d.jalali,
+          weekday: d.weekday,
+          status: d.undeclared
+            ? 'غایب (اعلام نشده)'
+            : DayStatusLabels[d.status],
+          declared: d.declared ? (d.declaredRemote ? 'دورکاری' : 'بله') : '',
         })),
     ).slice(CSV_BOM.length);
 
