@@ -142,6 +142,7 @@ export class MeController {
       presence: {
         declared: Boolean(declaration),
         declaredAt: declaration?.declaredAt ?? null,
+        workMode: declaration?.workMode ?? null,
       },
       /** Overtime from today's check-out: recorded already, or awaiting approval. */
       overtimeSuggestion: suggestion,
@@ -153,10 +154,21 @@ export class MeController {
   /** «امروز هستم»: for people in «بدون ثبت», in place of checking in. */
   @Post('presence')
   @HttpCode(200)
-  async declarePresence(@CurrentUser() user: UserEntity) {
+  async declarePresence(
+    @CurrentUser() user: UserEntity,
+    @Body(NormalizeNumbersPipe) dto: CheckInDto,
+  ) {
     const profile = await this.employees.requireOwn(user);
-    const row = await this.presence.declare(profile);
-    return { declared: true, declaredAt: row.declaredAt };
+    const { declaration, ...result } = await this.presence.declare(
+      profile,
+      dto,
+    );
+    return {
+      ...result,
+      declared: Boolean(declaration),
+      declaredAt: declaration?.declaredAt ?? null,
+      workMode: declaration?.workMode ?? null,
+    };
   }
 
   /** Take back today's «امروز هستم». */
@@ -164,7 +176,7 @@ export class MeController {
   async withdrawPresence(@CurrentUser() user: UserEntity) {
     const profile = await this.employees.requireOwn(user);
     await this.presence.withdraw(profile);
-    return { declared: false, declaredAt: null };
+    return { declared: false, declaredAt: null, workMode: null };
   }
 
   @Post('check-in')

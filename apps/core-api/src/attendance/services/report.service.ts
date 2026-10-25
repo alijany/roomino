@@ -84,6 +84,8 @@ export interface ReportDay {
   mode: AttendanceMode;
   /** «بدون ثبت»: the day was declared (by the person, or confirmed by a reviewer). */
   declared: boolean;
+  /** …from outside the workplace, as remote work. */
+  declaredRemote: boolean;
   /** «بدون ثبت»: a past working day nobody declared — absent until a reviewer confirms it. */
   undeclared: boolean;
   workMode: WorkMode | null;
@@ -124,6 +126,13 @@ export interface ReportSummary {
   declaredDays: number;
   /** …and of which nobody declared, so they count as absent. */
   undeclaredDays: number;
+  /**
+   * Working days so far that count either way — at work, remote, absent —
+   * not leave, missions or a day still awaited — and how many of them were
+   * spent at work or working remotely. What «بدون ثبت» is measured in.
+   */
+  requiredDays: number;
+  attendedDays: number;
 }
 
 interface ReportInput {
@@ -134,8 +143,8 @@ interface ReportInput {
   schedulePeriods: ScheduleModePeriodEntity[];
   /** The person's mode history, newest first. */
   modes: EmployeeModePeriodEntity[];
-  /** Civil dates the person declared themselves present. */
-  declared: Set<string>;
+  /** Civil dates the person declared themselves present, and from where. */
+  declared: Map<string, WorkMode>;
 }
 
 const sum = <T>(items: T[], pick: (item: T) => number) =>
@@ -226,7 +235,7 @@ export class ReportService {
       this.employees.assignmentsFor(ids),
       this.scheduleMode.between(from, to),
       this.modes.periodsFor(ids),
-      this.presence.datesBetween(ids, from, to),
+      this.presence.declarationsBetween(ids, from, to),
     ]);
 
     return (profileId: number): ReportInput => ({
@@ -240,7 +249,7 @@ export class ReportService {
       assignments: assignments.get(profileId) ?? [],
       schedulePeriods,
       modes: modePeriods.get(profileId) ?? [],
-      declared: declarations.get(profileId) ?? new Set<string>(),
+      declared: declarations.get(profileId) ?? new Map<string, WorkMode>(),
     });
   }
 
@@ -248,8 +257,14 @@ export class ReportService {
     const input = (await this.load([profile], period.from, period.to))(
       profile.id,
     );
+    const today = tehranToday();
     return {
       ...this.build(profile, period, input),
+      // How the period ends is how it is read: «بدون ثبت» is counted in days.
+      attendanceMode: modeOn(
+        input.modes,
+        period.to < today ? period.to : today,
+      ),
       // The day map falls back to this when a day's row has no workplace.
       workplace: profile.workplace ? toWorkplacePin(profile.workplace) : null,
     };
@@ -319,8 +334,15 @@ export class ReportService {
     // Remote work: a fixed weekly day or an approved request earns the full
     // scheduled shift. An unpermitted remote check-in stays pending until
     // approved, and counts as absence if rejected.
+    const mode = modeOn(input.modes, date);
+    // «بدون ثبت» declaring from outside the workplace is a remote check-in
+    // in all but name: it waits for the same approval.
+    const declaredRemote =
+      mode === AttendanceMode.UNTRACKED &&
+      input.declared.get(date) === WorkMode.REMOTE;
     const remoteCheckIn =
-      att?.workMode === WorkMode.REMOTE && Boolean(att.checkInAt);
+      (att?.workMode === WorkMode.REMOTE && Boolean(att.checkInAt)) ||
+      declaredRemote;
     const fixedRemote = scheduled > 0 && isFixedRemoteDay(profile, date);
     const pendingRemote = pending.some(
       (r) => r.type === RequestType.REMOTE_DAILY,
@@ -329,7 +351,6 @@ export class ReportService {
 
     const isToday = date === today;
     const isFuture = date > today;
-    const mode = modeOn(input.modes, date);
 
     // A day nobody checks in for: company-wide schedule mode, or a person in
     // «بدون ثبت» whose day was declared. A missing time is taken from the
@@ -349,7 +370,9 @@ export class ReportService {
     const untrackedDay = covered && mode === AttendanceMode.UNTRACKED;
     const declaredDay =
       input.declared.has(date) || Boolean(att?.checkInAt || att?.checkOutAt);
-    const bySchedule = scheduleModeDay || (untrackedDay && declaredDay);
+    // A remote declaration is presence only once its request is approved.
+    const bySchedule =
+      scheduleModeDay || (untrackedDay && declaredDay && !declaredRemote);
     // …and absent if not, once the day is over; today it is still awaited.
     const awaitingDeclaration =
       untrackedDay && !declaredDay && !scheduleModeDay;
@@ -492,6 +515,7 @@ export class ReportService {
       status,
       mode,
       declared: input.declared.has(date),
+      declaredRemote,
       undeclared: awaitingDeclaration && !isToday,
       workMode: att?.workMode ?? null,
       fixedRemote,
@@ -536,6 +560,19 @@ export class ReportService {
               DayStatus.IN_PROGRESS,
             ].includes(d.status))),
     );
+    const counted = days.filter(
+      (d) =>
+        !d.isFuture &&
+        d.scheduled > 0 &&
+        ![
+          DayStatus.ON_LEAVE,
+          DayStatus.MISSION,
+          DayStatus.HOLIDAY,
+          DayStatus.NO_SHIFT,
+          DayStatus.FUTURE,
+          DayStatus.AWAITING_DECLARATION,
+        ].includes(d.status),
+    );
     return {
       worked,
       required,
@@ -569,6 +606,15 @@ export class ReportService {
       ).length,
       byScheduleDays: days.filter((d) => d.status === DayStatus.BY_SCHEDULE)
         .length,
+      requiredDays: counted.length,
+      attendedDays: counted.filter((d) =>
+        [
+          DayStatus.PRESENT,
+          DayStatus.IN_PROGRESS,
+          DayStatus.BY_SCHEDULE,
+          DayStatus.REMOTE,
+        ].includes(d.status),
+      ).length,
       untrackedDays: untracked.length,
       declaredDays: untracked.filter((d) => d.declared).length,
       undeclaredDays: untracked.filter((d) => d.undeclared).length,
@@ -602,7 +648,7 @@ export class ReportService {
       this.employees.assignmentsFor(ids),
       this.scheduleMode.on(today),
       this.modes.periodsFor(ids),
-      this.presence.datesBetween(ids, today, today),
+      this.presence.declarationsBetween(ids, today, today),
       this.requests.inRange(ids, today, today, [RequestStatus.APPROVED]),
     ]);
     const byProfile = new Map(attendances.map((a) => [a.employee.id, a]));
@@ -660,7 +706,9 @@ export class ReportService {
       // «بدون ثبت»: present once they say so, awaited until then.
       else if (untracked)
         status = declared.get(profile.id)?.has(today)
-          ? BoardStatus.BY_SCHEDULE
+          ? declared.get(profile.id)?.get(today) === WorkMode.REMOTE
+            ? BoardStatus.REMOTE
+            : BoardStatus.BY_SCHEDULE
           : BoardStatus.AWAITING;
       // «منعطف» may arrive any time before the shift ends.
       else if (mode === AttendanceMode.FLEXIBLE && end && now < end)
@@ -669,13 +717,13 @@ export class ReportService {
       else status = BoardStatus.MISSING;
 
       // For «بدون ثبت»: did they say they're in? Only while it can matter.
-      const presence =
-        untracked &&
-        [BoardStatus.BY_SCHEDULE, BoardStatus.AWAITING].includes(status)
-          ? status === BoardStatus.BY_SCHEDULE
-            ? 'declared'
-            : 'not_declared'
-          : null;
+      const presence = !untracked
+        ? null
+        : declared.get(profile.id)?.has(today)
+        ? 'declared'
+        : status === BoardStatus.AWAITING
+        ? 'not_declared'
+        : null;
 
       return {
         profile,

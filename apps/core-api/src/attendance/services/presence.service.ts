@@ -12,27 +12,51 @@ import {
   AttendanceMode,
   AttendanceStatus,
   MAX_CONFIRM_DAYS,
+  MINUTES_PER_WORKDAY,
   RequestCategory,
   RequestStatus,
+  RequestType,
+  WorkMode,
 } from '../attendance.constants';
+import { CheckInDto } from '../dtos/attendance.dto';
 import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
 import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { PresenceDeclarationEntity } from '../entities/presence-declaration.entity';
 import { categoryOf, isHourly } from '../utils/attendance-request.util';
 import { scheduleFor } from '../utils/attendance-shift.util';
-import { formatJalaliDate, tehranToday } from '../utils/attendance-time.util';
+import {
+  distanceMeters,
+  formatJalaliDate,
+  tehranToday,
+} from '../utils/attendance-time.util';
 import { AttendanceModeService } from './attendance-mode.service';
+import { AttendanceNotificationService } from './attendance-notification.service';
+import { AttendanceService } from './attendance.service';
 import { EmployeeService } from './employee.service';
 import { HolidayService } from './holiday.service';
 
 type WhyNot = 'future' | 'tracked' | 'off_day' | 'marked_absent' | 'away';
 
+/** Starts the description of the remote-day request a declaration files. */
+const AUTO_REMOTE_NOTE = 'ثبت خودکار: اعلام حضور دورکاری';
+
+export interface DeclareResult {
+  success: boolean;
+  message: string;
+  /** After an out-of-range failure: the person may declare as remote work. */
+  canRemote?: boolean;
+  declaration?: PresenceDeclarationEntity;
+}
+
 /**
  * Presence of people in «بدون ثبت».
  *
  * They record no times. A scheduled day counts as present only if they said
- * so — «امروز هستم», on the day — or a reviewer later confirmed it
+ * so — «امروز هستم», on the day, as a check-in would be made: inside the
+ * workplace's radius (anywhere, if their profile doesn't use GPS), or as
+ * remote work, which files the same remote-day request a remote check-in
+ * does — or a reviewer later confirmed it
  * («حاضر بود»), which is how forgotten days are put right at the month's
  * end. A past scheduled day with neither, and no leave or mission, is absent
  * (see `ReportService`).
@@ -44,6 +68,8 @@ export class PresenceService {
     private readonly modes: AttendanceModeService,
     private readonly employees: EmployeeService,
     private readonly holidays: HolidayService,
+    private readonly attendance: AttendanceService,
+    private readonly notifications: AttendanceNotificationService,
   ) {}
 
   /** The declaration on a day, if any. */
@@ -54,22 +80,25 @@ export class PresenceService {
     });
   }
 
-  /** Dates in a range that count as declared, keyed by profile id. */
-  async datesBetween(
+  /**
+   * The days in a range that count as declared, with where they were
+   * declared from, keyed by profile id.
+   */
+  async declarationsBetween(
     profileIds: number[],
     from: string,
     to: string,
-  ): Promise<Map<number, Set<string>>> {
-    const map = new Map<number, Set<string>>();
+  ): Promise<Map<number, Map<string, WorkMode>>> {
+    const map = new Map<number, Map<string, WorkMode>>();
     if (!profileIds.length) return map;
     const rows = await this.em.find(PresenceDeclarationEntity, {
       employee: { $in: profileIds },
       date: { $gte: from, $lte: to },
     });
     for (const row of rows) {
-      const dates = map.get(row.employee.id) ?? new Set<string>();
-      dates.add(row.date);
-      map.set(row.employee.id, dates);
+      const days = map.get(row.employee.id) ?? new Map<string, WorkMode>();
+      days.set(row.date, row.workMode);
+      map.set(row.employee.id, days);
     }
     return map;
   }
@@ -164,8 +193,17 @@ export class PresenceService {
     }
   }
 
-  /** «امروز هستم»: the person declares today. Idempotent. */
-  async declare(profile: EmployeeProfileEntity) {
+  /**
+   * «امروز هستم»: the person says they are at work today. It means what a
+   * check-in means: from inside the workplace's radius (anywhere, when their
+   * profile doesn't use GPS), or else as remote work — allowed outright on a
+   * remote day, otherwise filed as a remote-day request for approval, exactly
+   * as a remote check-in does. Idempotent.
+   */
+  async declare(
+    profile: EmployeeProfileEntity,
+    dto: CheckInDto = {},
+  ): Promise<DeclareResult> {
     const today = tehranToday();
     const reason = await this.whyNot(profile, today, today);
     if (reason) {
@@ -179,14 +217,125 @@ export class PresenceService {
       };
       throw new BadRequestException(text[reason.code]);
     }
-    return this.persist(profile, today);
+
+    const existing = await this.on(profile.id, today);
+    if (existing) {
+      return {
+        success: true,
+        message: 'حضور امروز شما قبلاً اعلام شده است.',
+        declaration: existing,
+      };
+    }
+
+    const workplace = profile.workplace;
+    const distance =
+      workplace && dto.lat !== undefined && dto.lng !== undefined
+        ? distanceMeters(workplace.lat, workplace.lng, dto.lat, dto.lng)
+        : null;
+    const inRange =
+      Boolean(workplace) &&
+      (!profile.useGps ||
+        (distance !== null && distance <= workplace.radiusMeters));
+    const remoteStatus = await this.attendance.remoteStatus(profile, today);
+
+    let workMode: WorkMode;
+    if (inRange && !dto.remote) {
+      workMode = WorkMode.OFFICE;
+    } else if (dto.remote || remoteStatus) {
+      workMode = WorkMode.REMOTE;
+    } else {
+      return {
+        success: false,
+        canRemote: true,
+        message: !workplace
+          ? 'محل کاری برای شما تعریف نشده است.'
+          : distance === null
+          ? 'موقعیت مکانی شما دریافت نشد.'
+          : `شما خارج از محدوده مجاز محل کار هستید (فاصله: ${Math.round(
+              distance,
+            )} متر).`,
+      };
+    }
+
+    let autoRequest: AttendanceRequestEntity | null = null;
+    try {
+      const declaration = await this.em.transactional(async (em) => {
+        const row = em.create(PresenceDeclarationEntity, {
+          employee: profile,
+          date: today,
+          declaredAt: new Date(),
+          workMode,
+          lat: dto.lat ?? null,
+          lng: dto.lng ?? null,
+          distanceM: distance !== null ? Math.round(distance) : null,
+        });
+        em.persist(row);
+
+        // Remote work nobody permitted yet: file today's remote request.
+        if (workMode === WorkMode.REMOTE && remoteStatus === null) {
+          autoRequest = em.create(AttendanceRequestEntity, {
+            employee: profile,
+            type: RequestType.REMOTE_DAILY,
+            dateFrom: today,
+            dateTo: today,
+            status: RequestStatus.PENDING,
+            durationMinutes: MINUTES_PER_WORKDAY,
+            description:
+              AUTO_REMOTE_NOTE +
+              (distance !== null
+                ? ` (فاصله از محل کار: ${Math.round(distance)} متر)`
+                : ' (بدون موقعیت مکانی)'),
+          });
+          em.persist(autoRequest);
+        }
+        await em.flush();
+        return row;
+      });
+
+      if (autoRequest) {
+        await this.notifications.requestSubmitted(autoRequest, profile);
+      }
+      return {
+        success: true,
+        declaration,
+        message:
+          workMode === WorkMode.OFFICE
+            ? 'حضور امروز شما اعلام شد.'
+            : remoteStatus === null
+            ? 'حضور دورکاری شما اعلام شد و درخواست دورکاری امروز برای تایید مدیر ارسال شد.'
+            : 'حضور دورکاری شما اعلام شد.',
+      };
+    } catch (error) {
+      // A double tap: the other request wrote it first.
+      if (error instanceof UniqueConstraintViolationException) {
+        this.em.clear();
+        return {
+          success: true,
+          message: 'حضور امروز شما قبلاً اعلام شده است.',
+          declaration: (await this.on(profile.id, today))!,
+        };
+      }
+      throw error;
+    }
   }
 
-  /** Take back today's declaration. */
+  /**
+   * Take back today's declaration — and the remote-day request it filed, if
+   * that one is still waiting.
+   */
   async withdraw(profile: EmployeeProfileEntity) {
+    const today = tehranToday();
     await this.em.nativeDelete(PresenceDeclarationEntity, {
       employee: profile.id,
-      date: tehranToday(),
+      date: today,
+    });
+    await this.em.nativeDelete(AttendanceRequestEntity, {
+      employee: profile.id,
+      type: RequestType.REMOTE_DAILY,
+      status: RequestStatus.PENDING,
+      dateFrom: today,
+      dateTo: today,
+      description: { $like: `${AUTO_REMOTE_NOTE}%` },
     });
   }
 
