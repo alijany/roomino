@@ -49,6 +49,8 @@ export interface UserFilterDto {
   page?: number;
   limit?: number;
   isApproved?: boolean;
+  text?: string;
+  role?: Role;
 }
 
 export interface AddUserRoleDto {
