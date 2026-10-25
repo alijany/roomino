@@ -7,7 +7,7 @@ a real Postgres, like the finance suites.
 |---|---|---|
 | `01-attendance.sh` | flows and access — who can do what | `curl` + `jq` + `psql` |
 | `03-maintenance.sh` | admin maintenance — reset (validation, both scopes) and schedule mode; run right after `01`, on its database | `curl` + `jq` + `psql` |
-| `04-attendance-modes.sh` | the three attendance modes — mode per group and per person and its history, «منعطف» without delay, overtime from the check-out (nothing / recorded / awaiting approval, caps, supersede, decline), the forgotten check-out prompt, «بدون ثبت» (refused check-in, «امروز هستم», undeclared days absent, «حاضر بود» by HR and by team approvers, leave and recorded times, CSV, reset); run on its own fresh database | `curl` + `jq` + `psql`, Node 18+ |
+| `04-attendance-modes.sh` | the three attendance modes — mode per group and per person and its history, «منعطف» without delay, overtime from the check-out (nothing / recorded / awaiting approval, caps, supersede, decline), the forgotten check-out prompt, «بدون ثبت» (refused check-in, «امروز هستم» (located, remote fallback), days-based report and CSV, undeclared days absent, «حاضر بود» by HR and by team approvers, leave and recorded times, CSV, reset); run on its own fresh database | `curl` + `jq` + `psql`, Node 18+ |
 | `02-calculations.mjs` | the arithmetic — every day of a planted month, the summary, caps, shift history; and races (double taps, two reviewers at once) | Node 18+, `psql` |
 
 ## Prerequisites

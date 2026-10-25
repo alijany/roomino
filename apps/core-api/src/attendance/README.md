@@ -190,7 +190,13 @@ No check-in; the day counts as present only if it was **declared**:
 - the person taps «امروز هستم» — `POST /attendance/me/presence`, today only,
   no time recorded, idempotent, taken back with `DELETE`; refused when the
   day isn't a working day, is already leave or a mission, or the person isn't
-  «بدون ثبت»;
+  «بدون ثبت». It is said **like a check-in**: the body is a `CheckInDto`
+  (`lat`/`lng`/`remote`), and with GPS on the position must be inside the
+  workplace radius. Outside it the answer is `{ success: false, canRemote:
+  true }`; repeating it with `remote: true` declares a **remote day** — a
+  pending `REMOTE_DAILY` request (description `AUTO_REMOTE_NOTE`) is filed
+  for the reviewers, and `DELETE` withdraws it with the declaration. The
+  declaration keeps `workMode`, `lat`, `lng`, `distanceM`;
 - or a reviewer later confirms it — «حاضر بود», `POST
   /attendance/reports/employees/:id/presence` (admin/HR) or
   `/attendance/team/members/:id/presence` (approvers, own team, never
@@ -204,6 +210,14 @@ the month-end clean-up. **Today** is `awaiting` and not absent until the day
 ends. Declarations live in `PresenceDeclarationEntity` (`declaredBy` and
 `note` are set when a reviewer confirmed). The board shows `presence:
 declared | not_declared` and `stats.notDeclared`, purely informational.
+
+**Reports are in days.** Hours mean nothing without times, so for a person
+whose mode on the report's last day is «بدون ثبت» `report()` returns
+`attendanceMode: 'untracked'` and the summary carries `requiredDays` (counted
+working days, leave/mission/holiday/awaiting excluded) and `attendedDays`
+(present, by schedule or remote). The personal CSV becomes a day list (date,
+weekday, status, declaration) and the performance CSV blanks the hour columns
+for such rows.
 
 ### Forgotten check-out
 

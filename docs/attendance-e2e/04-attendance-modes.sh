@@ -239,12 +239,54 @@ expect "it can be taken back" 200 '.declared == false'
 call "$UNT" POST /attendance/me/presence '{}'
 expect "…and said again" 200 '.declared == true'
 
+echo "== «امروز هستم» is said like a check-in: from the workplace, or as remote work"
+call "$UNT" DELETE /attendance/me/presence
+call "$HR" PATCH "/attendance/employees/$P7" '{"useGps":true}'
+expect "GPS is switched on for نیما" 200 '.useGps == true'
+call "$UNT" POST /attendance/me/presence '{}'
+expect "without a position it is refused, offering remote work" 200 '.success == false and .canRemote == true and .declared == false'
+call "$UNT" POST /attendance/me/presence '{"lat":35.7450,"lng":51.3380}'
+expect "from 5 km away too" 200 '.success == false and .canRemote == true and (.message | contains("خارج از محدوده"))'
+call "$UNT" GET /attendance/me
+expect "…and nothing is declared" 200 '.presence.declared == false and .todayStatus == "awaiting"'
+call "$UNT" POST /attendance/me/presence '{"lat":35.7001,"lng":51.3382}'
+expect "from the workplace it counts" 200 '.success == true and .declared == true and .workMode == "office"'
+call "$UNT" DELETE /attendance/me/presence
+call "$UNT" POST /attendance/me/presence '{"lat":35.7450,"lng":51.3380,"remote":true}'
+expect "as remote work it counts too" 200 '.success == true and .workMode == "remote"'
+call "$UNT" GET "/attendance/me/requests?status=all&category=remote"
+expect "…and files the remote day for approval, as a remote check-in does" 200 '(.items | length == 1) and .items[0].status == "pending" and (.items[0].description | startswith("ثبت خودکار"))'
+REMOTE_REQ=$(echo "$BODY" | jq -r '.items[0].id')
+report "$P7" "$TODAY" "$TODAY"
+[[ "$(day "$TODAY" | jq '.status == "remote_pending" and .declaredRemote == true and .worked == 0')" == "true" ]] \
+  && ok "until it is approved the day is remote work awaiting approval" || bad "remote declared day" "$(day "$TODAY")"
+call "$HR" GET /attendance/reports/board
+expect "the board shows him working remotely" 200 '.rows[] | select(.employee.personnelCode == "1007") | .status == "remote" and .presence == "declared"'
+call "$UNT" DELETE /attendance/me/presence
+call "$UNT" GET "/attendance/me/requests?status=all&category=remote"
+expect "taking it back takes the waiting remote request with it" 200 '.items | length == 0'
+call "$UNT" POST /attendance/me/presence '{"lat":35.7450,"lng":51.3380,"remote":true}'
+expect "declared as remote work again" 200 '.success == true'
+call "$UNT" GET "/attendance/me/requests?status=all&category=remote"
+call "$HR" POST "/attendance/requests/$(echo "$BODY" | jq -r '.items[0].id')/approve"
+expect "HR approves the remote day" 200 '.status == "approved"'
+report "$P7" "$TODAY" "$TODAY"
+[[ "$(day "$TODAY" | jq '.status == "remote" and .remote == 540')" == "true" ]] \
+  && ok "the day is then remote work, in full" || bad "approved remote day" "$(day "$TODAY")"
+call "$HR" DELETE "/attendance/requests/$(echo "$BODY" | jq -r '.days[] | select(.date=="'"$TODAY"'") | .requests[0].id')"
+call "$UNT" DELETE /attendance/me/presence
+call "$HR" PATCH "/attendance/employees/$P7" '{"useGps":false}'
+call "$UNT" POST /attendance/me/presence '{}'
+expect "…and GPS off again: one tap, as before" 200 '.success == true and .workMode == "office"'
+
 echo "== a past working day nobody declared is absent — until a reviewer confirms it"
 report "$P7" "$D5" "$YESTERDAY"
 [[ "$(echo "$BODY" | jq '[.days[] | select(.undeclared == true and .status == "absent")] | length')" == "5" ]] \
   && ok "five undeclared days are absent, marked as such" || bad "undeclared days" "$(echo "$BODY" | jq -c '[.days[]|{date,status,undeclared}]')"
 [[ "$(echo "$BODY" | jq '.summary.undeclaredDays == 5 and .summary.absentDays == 5 and .summary.declaredDays == 0 and .summary.untrackedDays == 5')" == "true" ]] \
   && ok "the summary counts them" || bad "summary" "$(echo "$BODY" | jq -c .summary)"
+[[ "$(echo "$BODY" | jq '.attendanceMode == "untracked" and .summary.requiredDays == 5 and .summary.attendedDays == 0')" == "true" ]] \
+  && ok "the report is read in days: 0 of 5 working days attended" || bad "day counts" "$(echo "$BODY" | jq -c '{attendanceMode, requiredDays: .summary.requiredDays, attendedDays: .summary.attendedDays}')"
 call "$HR" GET "/attendance/reports/performance?from=$D5&to=$YESTERDAY"
 expect "the performance list carries the mode and the count" 200 '.items[] | select(.employee.personnelCode == "1007") | .attendanceMode == "untracked" and .summary.undeclaredDays == 5'
 
@@ -264,7 +306,7 @@ expect "an employee cannot confirm" 403
 call "$HR" POST "/attendance/reports/employees/$P7/presence" "{\"dates\":[\"$D2\",\"$D3\",\"$D4\",\"$D5\"]}"
 expect "the rest, in one go" 201 '.confirmed == 4'
 report "$P7" "$D5" "$YESTERDAY"
-[[ "$(echo "$BODY" | jq '.summary.undeclaredDays == 0 and .summary.absentDays == 0 and .summary.declaredDays == 5')" == "true" ]] \
+[[ "$(echo "$BODY" | jq '.summary.undeclaredDays == 0 and .summary.absentDays == 0 and .summary.declaredDays == 5 and .summary.attendedDays == 5 and .summary.requiredDays == 5')" == "true" ]] \
   && ok "nothing left undeclared" || bad "after confirming" "$(echo "$BODY" | jq -c .summary)"
 call "$HR" DELETE "/attendance/reports/employees/$P7/presence?date=$D4"
 expect "a confirmation can be taken back" 200
@@ -334,7 +376,8 @@ echo "== exports and maintenance know the modes"
 CSV=$(curl -s "$API/attendance/reports/performance/export" -H "Authorization: Bearer $HR")
 [[ "$CSV" == *"نوع حضور"* && "$CSV" == *"بدون ثبت"* ]] && ok "performance CSV has the mode" || bad "performance CSV" "${CSV:0:200}"
 CSV=$(curl -s "$API/attendance/reports/employees/$P7/export?from=$D5&to=$YESTERDAY" -H "Authorization: Bearer $HR")
-[[ "$CSV" == *"اعلام حضور"* ]] && ok "the person's CSV has the declaration column" || bad "personal CSV" "${CSV:0:200}"
+[[ "$CSV" == *"اعلام حضور"* && "$CSV" == *"روز"* && "$CSV" != *"منبع ورود"* ]] \
+  && ok "the person's CSV is in days: a declaration column, no check-in/out times" || bad "personal CSV" "${CSV:0:300}"
 call "$ADM" GET /attendance/maintenance
 expect "maintenance counts the new tables" 200 '.counts | has("presenceDeclarations") and has("employeeModes")'
 

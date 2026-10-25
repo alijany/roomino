@@ -39,8 +39,11 @@ card and the home change with it:
   pre-filled with that day and the shift's end.
 - **منعطف** — the same, with a line saying only the hours count; no «late».
 - **بدون ثبت** — no times and no check-in button. `UntrackedActions`
-  (`attendance.component.mode-today.tsx`) offers «امروز هستم» (one tap, can be
-  taken back) and «امروز نیستم» (opens the request form for today). The request
+  (`attendance.component.mode-today.tsx`) offers «امروز هستم» and «امروز نیستم» side by side
+  (the first can be taken back, the second opens the request form for today).
+  «امروز هستم» is located like a check-in (`usePresenceFlow` in
+  `attendance.hook.presence.ts`): outside the workplace it offers «اعلام حضور
+  دورکاری»; once declared only the confirmation and «بازگرداندن» remain. The request
   form drops remote work and manual attendance for them. Leave or a mission
   already on file says so instead of asking.
 
@@ -56,6 +59,11 @@ has «بازگرداندن اعلام حضور». The performance list has an «
 the review knows where to start, and the summary has «اعلام حضور X از Y روز».
 The boards show «در انتظار اعلام» / «اعلام حضور شد» and a note that today is
 not over — informational, never a fault.
+
+**Reports in days.** When `Report.attendanceMode` is `untracked`
+(`my-report`, `MemberReport`), `ReportSummaryTiles` and `DayList` get `daily`:
+«حضور X از Y روز» instead of hours, no ورود/خروج/کارکرد columns, a declaration
+badge per day. The performance table shows `X روز / از Y روز کاری` for such rows.
 
 **Location trouble.** `getPosition` throws a `LocationError` (blocked,
 unavailable, timeout, insecure, unsupported) after trying GPS accuracy and
