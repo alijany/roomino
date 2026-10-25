@@ -1,27 +1,25 @@
 'use client';
 
-import { Role, Roles, getRoleName } from '@/components/auth/auth.constants.roles';
-import { cn } from '@/libs/style/style.util.helpers';
+import { getRoleName } from '@/components/auth/auth.constants.roles';
 import { Button } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
-import { Dropdown } from '@/ui/atoms/ui.dropdown';
 import { PersonLabel, Table } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { ResultModal } from '@/ui/molecules/result-modal';
-import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import { IconCheck, IconPencil, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useAddUserRole, useApproveUser, useDeleteUser, useRemoveUserRole } from './users.api';
+import { useApproveUser, useDeleteUser } from './users.api';
 import { EditUserNameModal } from './users.component.edit-name';
 import { User, UserRole } from './users.types';
 
 interface UsersTableProps {
     users: User[];
     onChanged: () => void;
-    /** Editing, role add/remove and delete are admin-only; HR can only confirm registrations. */
+    /** Editing (with roles) and delete are admin-only; HR can only confirm registrations. */
     canManageRoles: boolean;
 }
 
-/** Every user as a table row: who, code and title, roles, status and the actions. */
+/** Every user as a table row: who (code under the name), title, roles, status and the actions. Roles are changed in the edit dialog. */
 export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps) {
     return (
         <Table
@@ -36,20 +34,21 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
                             name={user.name}
                             picture={user.profilePicture}
                             fallback="بدون نام"
-                            detail={<bdi dir="ltr">{user.phone ?? 'بدون شماره'}</bdi>}
+                            detail={user.personnelCode ? <bdi dir="ltr">{user.personnelCode}</bdi> : undefined}
                         />
                     ),
-                },
-                {
-                    key: 'code',
-                    header: 'کد پرسنلی',
-                    render: (user) => (user.personnelCode ? <bdi dir="ltr">{user.personnelCode}</bdi> : '—'),
                 },
                 { key: 'title', header: 'عنوان شغلی', render: (user) => user.jobTitle ?? '—', hideOnMobile: true },
                 {
                     key: 'roles',
                     header: 'نقش‌ها',
-                    render: (user) => <RolesCell user={user} onChanged={onChanged} canManage={canManageRoles} />,
+                    render: (user) => (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {user.roles.map((role) => (
+                                <RoleBadge key={role.id} role={role} />
+                            ))}
+                        </div>
+                    ),
                 },
                 {
                     key: 'status',
@@ -70,99 +69,11 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
     );
 }
 
-function RoleBadge({ role, onRemove, removable }: { role: UserRole; onRemove: () => void; removable: boolean }) {
+function RoleBadge({ role }: { role: UserRole }) {
     return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
             {getRoleName(role.role)}
-            {removable && (
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="text-slate-400 hover:text-rose-500"
-                    aria-label={`حذف نقش ${getRoleName(role.role)}`}
-                >
-                    <IconX size={13} />
-                </button>
-            )}
         </span>
-    );
-}
-
-function RolesCell({ user, onChanged, canManage }: { user: User; onChanged: () => void; canManage: boolean }) {
-    const addRole = useAddUserRole();
-    const removeRole = useRemoveUserRole();
-    const [result, setResult] = useState<{ status: 'success' | 'error'; message?: string } | null>(null);
-
-    const handleAdd = async (role: Role | null) => {
-        if (!role) return;
-        try {
-            await addRole.submit({ id: user.id, data: { role } });
-            onChanged();
-        } catch (error) {
-            setResult({ status: 'error', message: (error as Error)?.message });
-        }
-    };
-
-    const handleRemove = async (role: UserRole) => {
-        try {
-            await removeRole.submit({ id: user.id, roleId: role.id });
-            onChanged();
-        } catch (error) {
-            setResult({ status: 'error', message: (error as Error)?.message });
-        }
-    };
-
-    const addable = Roles.filter((role) => !user.roles.some((r) => r.role === role)).map((role) => ({
-        value: role,
-        label: getRoleName(role),
-    }));
-
-    return (
-        <>
-            <div className="flex flex-wrap items-center gap-1.5">
-                {user.roles.map((role) => (
-                    <RoleBadge
-                        key={role.id}
-                        role={role}
-                        removable={canManage && user.roles.length > 1}
-                        onRemove={() => handleRemove(role)}
-                    />
-                ))}
-                {canManage && addable.length > 0 && (
-                    <Dropdown
-                        items={addable}
-                        value={null}
-                        onChange={handleAdd}
-                        disabled={addRole.isLoading}
-                        renderButton={() => (
-                            <span
-                                className={cn(
-                                    'inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium transition-colors',
-                                    addRole.isLoading
-                                        ? 'border-slate-200 text-slate-300'
-                                        : 'border-slate-300 text-slate-500 hover:border-primary/50 hover:text-primary',
-                                )}
-                            >
-                                <IconPlus size={13} />
-                                نقش جدید
-                            </span>
-                        )}
-                    />
-                )}
-            </div>
-            <ResultModal
-                isOpen={result !== null}
-                onClose={() => {
-                    setResult(null);
-                    addRole.reset();
-                    removeRole.reset();
-                }}
-                status={result?.status || 'error'}
-                title="مدیریت نقش"
-                successMessage="تغییرات با موفقیت اعمال شد"
-                errorMessage={result?.message || 'خطا در اعمال تغییرات'}
-            />
-        </>
     );
 }
 
