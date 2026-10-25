@@ -1,5 +1,13 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+import { Role } from 'src/roles/roles.constants';
 
 export class UsersGetDto {
   @IsOptional()
@@ -26,4 +34,13 @@ export class UsersGetDto {
   })
   @IsBoolean()
   isApproved?: boolean;
+
+  /** Name, phone, personnel code or job title. */
+  @IsOptional()
+  @IsString()
+  text?: string;
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 }

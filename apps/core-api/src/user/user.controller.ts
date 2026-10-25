@@ -51,14 +51,32 @@ export class UserController {
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
   }> {
-    const { page = 0, limit = 10, ...rest } = filters;
+    const { page = 0, limit = 10, text, role, ...rest } = filters;
+    const like = text?.trim() ? { $ilike: `%${text.trim()}%` } : null;
 
-    const [users, total] = await this.userService.findAll(rest, {
-      orderBy: { created_at: 'DESC' },
-      limit,
-      offset: page * limit,
-      populate: ['roles'] as never,
-    });
+    const [users, total] = await this.userService.findAll(
+      {
+        ...rest,
+        ...(role ? { roles: { role } } : {}),
+        ...(like
+          ? {
+              $or: [
+                { firstName: like },
+                { lastName: like },
+                { phone: like },
+                { personnelCode: like },
+                { jobTitle: like },
+              ],
+            }
+          : {}),
+      },
+      {
+        orderBy: { created_at: 'DESC' },
+        limit,
+        offset: page * limit,
+        populate: ['roles'] as never,
+      },
+    );
 
     // Transform users to include role details (id + invitationStatus) for admin actions
     const items = users.map((user) => ({
