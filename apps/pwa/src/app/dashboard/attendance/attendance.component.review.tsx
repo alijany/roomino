@@ -137,6 +137,14 @@ export function RequestDetailModal({
         ['مدت', requestDurationLabel(shown)],
         ['وضعیت', <RequestStatusBadge key="s" status={shown.status} />],
         ['ثبت', jalaliDateTime(shown.createdAt)],
+        [
+          'منبع',
+          shown.autoSuggested
+            ? shown.status === RequestStatus.APPROVED
+              ? 'ثبت خودکار بر اساس ساعت خروج (۳۰ تا ۶۰ دقیقه بعد از پایان شیفت)'
+              : 'پیشنهاد خودکار بر اساس ساعت خروج، برای تایید مدیر'
+            : null,
+        ],
         ['توضیحات', shown.description],
         ['بررسی‌کننده', shown.reviewedBy?.name],
         ['زمان بررسی', shown.reviewedAt ? jalaliDateTime(shown.reviewedAt) : null],

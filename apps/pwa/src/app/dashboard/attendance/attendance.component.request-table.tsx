@@ -2,8 +2,9 @@
 
 import { PersonLabel, Table, TableColumn } from '@/ui/molecules';
 import { ReactNode } from 'react';
+import { Badge } from '@/ui/atoms/ui.badge';
 import { RequestStatusBadge } from './attendance.component.layout';
-import { AttendanceRequest } from './attendance.types';
+import { AttendanceRequest, RequestStatus } from './attendance.types';
 import { requestDurationLabel, fa, jalaliDateTime } from './attendance.util';
 
 /** Requests as a table; the employee column is for review queues. */
@@ -35,7 +36,20 @@ export function RequestTable({
           },
         ]
       : []),
-    { key: 'type', header: 'نوع', render: (r) => r.typeLabel },
+    {
+      key: 'type',
+      header: 'نوع',
+      render: (r) => (
+        <span className="flex flex-wrap items-center gap-1.5">
+          {r.typeLabel}
+          {r.autoSuggested && (
+            <Badge tone="info" withDot={false}>
+              {r.status === RequestStatus.APPROVED ? 'ثبت خودکار' : 'پیشنهاد خودکار'}
+            </Badge>
+          )}
+        </span>
+      ),
+    },
     {
       key: 'period',
       header: 'تاریخ',
