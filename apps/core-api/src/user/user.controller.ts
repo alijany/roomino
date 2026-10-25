@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -29,6 +30,28 @@ import { UpdateProfileDto, UpdateUserNameDto } from './dtos/update-profile.dto';
 import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
+
+/** A user as the users page shows them: HR facts and roles with their invitation state. */
+function toUserListItem(user: UserEntity) {
+  return {
+    id: user.id,
+    name: user.name,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    phone: user.phone,
+    personnelCode: user.personnelCode ?? null,
+    jobTitle: user.jobTitle ?? null,
+    profilePicture: user.profilePicture ?? null,
+    isApproved: user.isApproved,
+    roles: user.roles
+      ? user.roles.getItems().map((role) => ({
+          id: role.id,
+          role: role.role,
+          invitationStatus: role.invitationStatus,
+        }))
+      : [],
+  };
+}
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -78,25 +101,7 @@ export class UserController {
       },
     );
 
-    // Transform users to include role details (id + invitationStatus) for admin actions
-    const items = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      firstName: user.firstName ?? null,
-      lastName: user.lastName ?? null,
-      phone: user.phone,
-      personnelCode: user.personnelCode ?? null,
-      jobTitle: user.jobTitle ?? null,
-      profilePicture: user.profilePicture ?? null,
-      isApproved: user.isApproved,
-      roles: user.roles
-        ? user.roles.getItems().map((role) => ({
-            id: role.id,
-            role: role.role,
-            invitationStatus: role.invitationStatus,
-          }))
-        : [],
-    }));
+    const items = users.map(toUserListItem);
 
     return {
       items,
@@ -218,6 +223,18 @@ export class UserController {
    * An admin editing a user: name, personnel code and job title. Declared after the `profile` routes: Express
    * matches in order, and `:id` would otherwise catch `PATCH /users/profile`.
    */
+  /** One user, for the edit page. Declared after the `profile` routes, like `PATCH :id`. */
+  @Get(':id')
+  @Roles(Role.ADMIN, Role.HR)
+  async getUser(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.userService.findOne(
+      { id },
+      { populate: ['roles'] as never },
+    );
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    return toUserListItem(user);
+  }
+
   @Patch(':id')
   @Roles(Role.ADMIN)
   async updateUserName(
