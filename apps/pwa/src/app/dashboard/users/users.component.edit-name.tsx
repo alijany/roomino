@@ -13,18 +13,30 @@ interface EditUserNameModalProps {
     onSaved: () => void;
 }
 
-/** Admin-only: rename a user. Mount it only while open so the fields start from the current name. */
+/** Admin-only: edit a user's name, personnel code and job title. Mount it only while open so the fields start from the current name. */
 export function EditUserNameModal({ user, onClose, onSaved }: EditUserNameModalProps) {
     const [firstName, setFirstName] = useState(user.firstName ?? '');
     const [lastName, setLastName] = useState(user.lastName ?? '');
+    const [personnelCode, setPersonnelCode] = useState(user.personnelCode ?? '');
+    const [jobTitle, setJobTitle] = useState(user.jobTitle ?? '');
     const { submit, isLoading, error } = useUpdateUserName();
 
-    const unchanged = firstName.trim() === (user.firstName ?? '') && lastName.trim() === (user.lastName ?? '');
+    const unchanged =
+        firstName.trim() === (user.firstName ?? '') &&
+        lastName.trim() === (user.lastName ?? '') &&
+        personnelCode.trim() === (user.personnelCode ?? '') &&
+        jobTitle.trim() === (user.jobTitle ?? '');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await submit({ id: user.id, data: { firstName: firstName.trim(), lastName: lastName.trim() } });
+            await submit({ id: user.id, data: {
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    personnelCode: personnelCode.trim() || undefined,
+                    jobTitle: jobTitle.trim(),
+                },
+            });
             onSaved();
             onClose();
         } catch {
@@ -37,7 +49,7 @@ export function EditUserNameModal({ user, onClose, onSaved }: EditUserNameModalP
             <div className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                        <div className="font-bold text-lg text-slate-700 lg:text-xl">ویرایش نام کاربر</div>
+                        <div className="font-bold text-lg text-slate-700 lg:text-xl">ویرایش کاربر</div>
                         <div className="text-xs text-slate-400" dir="ltr">{user.phone}</div>
                     </div>
                     <Button variant="outline" className="shrink-0 !px-2" onClick={onClose} aria-label="بستن">
@@ -65,14 +77,34 @@ export function EditUserNameModal({ user, onClose, onSaved }: EditUserNameModalP
                         maxLength={50}
                     />
 
+                    <Input
+                        id="edit-personnel-code"
+                        packageId="edit-personnel-code"
+                        label="کد پرسنلی"
+                        dir="ltr"
+                        className="text-left"
+                        value={personnelCode}
+                        onChange={(e) => setPersonnelCode(e.target.value)}
+                        maxLength={50}
+                        required
+                    />
+                    <Input
+                        id="edit-job-title"
+                        packageId="edit-job-title"
+                        label="عنوان شغلی (اختیاری)"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        maxLength={100}
+                    />
+
                     {error && (
                         <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600" role="alert">
-                            {error.message || 'ذخیره نام انجام نشد'}
+                            {error.message || 'ذخیره انجام نشد'}
                         </p>
                     )}
 
                     <div className="flex gap-4 pt-2">
-                        <Button type="submit" className="flex-1" disabled={isLoading || !firstName.trim() || unchanged}>
+                        <Button type="submit" className="flex-1" disabled={isLoading || !firstName.trim() || !personnelCode.trim() || unchanged}>
                             {isLoading ? 'در حال ذخیره...' : 'ذخیره'}
                         </Button>
                         <Button type="button" variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>

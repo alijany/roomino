@@ -19,6 +19,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
     // const [name, setName] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [jobTitle, setJobTitle] = useState('');
     const [role, setRole] = useState<Role | ''>('');
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
@@ -32,6 +33,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
                 // name: name || undefined,
                 firstName: firstName || undefined,
                 lastName: lastName || undefined,
+                jobTitle: jobTitle.trim() || undefined,
                 role: role || undefined
             });
             setIsResultModalOpen(true);
@@ -39,6 +41,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
             // setName('');
             setFirstName('');
             setLastName('');
+            setJobTitle('');
             setRole('');
             setIsOpen(false);
             if (onSuccess) onSuccess();
@@ -125,6 +128,15 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
                             onChange={(e) => setLastName(e.target.value)}
                             placeholder="نام خانوادگی"
                         />
+
+                        <Input
+                            id="jobTitle"
+                            label='عنوان شغلی (اختیاری)'
+                            value={jobTitle}
+                            onChange={(e) => setJobTitle(e.target.value)}
+                            placeholder="مثلاً کارشناس مالی"
+                        />
+                        <p className="-mt-2 text-xs text-slate-400">کد پرسنلی خودکار ساخته می‌شود و بعداً قابل ویرایش است.</p>
 
                         <div className="flex gap-4 pt-4">
                             <Button

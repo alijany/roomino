@@ -18,6 +18,8 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   phone: string;
+  personnelCode?: string | null;
+  jobTitle?: string | null;
   profilePicture?: string | null;
   isApproved: boolean;
   roles: UserRole[];
@@ -39,6 +41,7 @@ export interface AddUserDto {
   firstName?: string;
   lastName?: string;
   phone: string;
+  jobTitle?: string;
   role?: Role;
 }
 
@@ -55,4 +58,7 @@ export interface AddUserRoleDto {
 export interface UpdateUserNameDto {
   firstName: string;
   lastName?: string;
+  personnelCode?: string;
+  /** An empty string clears it. */
+  jobTitle?: string;
 }

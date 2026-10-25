@@ -105,14 +105,21 @@ export function UserRow({ user, onChanged, canManageRoles = false }: UserRowProp
                                         type="button"
                                         onClick={() => setEditingName(true)}
                                         className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                                        aria-label={`ویرایش نام ${user.name ?? user.phone}`}
-                                        title="ویرایش نام"
+                                        aria-label={`ویرایش ${user.name ?? user.phone}`}
+                                        title="ویرایش کاربر"
                                     >
                                         <IconPencil className="size-4" />
                                     </button>
                                 )}
                             </div>
                             <p className="text-xs text-slate-400 truncate" dir="ltr">{user.phone ?? 'بدون شماره'}</p>
+                            {(user.personnelCode || user.jobTitle) && (
+                                <p className="text-xs text-slate-500 truncate">
+                                    {user.personnelCode && <bdi dir="ltr">{user.personnelCode}</bdi>}
+                                    {user.personnelCode && user.jobTitle && ' · '}
+                                    {user.jobTitle}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <span
