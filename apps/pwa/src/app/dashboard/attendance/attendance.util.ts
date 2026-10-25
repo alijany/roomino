@@ -159,19 +159,69 @@ export function filterDays(days: ReportDay[], filter: DayFilter): ReportDay[] {
 
 // --- browser ---------------------------------------------------------------------------
 
-/** Current position, or a Persian reason it couldn't be read. */
-export function getPosition(): Promise<{ lat: number; lng: number }> {
-  return new Promise((resolve, reject) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      reject(new Error('مرورگر شما از موقعیت مکانی پشتیبانی نمی‌کند.'));
-      return;
+/** Why a position couldn't be read — decides which help the UI shows. */
+export type LocationIssueKind = 'unsupported' | 'insecure' | 'blocked' | 'unavailable' | 'timeout';
+
+export class LocationError extends Error {
+  constructor(
+    readonly kind: LocationIssueKind,
+    message: string,
+    /** The browser's own wording, for diagnosing — not meant for end users. */
+    readonly detail?: string,
+  ) {
+    super(message);
+    this.name = 'LocationError';
+  }
+}
+
+const readPosition = (options: PositionOptions) =>
+  new Promise<GeolocationPosition>((resolve, reject) =>
+    navigator.geolocation.getCurrentPosition(resolve, reject, options),
+  );
+
+/**
+ * Current position, or a `LocationError` with a Persian reason it couldn't be
+ * read. GPS-grade accuracy is tried first; where it fails or times out (a
+ * laptop, indoors, Safari without a fix) the coarser Wi-Fi/network position
+ * is accepted — the workplace radius is far wider than its error.
+ */
+export async function getPosition(): Promise<{ lat: number; lng: number }> {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    throw new LocationError('unsupported', 'مرورگر شما از موقعیت مکانی پشتیبانی نمی‌کند.');
+  }
+  // Browsers refuse location on plain http (except localhost) without asking.
+  if (typeof window !== 'undefined' && window.isSecureContext === false) {
+    throw new LocationError('insecure', 'دریافت موقعیت مکانی فقط روی اتصال امن (HTTPS) ممکن است.');
+  }
+
+  let failure: GeolocationPositionError;
+  try {
+    const pos = await readPosition({ enableHighAccuracy: true, timeout: 8000 });
+    return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  } catch (error) {
+    failure = error as GeolocationPositionError;
+  }
+
+  if (failure.code !== failure.PERMISSION_DENIED) {
+    try {
+      const pos = await readPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 5 * 60_000 });
+      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch (error) {
+      failure = error as GeolocationPositionError;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => reject(new Error('دسترسی به موقعیت مکانی داده نشد. لطفاً GPS را فعال کنید.')),
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
-  });
+  }
+
+  if (failure.code === failure.PERMISSION_DENIED) {
+    throw new LocationError('blocked', 'دسترسی به موقعیت مکانی داده نشد.', failure.message);
+  }
+  if (failure.code === failure.TIMEOUT) {
+    throw new LocationError('timeout', 'موقعیت مکانی به‌موقع دریافت نشد.', failure.message);
+  }
+  throw new LocationError(
+    'unavailable',
+    'موقعیت مکانی در دسترس نیست. GPS و اتصال اینترنت را بررسی کنید.',
+    failure.message,
+  );
 }
 
 /**

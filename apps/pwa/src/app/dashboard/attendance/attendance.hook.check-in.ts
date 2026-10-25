@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useCheckIn, useCheckOut } from './attendance.api';
 import { CheckResult } from './attendance.types';
-import { errorMessage, getPosition } from './attendance.util';
+import { errorMessage, getPosition, LocationError } from './attendance.util';
 
 /**
  * Check-in/out with GPS and the remote fallback — shared by the attendance
@@ -14,6 +14,9 @@ export function useCheckInFlow(onChange: () => void) {
   const [locating, setLocating] = useState(false);
   const [offerRemote, setOfferRemote] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  /** Set while the last attempt couldn't read a position; cleared by the next that can. */
+  const [locationIssue, setLocationIssue] = useState<LocationError | null>(null);
+  const lastAction = useRef<'in' | 'out'>('in');
   /** Where GPS last put the person, drawn on the map as «موقعیت شما». */
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -26,9 +29,11 @@ export function useCheckInFlow(onChange: () => void) {
     try {
       const position = await getPosition();
       setMe(position);
+      setLocationIssue(null);
       return position;
     } catch (error) {
       toast.warning((error as Error).message);
+      if (error instanceof LocationError) setLocationIssue(error);
       return {};
     } finally {
       setLocating(false);
@@ -48,6 +53,7 @@ export function useCheckInFlow(onChange: () => void) {
   };
 
   const doCheckIn = async (remote = false) => {
+    lastAction.current = 'in';
     const position = await locate();
     try {
       handle(await checkIn.submit({ ...position, remote: remote || undefined }));
@@ -59,6 +65,7 @@ export function useCheckInFlow(onChange: () => void) {
   };
 
   const doCheckOut = async () => {
+    lastAction.current = 'out';
     const position = await locate();
     try {
       handle(await checkOut.submit(position));
@@ -68,11 +75,16 @@ export function useCheckInFlow(onChange: () => void) {
     }
   };
 
+  /** Asks for the position again — which prompts afresh wherever the browser allows it. */
+  const retryLocation = () => (lastAction.current === 'out' ? doCheckOut() : doCheckIn());
+
   return {
     locating,
     busy: locating || checkIn.isLoading || checkOut.isLoading,
     offerRemote,
     lastError,
+    locationIssue,
+    retryLocation,
     me,
     doCheckIn,
     doCheckOut,

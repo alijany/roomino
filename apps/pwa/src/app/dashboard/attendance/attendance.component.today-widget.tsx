@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useMyToday } from './attendance.api';
+import { LocationIssueNotice } from './attendance.component.location-issue';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
 import { REMOTE_STATUS_LABELS } from './attendance.constants';
 import { useCheckInFlow } from './attendance.hook.check-in';
@@ -73,7 +74,7 @@ function useNowMinutes(ms = 30_000) {
 }
 
 function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const att = today.attendance;
   const scheduleMode = Boolean(today.scheduleMode);
   // In schedule mode a requested time (an exception) shows until it's
@@ -234,6 +235,12 @@ function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void 
           </Button>
         )}
       </div>
+
+      {locationIssue && !scheduleMode && (
+        <div className="lg:col-span-full lg:row-start-4 xl:row-start-3">
+          <LocationIssueNotice issue={locationIssue} busy={busy} onRetry={retryLocation} />
+        </div>
+      )}
 
       {lastError && !scheduleMode && (
         <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 lg:col-span-full lg:row-start-4 xl:row-start-3" role="alert">

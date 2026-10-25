@@ -14,6 +14,7 @@ import {
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useHolidays, useMyToday } from './attendance.api';
+import { LocationIssueNotice } from './attendance.component.location-issue';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
 import { AttendanceProfileUnavailable, AttendanceTeamLink } from './attendance.component.profile-gate';
 import { PunchHint, ScheduleModeAction, ScheduleModeNotice } from './attendance.component.schedule-mode';
@@ -49,7 +50,7 @@ export default function AttendanceHomePage() {
 }
 
 function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
   const { data: holidays } = useHolidays({ upcoming: 3 });
 
   const att = today.attendance;
@@ -113,6 +114,10 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             </div>
           </div>
         </div>
+
+        {locationIssue && !scheduleMode && (
+          <LocationIssueNotice issue={locationIssue} busy={busy} onRetry={retryLocation} />
+        )}
 
         {lastError && !scheduleMode && (
           <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
