@@ -32,7 +32,7 @@ export default function MyRequestsPage() {
 }
 
 function MyRequestsContent() {
-  const [filters, setFilters] = useState<RequestFilterDto>({ status: RequestStatus.PENDING, limit: 10 });
+  const [filters, setFilters] = useState<RequestFilterDto>({ limit: 10 });
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [cancelling, setCancelling] = useState<AttendanceRequest | null>(null);
@@ -54,7 +54,9 @@ function MyRequestsContent() {
     }
   };
 
+  const total = data ? data.counts.pending + data.counts.approved + data.counts.rejected : undefined;
   const tabs = [
+    { id: 'all', label: 'همه', count: total },
     { id: RequestStatus.PENDING, label: 'در دست بررسی', count: data?.counts.pending },
     { id: RequestStatus.APPROVED, label: 'تایید شده', count: data?.counts.approved },
     { id: RequestStatus.REJECTED, label: 'رد شده', count: data?.counts.rejected },
@@ -78,8 +80,8 @@ function MyRequestsContent() {
         <Panel className="grow overflow-hidden">
           <Tabs
             tabs={tabs}
-            defaultTab={RequestStatus.PENDING}
-            onTabChange={(id) => setFilters((prev) => ({ ...prev, status: id as RequestStatus, page: 0 }))}
+            defaultTab="all"
+            onTabChange={(id) => setFilters((prev) => ({ ...prev, status: id === 'all' ? undefined : (id as RequestStatus), page: 0 }))}
           />
           <div className="overflow-auto pt-2">
             <DataView
@@ -87,7 +89,7 @@ function MyRequestsContent() {
               error={error}
               isLoading={isLoading}
               isEmpty={(d) => !d?.items.length}
-              emptyMessage="درخواستی در این وضعیت ندارید."
+              emptyMessage={filters.status ? 'درخواستی در این وضعیت ندارید.' : 'هنوز درخواستی ثبت نکرده‌اید.'}
               onRetry={refresh}
             >
               <RequestTable
