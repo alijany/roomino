@@ -17,7 +17,7 @@ import { RequestForm, RequestPrefill } from '../attendance.component.request-for
 import { RequestDetailModal } from '../attendance.component.review';
 import { ReportSummaryTiles } from '../attendance.component.summary';
 import { DAY_FILTERS, LEAVE_TYPE_LABELS } from '../attendance.constants';
-import { AttendanceRequest, PeriodQuery, RequestType } from '../attendance.types';
+import { AttendanceMode, AttendanceRequest, PeriodQuery, RequestType } from '../attendance.types';
 import { currentJalaliMonth, downloadCsv, fa, hm } from '../attendance.util';
 import {
   filterMemberDays,
@@ -51,6 +51,8 @@ function MyReportContent() {
 
   const scopedDays = useMemo(() => visibleMemberDays(data?.days ?? [], showFuture, true), [data, showFuture]);
   const days = useMemo(() => filterMemberDays(scopedDays, filter), [scopedDays, filter]);
+  // «بدون ثبت» is read in days — no times, no hours.
+  const daily = data?.attendanceMode === AttendanceMode.UNTRACKED;
   const needsFix = data?.days.filter((day) => !day.isFuture && day.needsFix).length ?? 0;
   const pending = useMemo(() => pendingReportRequests(data?.days ?? []), [data]);
   const futureDays = data?.days.filter((day) => day.isFuture).length ?? 0;
@@ -108,7 +110,7 @@ function MyReportContent() {
             <div className="min-w-0">
               <h2 className="font-semibold text-slate-800">دوره گزارش</h2>
               <p className="mt-1 text-xs text-slate-500">
-                {data ? fa(data.period.label) : 'انتخاب ماه یا بازه دلخواه'} · مدت‌ها: ساعت:دقیقه
+                {data ? fa(data.period.label) : 'انتخاب ماه یا بازه دلخواه'} · {daily ? 'به‌صورت روز' : 'مدت‌ها: ساعت:دقیقه'}
               </p>
             </div>
             {/* Icon-only on a phone, so it shares the heading row. */}
@@ -143,7 +145,7 @@ function MyReportContent() {
         <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
           {data && (
             <div className="space-y-3">
-              <ReportSummaryTiles summary={data.summary} compact personal />
+              <ReportSummaryTiles summary={data.summary} compact personal daily={daily} />
               {(needsFix > 0 || pending.length > 0) && (
                 <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
                   <IconAlertCircle className="size-5 shrink-0 text-amber-700" aria-hidden="true" />
@@ -265,6 +267,7 @@ function MyReportContent() {
                 ) : (
                   <DayList
                     days={days}
+                    daily={daily}
                     workplace={data.workplace}
                     quickActions
                     actions={{

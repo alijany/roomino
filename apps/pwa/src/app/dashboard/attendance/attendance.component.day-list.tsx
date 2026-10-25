@@ -102,11 +102,14 @@ export function DayList({
   days,
   actions = {},
   quickActions = false,
+  daily = false,
   workplace,
 }: {
   days: ReportDay[];
   actions?: DayActions;
   quickActions?: boolean;
+  /** «بدون ثبت»: days, not hours — no check-in, check-out or worked-time columns. */
+  daily?: boolean;
   /** The person's workplace — the map's fallback when a day has none. */
   workplace?: WorkplacePin | null;
 }) {
@@ -118,15 +121,25 @@ export function DayList({
   }
 
   return (
-    <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 md:grid md:grid-cols-[minmax(7.5rem,auto)_4rem_4rem_4rem_auto_minmax(0,1fr)_1rem_auto] md:gap-x-4">
+    <ul
+      className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 md:grid md:gap-x-4 ${
+        daily
+          ? 'md:grid-cols-[minmax(7.5rem,auto)_auto_minmax(0,1fr)_1rem_auto]'
+          : 'md:grid-cols-[minmax(7.5rem,auto)_4rem_4rem_4rem_auto_minmax(0,1fr)_1rem_auto]'
+      }`}
+    >
       <li
         aria-hidden="true"
         className="hidden bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 md:col-span-full md:grid md:grid-cols-subgrid md:border-s-4 md:border-s-transparent"
       >
         <span>روز</span>
-        <span>ورود</span>
-        <span>خروج</span>
-        <span>کارکرد</span>
+        {!daily && (
+          <>
+            <span>ورود</span>
+            <span>خروج</span>
+            <span>کارکرد</span>
+          </>
+        )}
         <span>وضعیت</span>
         <span>جزئیات</span>
       </li>
@@ -153,7 +166,7 @@ export function DayList({
             <div className="flex items-center gap-2 md:col-span-full md:grid md:grid-cols-subgrid">
               <button
                 type="button"
-                className={`flex min-w-0 flex-1 flex-col gap-2 rounded-lg px-3 text-right hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 md:col-span-7 md:grid md:grid-cols-subgrid md:items-center md:gap-y-0 md:px-4 ${
+                className={`flex min-w-0 flex-1 flex-col gap-2 rounded-lg px-3 text-right hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 ${daily ? 'md:col-span-4' : 'md:col-span-7'} md:grid md:grid-cols-subgrid md:items-center md:gap-y-0 md:px-4 ${
                   quiet ? 'py-2 text-slate-400' : 'py-3'
                 }`}
                 onClick={() => setOpen(expanded ? null : day.date)}
@@ -173,15 +186,31 @@ export function DayList({
                       {day.holiday && ` · ${day.holiday}`}
                     </div>
                   </div>
-                  <div className="ms-auto flex items-center gap-1 md:col-start-5 md:row-start-1 md:ms-0">
+                  <div className={`ms-auto flex items-center gap-1 md:row-start-1 md:ms-0 ${daily ? 'md:col-start-2' : 'md:col-start-5'}`}>
                     <DayStatusBadge status={day.status} undeclared={day.undeclared} />
                   </div>
                   <IconChevronDown
-                    className={`size-4 shrink-0 text-slate-400 transition-transform md:col-start-7 md:row-start-1 ${expanded ? 'rotate-180' : ''}`}
+                    className={`size-4 shrink-0 text-slate-400 transition-transform md:row-start-1 ${daily ? 'md:col-start-4' : 'md:col-start-7'} ${expanded ? 'rotate-180' : ''}`}
                   />
                 </div>
 
-                {!quiet && (
+                {!quiet && daily && (
+                  <div className="flex flex-wrap items-center gap-1 md:col-start-3 md:row-start-1">
+                    {day.declared && (
+                      <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] text-emerald-700">
+                        {day.declaredRemote ? 'اعلام دورکاری' : 'اعلام حضور'}
+                      </span>
+                    )}
+                    <Metric label="اضافه‌کار" value={day.overtime} tone="bg-emerald-50 text-emerald-700" />
+                    {day.hasPending && (
+                      <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
+                        درخواست در انتظار
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {!quiet && !daily && (
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 md:contents">
                     <TimeCell label="ورود" value={day.checkIn} missing={expectPresence} className="md:col-start-2" />
                     <TimeCell
@@ -212,7 +241,7 @@ export function DayList({
                 )}
               </button>
               {(showCorrect || showRequestFix || showConfirm) && (
-                <div className="flex shrink-0 items-center gap-2 pe-3 md:col-start-8 md:row-start-1 md:pe-4">
+                <div className={`flex shrink-0 items-center gap-2 pe-3 md:row-start-1 md:pe-4 ${daily ? 'md:col-start-5' : 'md:col-start-8'}`}>
                   {showConfirm && (
                     <Button
                       size="sm"
@@ -270,7 +299,7 @@ export function DayList({
                       'بدون شیفت'
                     )}
                   </span>
-                  {day.scheduled > 0 && <span>موظفی: {hm(day.scheduled)}</span>}
+                  {day.scheduled > 0 && !daily && <span>موظفی: {hm(day.scheduled)}</span>}
                   {day.workMode === 'remote' && <span className="text-sky-600">ورود دورکاری</span>}
                   {day.fixedRemote && <span className="text-sky-600">روز دورکاری ثابت</span>}
                   {day.attendance?.checkInDistanceM != null && (

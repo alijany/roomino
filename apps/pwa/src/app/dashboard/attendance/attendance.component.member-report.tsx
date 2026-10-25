@@ -15,7 +15,7 @@ import { RequestForm } from './attendance.component.request-form';
 import { CorrectionModal, RequestDetailModal, ReviewActions } from './attendance.component.review';
 import { ReportSummaryTiles } from './attendance.component.summary';
 import { DAY_FILTERS } from './attendance.constants';
-import { AttendanceRequest, PeriodQuery, Report, ReportDay } from './attendance.types';
+import { AttendanceMode, AttendanceRequest, PeriodQuery, Report, ReportDay } from './attendance.types';
 import { downloadCsv, errorMessage, fa } from './attendance.util';
 import {
   filterMemberDays,
@@ -74,6 +74,8 @@ export function MemberReport({
   );
   const days = useMemo(() => filterMemberDays(scopedDays, filter), [scopedDays, filter]);
   const pending = useMemo(() => pendingReportRequests(data?.days ?? []), [data]);
+  // «بدون ثبت» is read in days — no times, no hours.
+  const daily = data?.attendanceMode === AttendanceMode.UNTRACKED;
   // «بدون ثبت»: past working days nobody declared — absent until confirmed.
   const undeclared = useMemo(() => (data?.days ?? []).filter((day) => day.undeclared), [data]);
   const needsFix = data?.days.filter((day) => !day.isFuture && day.needsFix).length ?? 0;
@@ -126,7 +128,7 @@ export function MemberReport({
           <div className="w-full">
             <h2 className="font-semibold text-slate-800">گزارش کارکرد</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {data ? fa(data.period.label) : 'انتخاب دوره گزارش'} · مدت‌ها به صورت ساعت:دقیقه نمایش داده می‌شوند.
+              {data ? fa(data.period.label) : 'انتخاب دوره گزارش'} · {daily ? 'به‌صورت روز، بدون ساعت.' : 'مدت‌ها به صورت ساعت:دقیقه نمایش داده می‌شوند.'}
             </p>
           </div>
         )}
@@ -159,7 +161,7 @@ export function MemberReport({
       <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
         {data && (
           <div className="space-y-3">
-            <ReportSummaryTiles summary={data.summary} compact={managementView} />
+            <ReportSummaryTiles summary={data.summary} compact={managementView} daily={daily} />
             {canReview && undeclared.length > 0 && (
               <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
                 <IconUserCheck className="size-5 shrink-0 text-amber-700" aria-hidden="true" />
@@ -288,6 +290,7 @@ export function MemberReport({
               )}
               <DayList
                 days={days}
+                daily={daily}
                 workplace={data.workplace}
                 quickActions={managementView}
                 actions={{

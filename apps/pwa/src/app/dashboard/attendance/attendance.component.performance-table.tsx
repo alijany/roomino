@@ -53,18 +53,28 @@ export function PerformanceTable({
       key: 'worked',
       header: 'کارکرد / موظفی',
       numeric: true,
-      render: (row) => (
-        <div className="whitespace-nowrap">
-          <span className="font-semibold">{duration(row.summary.worked)}</span>
-          <div className="mt-1 text-xs text-slate-400">موظفی {duration(row.summary.required)}</div>
-        </div>
-      ),
+      render: (row) =>
+        row.attendanceMode === AttendanceMode.UNTRACKED ? (
+          // No hours to count: days at work out of the working days so far.
+          <div className="whitespace-nowrap">
+            <span className="font-semibold">{fa(row.summary.attendedDays)} روز</span>
+            <div className="mt-1 text-xs text-slate-400">از {fa(row.summary.requiredDays)} روز کاری</div>
+          </div>
+        ) : (
+          <div className="whitespace-nowrap">
+            <span className="font-semibold">{duration(row.summary.worked)}</span>
+            <div className="mt-1 text-xs text-slate-400">موظفی {duration(row.summary.required)}</div>
+          </div>
+        ),
     },
     {
       key: 'balance',
       header: 'تراز کارکرد',
       numeric: true,
-      render: (row) => (
+      render: (row) =>
+        row.attendanceMode === AttendanceMode.UNTRACKED ? (
+          <span className="text-xs text-slate-300">—</span>
+        ) : (
         <div
           className={`whitespace-nowrap font-semibold ${
             row.summary.balance < 0 ? 'text-rose-600' : row.summary.balance > 0 ? 'text-emerald-600' : 'text-slate-500'
@@ -75,7 +85,7 @@ export function PerformanceTable({
             {row.summary.balance < 0 ? 'کسری' : row.summary.balance > 0 ? 'مازاد' : 'متوازن'}
           </div>
         </div>
-      ),
+        ),
     },
     {
       key: 'absent',
@@ -115,7 +125,12 @@ export function PerformanceTable({
       header: 'تاخیر',
       numeric: true,
       hideOnMobile: !detailed,
-      render: (row) => duration(row.summary.delayMinutes),
+      render: (row) =>
+        row.attendanceMode === AttendanceMode.UNTRACKED ? (
+          <span className="text-xs text-slate-300">—</span>
+        ) : (
+          duration(row.summary.delayMinutes)
+        ),
     },
     {
       key: 'pending',
@@ -132,9 +147,35 @@ export function PerformanceTable({
   if (detailed)
     columns.push(
       { key: 'present', header: 'روز حضور', numeric: true, render: (row) => `${fa(row.summary.presentDays)} روز` },
-      { key: 'early', header: 'تعجیل', numeric: true, render: (row) => duration(row.summary.earlyMinutes) },
-      { key: 'leave', header: 'مرخصی', numeric: true, render: (row) => duration(row.summary.leaveMinutes) },
-      { key: 'remote', header: 'دورکاری', numeric: true, render: (row) => duration(row.summary.remoteMinutes) },
+      {
+        key: 'early',
+        header: 'تعجیل',
+        numeric: true,
+        render: (row) =>
+          row.attendanceMode === AttendanceMode.UNTRACKED ? (
+            <span className="text-xs text-slate-300">—</span>
+          ) : (
+            duration(row.summary.earlyMinutes)
+          ),
+      },
+      {
+        key: 'leave',
+        header: 'مرخصی',
+        numeric: true,
+        render: (row) =>
+          row.attendanceMode === AttendanceMode.UNTRACKED
+            ? `${fa(row.summary.leaveDays)} روز`
+            : duration(row.summary.leaveMinutes),
+      },
+      {
+        key: 'remote',
+        header: 'دورکاری',
+        numeric: true,
+        render: (row) =>
+          row.attendanceMode === AttendanceMode.UNTRACKED
+            ? `${fa(row.summary.remoteDays)} روز`
+            : duration(row.summary.remoteMinutes),
+      },
       { key: 'overtime', header: 'اضافه کار', numeric: true, render: (row) => duration(row.summary.overtime) },
     );
   columns.push({

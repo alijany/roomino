@@ -10,11 +10,16 @@ export function ReportSummaryTiles({
   summary,
   compact = false,
   personal = false,
+  daily = false,
 }: {
   summary: ReportSummary;
   compact?: boolean;
   personal?: boolean;
+  /** «بدون ثبت»: days, not hours — nothing here is a time of day or an hour count. */
+  daily?: boolean;
 }) {
+  if (daily) return <DailySummaryTiles summary={summary} compact={compact} />;
+
   const personalBalanceHint =
     summary.balance < 0
       ? 'کسری نسبت به موظفی سپری‌شده'
@@ -117,6 +122,47 @@ export function ReportSummaryTiles({
           {tiles.filter((tile) => !primaryKeys.includes(tile.key)).map(renderTile)}
         </div>
       </details>
+    </section>
+  );
+}
+
+/** The summary for someone in «بدون ثبت»: how many days, never how many hours. */
+function DailySummaryTiles({ summary, compact }: { summary: ReportSummary; compact: boolean }) {
+  const days = (value: number) => `${fa(value)} روز`;
+  const tiles: Array<ComponentProps<typeof StatTile> & { key: string }> = [
+    {
+      key: 'attended',
+      label: 'حضور',
+      value: `${fa(summary.attendedDays)} از ${fa(summary.requiredDays)} روز`,
+      hint: summary.undeclaredDays ? `${fa(summary.undeclaredDays)} روز اعلام‌نشده (غیبت)` : 'روزهای کاری تا امروز',
+      tone: summary.undeclaredDays ? 'warning' : 'success',
+    },
+    {
+      key: 'absent',
+      label: 'غیبت',
+      value: days(summary.absentDays),
+      tone: summary.absentDays ? 'danger' : 'neutral',
+    },
+    { key: 'leave', label: 'مرخصی', value: days(summary.leaveDays) },
+    { key: 'mission', label: 'ماموریت', value: days(summary.missionDays) },
+    {
+      key: 'remote',
+      label: 'دورکاری',
+      value: days(summary.remoteDays),
+      hint: summary.remotePendingDays ? `${fa(summary.remotePendingDays)} روز در انتظار تایید` : undefined,
+    },
+    ...(summary.overtime
+      ? [{ key: 'overtime', label: 'اضافه کار', value: hm(summary.overtime), tone: 'success' as const }]
+      : []),
+  ];
+
+  return (
+    <section aria-label="خلاصه حضور" className="space-y-3">
+      <div className={compact ? 'grid grid-cols-2 gap-3 md:grid-cols-4' : 'grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6'}>
+        {tiles.map(({ key, ...props }) => (
+          <StatTile key={key} {...props} />
+        ))}
+      </div>
     </section>
   );
 }
