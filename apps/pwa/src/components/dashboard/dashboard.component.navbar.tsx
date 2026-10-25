@@ -7,6 +7,7 @@ import { IconMenu4, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import React, { Fragment } from "react";
 import { MenuItems } from "./dashboard.component.menu-items";
+import { TodayDate } from "./dashboard.component.date";
 import { NotificationDropdown } from "./dashboard.component.notification-dropdown";
 
 
@@ -27,7 +28,11 @@ export const Navbar = () => {
                 <span className="text-base font-bold text-slate-900">{brand.name}</span>
             </Link>
 
+            {/* Desktop: the date sits at the start (right in RTL), the bell at the end. */}
+            <TodayDate className="hidden lg:block" />
+
             <div className="flex items-center gap-2 lg:mr-auto">
+                <TodayDate className="text-xs lg:hidden" />
                 <NotificationDropdown />
             </div>
 
