@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { useGrant, useMyToday, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
 import { AttachmentPicker } from './attendance.component.attachments';
 import { Field, FormModal, TimeField } from './attendance.component.layout';
-import { GRANT_TYPES, REQUEST_TYPE_LABELS } from './attendance.constants';
+import { ATTACHMENT_TYPES, GRANT_TYPES, REQUEST_TYPE_LABELS } from './attendance.constants';
 import { AttendanceMode, RequestInput, RequestType } from './attendance.types';
 import {
   errorMessage,
@@ -71,6 +71,7 @@ export function RequestForm({
   const [files, setFiles] = useState<File[]>([]);
 
   const shape = shapeOf(type);
+  const canAttach = Boolean(type) && ATTACHMENT_TYPES.includes(type as RequestType);
   // Someone in «بدون ثبت» doesn't check in, so there's no hourly remote work
   // and no late arrival to report; a remote day, leave and missions stay.
   const { data: me } = useMyToday();
@@ -108,7 +109,7 @@ export function RequestForm({
         const created = await submit.submit(body);
         // The request exists now; a failed file shouldn't undo it.
         const failed: string[] = [];
-        for (const file of files) {
+        for (const file of canAttach ? files : []) {
           try {
             await uploadAttachment.submit({ requestId: created.id, file });
           } catch {
@@ -241,7 +242,7 @@ export function RequestForm({
         />
       )}
 
-      {shape && !grantFor && <AttachmentPicker files={files} onChange={setFiles} disabled={busy} />}
+      {shape && canAttach && !grantFor && <AttachmentPicker files={files} onChange={setFiles} disabled={busy} />}
     </FormModal>
   );
 }

@@ -176,3 +176,12 @@ export const ATTENDANCE_MODES = [
   AttendanceMode.FLEXIBLE,
   AttendanceMode.UNTRACKED,
 ] as const;
+
+/** Requests that take an attachment: sick leave (a certificate), missions and «سایر». */
+export const ATTACHMENT_TYPES: RequestType[] = [
+  RequestType.LEAVE_SICK_DAILY,
+  RequestType.LEAVE_SICK_HOURLY,
+  RequestType.MISSION_DAILY,
+  RequestType.MISSION_HOURLY,
+  RequestType.OTHER,
+];

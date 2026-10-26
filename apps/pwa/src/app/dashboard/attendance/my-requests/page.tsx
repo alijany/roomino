@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useCancelRequest, useMyRequests } from '../attendance.api';
 import { PageHeader, Panel } from '../attendance.component.layout';
+import { ATTACHMENT_TYPES } from '../attendance.constants';
 import { AttendanceProfileGate } from '../attendance.component.profile-gate';
 import { RequestForm } from '../attendance.component.request-form';
 import { RequestTable } from '../attendance.component.request-table';
@@ -134,7 +135,7 @@ function MyRequestsContent() {
       <RequestDetailModal
         request={viewing}
         onClose={() => setViewing(null)}
-        canEditAttachments={viewing?.status === RequestStatus.PENDING}
+        canEditAttachments={viewing?.status === RequestStatus.PENDING && ATTACHMENT_TYPES.includes(viewing.type)}
       />
       <ConfirmModal
         isOpen={cancelling !== null}
