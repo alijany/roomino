@@ -26,6 +26,7 @@ import {
   IconUser,
   IconUsers,
   IconUsersGroup,
+  IconWallet,
 } from "@tabler/icons-react";
 import { Role } from "../auth/auth.constants.roles";
 
@@ -140,6 +141,23 @@ export const RouteItems = {
     roles: [Role.FINANCE],
     icon: <IconBuildingBank className="size-5" />
   },
+  // --- مساعده مالی (advances) ------------------------------------------------
+  // Personal: submit and track my own requests. Decisions are made from the
+  // management queue below, not here — this page is personnel-facing only.
+  advanceRequest: {
+    href: "/dashboard/advance-request",
+    label: "مساعده",
+    roles: false as const,
+    icon: <IconWallet className="size-5" />
+  },
+  // Management: the CEO/finance-manager review queue where approve/reject
+  // actually happens.
+  advanceRequestReview: {
+    href: "/dashboard/advance-request/review",
+    label: "مساعده‌ها",
+    roles: [Role.CEO, Role.FINANCE_MANAGER, Role.ADMIN],
+    icon: <IconChecklist className="size-5" />
+  },
   // --- Attendance & leave ------------------------------------------------------
   attendanceHome: {
     href: "/dashboard/attendance",
@@ -242,6 +260,16 @@ export const routeGroups: RouteGroup[] = [
     ]
   },
   {
+    id: "advance-request",
+    workspace: "personal",
+    label: "مالی",
+    description: "درخواست مساعده و تأییدهای در انتظار من",
+    icon: <IconWallet className="size-5" />,
+    routes: [
+      RouteItems.advanceRequest,
+    ]
+  },
+  {
     id: "attendance-management",
     workspace: "management",
     label: "مدیریت حضور و غیاب",
@@ -270,6 +298,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.financeReports,
       RouteItems.financeSources,
       RouteItems.financeSettings,
+      RouteItems.advanceRequestReview,
     ]
   },
   {

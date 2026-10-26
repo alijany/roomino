@@ -2,7 +2,9 @@ import { User } from "@/app/dashboard/users/users.types";
 
 export enum Role {
   ADMIN = 'admin',
+  CEO = 'ceo',
   FINANCE = 'finance',
+  FINANCE_MANAGER = 'finance_manager',
   APPROVER = 'approver',
   HR = 'hr',
   USER = 'user',
@@ -46,7 +48,9 @@ export type RoleType = {
 
 const roleNames: Record<Role, string> = {
   [Role.ADMIN]: 'ادمین',
+  [Role.CEO]: 'مدیر عامل',
   [Role.FINANCE]: 'مالی',
+  [Role.FINANCE_MANAGER]: 'مدیر مالی',
   [Role.APPROVER]: 'تأییدکننده',
   [Role.HR]: 'منابع انسانی',
   [Role.USER]: 'کاربر',
@@ -63,6 +67,8 @@ export function getRoleName(role: Role): string {
  */
 export const RoleHierarchy: Record<Role, number> = {
   [Role.ADMIN]: 3,
+  [Role.CEO]: 3,
+  [Role.FINANCE_MANAGER]: 2,
   [Role.FINANCE]: 2,
   [Role.APPROVER]: 1,
   [Role.HR]: 1,
