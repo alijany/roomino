@@ -14,7 +14,13 @@ import { Period, ReportService } from './report.service';
 const hm = (minutes: number) => (minutes ? formatHm(minutes) : '');
 
 const sourceLabel = (source?: AttendanceSource | null) =>
-  source === AttendanceSource.MANUAL ? 'دستی' : source ? 'GPS' : '';
+  source === AttendanceSource.MANUAL
+    ? 'دستی'
+    : source === AttendanceSource.SELF
+    ? 'خوداظهاری'
+    : source
+    ? 'GPS'
+    : '';
 
 /**
  * CSV exports (with a BOM so Excel reads the Persian), matching the columns

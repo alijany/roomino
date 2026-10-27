@@ -14,7 +14,7 @@
 | `/requests` | admin, hr | the full review queue, search and category filter |
 | `/performance`, `/performance/[id]` | admin, hr | company-wide month/range summary + CSV; one person's profile, balances and report with corrections and grants |
 | `/employees` | admin, hr | attendance profiles — added to existing users, one at a time or in a batch (pick users, number their codes in order, one shared workplace/shift); attendance mode per person |
-| `/maintenance` | admin | schedule-mode switch (with a note for staff, and its history); wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
+| `/maintenance` | admin | schedule-mode switch (with a note for staff, and its history); self-declared check-in switch («ورود بدون موقعیت مکانی»); wipe attendance data: records only (check-ins, requests, leave ledgers) or everything incl. setup and profiles; current counts, typed confirmation |
 | `/settings` | admin, hr | tabs: workplaces (map picker: click or drag the pin, radius drawn live, "use my location"), shifts, job groups (approvers and attendance mode), work policies, holidays & official sync |
 
 The dashboard home (`/dashboard`) is a 12-column row of widgets: today's
@@ -81,6 +81,14 @@ overtime. `todayPunches` merges what's recorded with today's
 `manualRequests`, so an exception shows «در انتظار تایید» until it's decided.
 The board and «تیم من» explain the mode; reviewers record an absence with
 «غایب بود» in the correction form.
+
+**Self-declared check-in (ورود بدون موقعیت مکانی).** When `/attendance/me`
+says `selfDeclared`, `useCheckInFlow` and `usePresenceFlow` never ask for a
+position — no prompt, no «در حال دریافت موقعیت», no location help. Nothing
+refuses the check-in, so remote can't be offered after a refusal: the home and
+the dashboard card show «دورکاری» beside «ثبت ورود» instead. The home drops
+the radius line and shows `SelfDeclaredHint`; a report day says «ورود/خروج
+خوداظهاری» for `source === 'self'`.
 
 «تیم من» is not a role, so `RouteItem.roles` can't express it: the sidebar adds
 it to the attendance group when `/attendance/me` says `isApprover`, and the

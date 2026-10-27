@@ -7,9 +7,11 @@ import { errorMessage, getPosition, LocationError } from './attendance.util';
 
 /**
  * Check-in/out with GPS and the remote fallback — shared by the attendance
- * home and the dashboard widget so both behave the same.
+ * home and the dashboard widget so both behave the same. With
+ * `selfDeclared` (`MyToday.selfDeclared`) nobody is located: the person's
+ * word is taken, and remote is theirs to say.
  */
-export function useCheckInFlow(onChange: () => void) {
+export function useCheckInFlow(onChange: () => void, selfDeclared = false) {
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
   const [locating, setLocating] = useState(false);
@@ -56,7 +58,7 @@ export function useCheckInFlow(onChange: () => void) {
 
   const doCheckIn = async (remote = false) => {
     lastAction.current = 'in';
-    const position = await locate();
+    const position = selfDeclared ? {} : await locate();
     try {
       handle(await checkIn.submit({ ...position, remote: remote || undefined }));
     } catch (error) {
@@ -68,7 +70,7 @@ export function useCheckInFlow(onChange: () => void) {
 
   const doCheckOut = async () => {
     lastAction.current = 'out';
-    const position = await locate();
+    const position = selfDeclared ? {} : await locate();
     try {
       handle(await checkOut.submit(position));
     } catch (error) {

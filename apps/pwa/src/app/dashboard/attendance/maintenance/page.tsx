@@ -6,14 +6,14 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Input, ToggleSwitch } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
-import { IconAlertTriangle, IconEraser, IconTool } from '@tabler/icons-react';
+import { IconAlertTriangle, IconEraser, IconMapPinOff, IconTool } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { mutate } from 'swr';
-import { useMaintenanceSummary, useResetAttendance, useUpdateScheduleMode } from '../attendance.api';
+import { useMaintenanceSummary, useResetAttendance, useUpdateScheduleMode, useUpdateSelfDeclared } from '../attendance.api';
 import { FormModal, PageHeader, Panel } from '../attendance.component.layout';
-import { AttendanceTable, MaintenanceSummary, ResetScope, ScheduleMode } from '../attendance.types';
-import { errorMessage, fa, tehranToday } from '../attendance.util';
+import { AttendanceTable, MaintenanceSummary, ResetScope, ScheduleMode, SelfDeclared } from '../attendance.types';
+import { errorMessage, fa, jalaliDateTime, tehranToday } from '../attendance.util';
 
 /** Shown per table; rows that only exist inside these (shift days, policy rules, shift history) go with them. */
 const RECORD_LABELS: Partial<Record<AttendanceTable, string>> = {
@@ -50,7 +50,7 @@ const SCOPES: Array<{ value: ResetScope; title: string; description: string }> =
 const normalize = (value: string) =>
   value.replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[\s‌‍]+/g, '');
 
-/** نگهداری — module-wide controls: schedule mode and wiping data. Admin only. */
+/** نگهداری — module-wide controls: schedule mode, self-declared check-in and wiping data. Admin only. */
 export default function AttendanceMaintenancePage() {
   const { data, error, isLoading, refresh } = useMaintenanceSummary();
 
@@ -61,7 +61,7 @@ export default function AttendanceMaintenancePage() {
           <PageHeader
             icon={<IconTool className="size-6" />}
             title="نگهداری حضور و غیاب"
-            subtitle="حضور طبق شیفت برای همه پرسنل، و پاک‌سازی داده‌ها برای شروع دوباره"
+            subtitle="حضور طبق شیفت یا ورود بدون موقعیت مکانی برای همه پرسنل، و پاک‌سازی داده‌ها برای شروع دوباره"
           />
           <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
             {data && <Maintenance summary={data} onDone={refresh} />}
@@ -89,6 +89,13 @@ function Maintenance({ summary, onDone }: { summary: MaintenanceSummary; onDone:
         onSaved={onDone}
       />
 
+      <SelfDeclaredPanel
+        // Re-seeded from the server after every save.
+        key={`${summary.selfDeclared.enabled}-${summary.selfDeclared.changedAt}`}
+        setting={summary.selfDeclared}
+        onSaved={onDone}
+      />
+
       <h2 className="mt-3 flex items-center gap-2 font-semibold text-slate-800 lg:col-span-2">
         <IconEraser className="size-5 text-rose-600" aria-hidden="true" />
         پاک‌سازی داده‌ها
@@ -104,7 +111,7 @@ function Maintenance({ summary, onDone }: { summary: MaintenanceSummary; onDone:
       <Panel className="gap-4">
         <fieldset className="space-y-2">
           <legend className="mb-2 font-semibold text-slate-800">چه چیزی پاک شود؟</legend>
-          <p className="mb-2 text-xs text-slate-500">حالت «حضور طبق شیفت» و سابقه‌اش با پاک‌سازی تغییر نمی‌کند.</p>
+          <p className="mb-2 text-xs text-slate-500">«حضور طبق شیفت» و سابقه‌اش، و «ورود بدون موقعیت مکانی»، با پاک‌سازی تغییر نمی‌کنند.</p>
           {SCOPES.map((option) => (
             <label
               key={option.value}
@@ -267,6 +274,83 @@ function ScheduleModePanel({ mode, onSaved }: { mode: ScheduleMode; onSaved: () 
           </ul>
         </div>
       )}
+    </Panel>
+  );
+}
+
+/**
+ * Self-declared check-in: nobody is asked for a position and the workplace
+ * radius isn't checked — the person's word is taken. Unlike schedule mode it
+ * takes effect at once both ways: it changes how a day is recorded, not how
+ * it is counted.
+ */
+function SelfDeclaredPanel({ setting, onSaved }: { setting: SelfDeclared; onSaved: () => void }) {
+  const update = useUpdateSelfDeclared();
+  const [enabled, setEnabled] = useState(setting.enabled);
+  const dirty = enabled !== setting.enabled;
+
+  const save = async () => {
+    try {
+      await update.submit({ enabled });
+      toast.success(enabled ? 'ورود بدون موقعیت مکانی فعال شد' : 'ورود بدون موقعیت مکانی خاموش شد');
+      // The home screen and the dashboard card stop (or start) asking for a position.
+      await mutate((key) => typeof key === 'string' && key.startsWith('/attendance'));
+      onSaved();
+    } catch (error) {
+      toast.error(errorMessage(error, 'ذخیره انجام نشد'));
+    }
+  };
+
+  return (
+    <Panel className="gap-4 lg:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold text-slate-800">
+          <IconMapPinOff className="size-5 text-slate-500" aria-hidden="true" />
+          ورود بدون موقعیت مکانی
+        </h2>
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-1 text-xs font-medium',
+            setting.enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
+          )}
+        >
+          {setting.enabled ? 'فعال' : 'خاموش'}
+        </span>
+      </div>
+
+      <div
+        className={cn(
+          'flex items-start justify-between gap-4 rounded-2xl border p-4 transition-colors',
+          enabled ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200',
+        )}
+      >
+        <div>
+          <p className="font-medium text-slate-800">ثبت خوداظهاری؛ موقعیت مکانی از کسی خواسته نمی‌شود</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            ورود، خروج و «امروز هستم» بدون دریافت موقعیت ثبت می‌شوند و فاصله تا محل کار بررسی نمی‌شود. ساعت‌ها مثل همیشه
+            ثبت می‌شوند و در گزارش با برچسب «خوداظهاری» مشخص‌اند. کسی که دورکاری می‌کند خودش «دورکاری» را می‌زند؛ اگر
+            دورکاری مجاز نداشته باشد، درخواستش برای تایید مدیر می‌رود.
+          </p>
+        </div>
+        <ToggleSwitch
+          checked={enabled}
+          onChange={setEnabled}
+          aria-label="ورود بدون موقعیت مکانی"
+          disabled={update.isLoading}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-slate-400">
+          {setting.changedAt &&
+            `آخرین تغییر: ${jalaliDateTime(setting.changedAt)}${
+              setting.changedBy ? ` — ${setting.changedBy.name || fa(setting.changedBy.phone)}` : ''
+            }`}
+        </p>
+        <Button className="w-full sm:w-auto" disabled={!dirty || update.isLoading} aria-busy={update.isLoading} onClick={save}>
+          {update.isLoading ? 'در حال ذخیره…' : 'ذخیره'}
+        </Button>
+      </div>
     </Panel>
   );
 }

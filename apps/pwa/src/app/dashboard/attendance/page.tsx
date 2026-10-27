@@ -23,6 +23,7 @@ import {
   FlexibleHint,
   MissingCheckOutNotice,
   OvertimeNotice,
+  SelfDeclaredHint,
   UntrackedActions,
 } from './attendance.component.mode-today';
 import { PageHeader, Panel, StatTile } from './attendance.component.layout';
@@ -62,7 +63,8 @@ export default function AttendanceHomePage() {
 }
 
 function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const selfDeclared = Boolean(today.selfDeclared);
+  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange, selfDeclared);
   const { data: holidays } = useHolidays({ upcoming: 3 });
   const [formOpen, setFormOpen] = useState(false);
 
@@ -98,9 +100,11 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
           {today.workplace && (
             <div className="text-left text-sm text-slate-500">
               {today.workplace.name}
-              <div className="text-xs text-slate-400">
-                شعاع مجاز {fa(today.workplace.radiusMeters)} متر
-              </div>
+              {!selfDeclared && (
+                <div className="text-xs text-slate-400">
+                  شعاع مجاز {fa(today.workplace.radiusMeters)} متر
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -117,6 +121,8 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             {REMOTE_STATUS_LABELS[today.remoteStatus]}
           </p>
         )}
+
+        {selfDeclared && !scheduleMode && <SelfDeclaredHint />}
 
         {!untracked && (
         <div className="grid grid-cols-2 gap-3">
@@ -169,10 +175,19 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
             ورود و خروج امروز ثبت شده است.
           </p>
         ) : !att?.checkIn ? (
-          <Button size="lg" className="w-full gap-2 text-base" disabled={busy} onClick={() => doCheckIn()}>
-            {locating ? <IconCurrentLocation className="size-5 animate-pulse" /> : <IconLogin className="size-5" />}
-            {locating ? 'در حال دریافت موقعیت...' : 'ثبت ورود'}
-          </Button>
+          <div className="flex gap-2">
+            <Button size="lg" className="grow gap-2 text-base" disabled={busy} onClick={() => doCheckIn()}>
+              {locating ? <IconCurrentLocation className="size-5 animate-pulse" /> : <IconLogin className="size-5" />}
+              {locating ? 'در حال دریافت موقعیت...' : 'ثبت ورود'}
+            </Button>
+            {/* Nothing refuses a self-declared check-in, so remote is said up front. */}
+            {selfDeclared && (
+              <Button size="lg" variant="outline" className="shrink-0 gap-2 text-base" disabled={busy} onClick={() => doCheckIn(true)}>
+                <IconHome className="size-5" />
+                دورکاری
+              </Button>
+            )}
+          </div>
         ) : (
           <Button size="lg" className="w-full gap-2 bg-slate-900 text-base shadow-none hover:bg-slate-800" disabled={busy} onClick={doCheckOut}>
             {locating ? <IconCurrentLocation className="size-5 animate-pulse" /> : <IconLogout className="size-5" />}

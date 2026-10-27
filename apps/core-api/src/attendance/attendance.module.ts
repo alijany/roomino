@@ -15,6 +15,7 @@ import { WorkPolicyController } from './controllers/work-policy.controller';
 import { WorkplaceController } from './controllers/workplace.controller';
 import { AttendanceRequestAttachmentEntity } from './entities/attendance-request-attachment.entity';
 import { AttendanceRequestEntity } from './entities/attendance-request.entity';
+import { AttendanceSettingsEntity } from './entities/attendance-settings.entity';
 import { AttendanceEntity } from './entities/attendance.entity';
 import { EmployeeModePeriodEntity } from './entities/employee-mode-period.entity';
 import { EmployeeProfileEntity } from './entities/employee-profile.entity';
@@ -35,6 +36,7 @@ import { AttendanceMaintenanceService } from './services/attendance-maintenance.
 import { AttendanceNotificationService } from './services/attendance-notification.service';
 import { AttendanceModeService } from './services/attendance-mode.service';
 import { AttendanceScheduleService } from './services/attendance-schedule.service';
+import { AttendanceSettingsService } from './services/attendance-settings.service';
 import { AttendanceService } from './services/attendance.service';
 import { EmployeeService } from './services/employee.service';
 import { HolidayService } from './services/holiday.service';
@@ -77,11 +79,13 @@ import { WorkplaceService } from './services/workplace.service';
       ScheduleModePeriodEntity,
       EmployeeModePeriodEntity,
       PresenceDeclarationEntity,
+      AttendanceSettingsEntity,
     ]),
     NotificationModule,
     S3StorageModule,
   ],
   providers: [
+    AttendanceSettingsService,
     WorkplaceService,
     ShiftService,
     JobGroupService,

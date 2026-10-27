@@ -2,7 +2,7 @@
 
 import { cn } from '@/libs/style/style.util.helpers';
 import { Button } from '@/ui/atoms';
-import { IconAlertTriangle, IconCheck, IconClockPlus, IconCurrentLocation, IconHome, IconUserOff } from '@tabler/icons-react';
+import { IconAlertTriangle, IconCheck, IconClockPlus, IconCurrentLocation, IconHome, IconMapPinOff, IconUserOff } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useWithdrawPresence } from './attendance.api';
@@ -50,6 +50,16 @@ export function FlexibleHint({ className }: { className?: string }) {
   return (
     <p className={cn('rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800', className)}>
       ساعت ورود و خروج شما آزاد است؛ فقط مجموع ساعت کار با ساعت شیفت سنجیده می‌شود.
+    </p>
+  );
+}
+
+/** Self-declared check-in: why nobody asks for a position, and how to say remote. */
+export function SelfDeclaredHint({ className }: { className?: string }) {
+  return (
+    <p className={cn('flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600 ring-1 ring-inset ring-slate-200/60', className)}>
+      <IconMapPinOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      حضور شما خوداظهاری ثبت می‌شود و موقعیت مکانی گرفته نمی‌شود. اگر امروز دورکاری می‌کنید، «دورکاری» را بزنید.
     </p>
   );
 }
@@ -111,7 +121,7 @@ export function MissingCheckOutNotice({
  * opens the request form for today. Once said, only the confirmation shows.
  */
 export function UntrackedActions({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const flow = usePresenceFlow(onChange);
+  const flow = usePresenceFlow(onChange, today.selfDeclared);
   const withdraw = useWithdrawPresence();
   const [formOpen, setFormOpen] = useState(false);
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Attendance maintenance — data reset and schedule mode. Run right after
+# Attendance maintenance — data reset, schedule mode and self-declared
+# check-in. Run right after
 # 01-attendance.sh, on the same database: it resets the data that suite left.
 set -uo pipefail
 
@@ -8,7 +9,8 @@ TOK=${TOK:-/tmp}
 PSQL=${PSQL:-psql -h 127.0.0.1 -U postgres -d roomino -tAc}
 
 EMP=$(cat "$TOK/at_1")     # سارا — employee in «توسعه»
-HR=$(cat "$TOK/at_3")      # نگار — hr
+APR=$(cat "$TOK/at_2")     # رضا  — employee in «توسعه», its approver
+HR=$(cat "$TOK/at_3")      # نگار — hr, with a profile and no group
 ADM=$(cat "$TOK/at_4")     # admin
 EMP2=$(cat "$TOK/at_5")    # علی  — employee in «پشتیبانی»
 
@@ -51,7 +53,7 @@ call "$HR" POST /attendance/maintenance/reset "{\"scope\":\"records\",\"confirm\
 expect "HR cannot reset" 403
 call "$ADM" GET /attendance/maintenance
 expect "admin sees the counts 01 left behind, the phrase and the mode" 200 \
-  '.counts.attendance > 0 and .counts.requests > 0 and .counts.employees > 0 and .confirmation == "پاکسازی" and .scheduleMode.enabled == false and .scheduleMode.history == []'
+  '.counts.attendance > 0 and .counts.requests > 0 and .counts.employees > 0 and .confirmation == "پاکسازی" and .scheduleMode.enabled == false and .scheduleMode.history == [] and .selfDeclared == {"enabled":false,"changedAt":null,"changedBy":null}'
 BEFORE=$BODY
 
 echo "== reset — validation"
@@ -82,6 +84,66 @@ expect "سارا still has a profile, and a clean day" 200 \
   '.hasProfile and .attendance == null and .pendingRequests == 0 and .scheduleMode == false and .manualRequests == []'
 P1=$(echo "$BODY" | jq .profile.id)
 WLAT=$(echo "$BODY" | jq .workplace.lat); WLNG=$(echo "$BODY" | jq .workplace.lng)
+
+# Before schedule mode, which refuses every check-in for the rest of the run.
+# رضا and نگار only: the checks below still need سارا and علی not checked in.
+echo "== self-declared check-in"
+call "$HR" PATCH /attendance/maintenance/self-declared '{"enabled":true}'
+expect "HR cannot switch self-declared check-in" 403
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":"yes"}'
+expect "enabled must be a boolean" 400
+call "$APR" GET /attendance/me
+expect "while off, /me says to locate" 200 '.selfDeclared == false'
+call "$APR" POST /attendance/me/check-in '{"lat":0,"lng":0}'
+expect "…and a check-in far from the workplace is refused, offering remote" 200 '.success == false and .canRemote'
+
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":true}'
+expect "admin switches it on" 200 '.enabled and .changedBy.id == 4 and .changedAt != null'
+CHANGED=$(echo "$BODY" | jq -r .changedAt)
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":true}'
+expect "switching it on while on changes nothing" 200 ".enabled and .changedAt == \"$CHANGED\""
+call "$APR" GET /attendance/me
+expect "/me tells the client not to locate" 200 '.selfDeclared'
+
+call "$APR" POST /attendance/me/check-in '{}'
+expect "a check-in with no position is an office day, self-declared" 200 \
+  '.success and .attendance.workMode == "office" and .attendance.checkInSource == "self"'
+call "$APR" POST /attendance/me/check-out '{"lat":0,"lng":0}'
+expect "a check-out far from the workplace is accepted" 200 '.success and .attendance.checkOutSource == "self"'
+[[ "$($PSQL "select concat_ws(',', a.check_in_lat, a.check_in_distance_m, a.check_out_lat, a.check_out_distance_m) from attendance_entity a join employee_profile_entity p on p.id = a.employee_id where p.user_id = 2 and a.date = '$TODAY'")" == "" ]] \
+  && ok "no position is kept, not even one the client sent" \
+  || bad "no position is kept" "$($PSQL "select a.* from attendance_entity a join employee_profile_entity p on p.id = a.employee_id where p.user_id = 2")"
+CSV=$(curl -s "$API/attendance/me/report/export?from=$TODAY&to=$TODAY" -H "Authorization: Bearer $APR")
+[[ "$CSV" == *خوداظهاری* ]] && ok "the CSV names the source «خوداظهاری»" || bad "CSV source" "${CSV:0:300}"
+
+call "$HR" GET /attendance/me
+P3=$(echo "$BODY" | jq .profile.id)
+if [[ "$(echo "$BODY" | jq '.holiday == null and .shiftStart != null')" == true ]]; then
+  call "$ADM" PATCH "/attendance/employees/$P3" '{"attendanceMode":"untracked"}'
+  expect "نگار is «بدون ثبت» for a moment" 200 '.attendanceMode == "untracked"'
+  call "$HR" POST /attendance/me/presence '{"lat":0,"lng":0}'
+  expect "«امروز هستم» far from the workplace is a day at the office" 200 '.success and .declared and .workMode == "office"'
+  [[ "$($PSQL "select concat_ws(',', lat, lng, distance_m) from presence_declaration_entity where employee_id = $P3 and date = '$TODAY'")" == "" ]] \
+    && ok "…with no position kept" || bad "declaration keeps no position" "$($PSQL "select * from presence_declaration_entity where employee_id = $P3")"
+  call "$HR" DELETE /attendance/me/presence
+  expect "…taken back" 200 '.declared == false'
+  call "$ADM" PATCH "/attendance/employees/$P3" '{"attendanceMode":null}'
+  expect "…and «ساعت‌دار» again, undone the same day" 200 '.attendanceMode == "tracked"'
+else
+  echo "  (today isn't a working day for نگار — «امروز هستم» skipped)"
+fi
+
+call "$HR" POST /attendance/me/check-in '{"remote":true}'
+expect "remote is the person's word: recorded, and filed for approval" 200 \
+  '.success and .attendance.workMode == "remote" and .attendance.checkInSource == "self" and (.message | test("تایید"))'
+[[ "$($PSQL "select description from attendance_request_entity where employee_id = $P3 and type = 'remote_daily' and status = 'pending' and date_from = '$TODAY'")" == *خوداظهاری* ]] \
+  && ok "the remote-day request says it was self-declared" \
+  || bad "remote request description" "$($PSQL "select description from attendance_request_entity where employee_id = $P3")"
+
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":false}'
+expect "switched off, at once" 200 '.enabled == false and .changedBy.id == 4'
+call "$APR" GET /attendance/me
+expect "/me says to locate again" 200 '.selfDeclared == false'
 
 echo "== schedule mode — switching"
 call "$HR" PATCH /attendance/maintenance/schedule-mode '{"enabled":true}'
@@ -181,11 +243,14 @@ expect "on again the same day carries the period on" 200 \
   '.enabled and (.history | length == 1) and .current.endDate == null'
 
 echo "== reset — all"
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":true}'
+expect "self-declared check-in on again, to see it survive" 200 '.enabled'
 call "$ADM" POST /attendance/maintenance/reset "{\"scope\":\"all\",\"confirm\":\"$CONFIRM\"}"
 expect "full reset succeeds" 200 '.scope == "all" and .deleted.employees > 0 and .deleted.requests > 0'
 call "$ADM" GET /attendance/maintenance
 expect "every attendance table is empty" 200 '[.counts[]] | all(. == 0)'
 expect "schedule mode survives a reset" 200 '.scheduleMode.enabled'
+expect "so does self-declared check-in" 200 '.selfDeclared.enabled'
 [[ "$($PSQL 'select count(*) from attendance_job_group_approver')" == "0" ]] \
   && ok "the approver pivot is empty" || bad "the approver pivot is empty" "rows remain"
 [[ "$($PSQL 'select count(*) from user_entity')" == "$USERS" ]] \
@@ -196,6 +261,8 @@ call "$ADM" POST /attendance/workplaces '{"name":"دفتر جدید","lat":35.7,
 expect "setup starts over, ids from 1" 201 '.id == 1'
 call "$ADM" PATCH /attendance/maintenance/schedule-mode '{"enabled":false}'
 expect "schedule mode is switched off again" 200 '.enabled == false'
+call "$ADM" PATCH /attendance/maintenance/self-declared '{"enabled":false}'
+expect "self-declared check-in is switched off again" 200 '.enabled == false'
 
 echo
 echo "passed: $PASS  failed: $FAIL"

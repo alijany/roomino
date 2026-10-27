@@ -8,9 +8,9 @@ import { errorMessage, getPosition, LocationError } from './attendance.util';
  * the workplace (position read, inside the radius unless their profile
  * doesn't use GPS) or, failing that, as remote work, which files the remote
  * day for approval. Same refusal, same remote offer, same location help as
- * `useCheckInFlow`.
+ * `useCheckInFlow` — and, like it, no position at all when `selfDeclared`.
  */
-export function usePresenceFlow(onChange: () => void) {
+export function usePresenceFlow(onChange: () => void, selfDeclared = false) {
   const declare = useDeclarePresence();
   const [locating, setLocating] = useState(false);
   const [offerRemote, setOfferRemote] = useState(false);
@@ -34,7 +34,7 @@ export function usePresenceFlow(onChange: () => void) {
   };
 
   const say = async (remote = false) => {
-    const position = await locate();
+    const position = selfDeclared ? {} : await locate();
     try {
       const result = await declare.submit({ ...position, remote: remote || undefined });
       if (result.success) {

@@ -74,7 +74,7 @@ function useNowMinutes(ms = 30_000) {
 }
 
 function WidgetBody({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange, today.selfDeclared);
   const att = today.attendance;
   const scheduleMode = Boolean(today.scheduleMode);
   // In schedule mode a requested time (an exception) shows until it's

@@ -332,8 +332,9 @@ export interface AttendanceRecord {
   checkOutAt: string | null;
   checkIn: string | null;
   checkOut: string | null;
-  checkInSource: 'gps' | 'wifi' | 'manual' | null;
-  checkOutSource: 'gps' | 'wifi' | 'manual' | null;
+  /** `self`: recorded while self-declared check-in was on — nobody was located. */
+  checkInSource: 'gps' | 'wifi' | 'manual' | 'self' | null;
+  checkOutSource: 'gps' | 'wifi' | 'manual' | 'self' | null;
   checkInDistanceM: number | null;
   checkOutDistanceM: number | null;
   checkInLat: number | null;
@@ -492,6 +493,8 @@ export interface MyToday {
   overtimeSuggestion?: OvertimeSuggestion | null;
   /** A recent day with a check-in and no check-out, to put right. */
   missingCheckOut?: { date: string; checkIn: string | null; shiftEnd: string | null } | null;
+  /** Self-declared check-in: don't ask for a position — the server checks none. */
+  selfDeclared?: boolean;
 }
 
 export interface ManualRequestBrief {
@@ -687,11 +690,20 @@ export interface ScheduleMode {
   history: ScheduleModePeriod[];
 }
 
+/** Check-in, check-out and «امروز هستم» without a position, for everyone. */
+export interface SelfDeclared {
+  enabled: boolean;
+  /** Last switched — null if it never was. */
+  changedAt: string | null;
+  changedBy: UserBrief | null;
+}
+
 export interface MaintenanceSummary {
   counts: Record<AttendanceTable, number>;
   /** The phrase the admin types to confirm. */
   confirmation: string;
   scheduleMode: ScheduleMode;
+  selfDeclared: SelfDeclared;
 }
 
 export interface ResetResult {

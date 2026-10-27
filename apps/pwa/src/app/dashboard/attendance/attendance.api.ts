@@ -41,6 +41,7 @@ import {
   ResetResult,
   ResetScope,
   ScheduleMode,
+  SelfDeclared,
   Shift,
   ShiftInput,
   UserBrief,
@@ -453,6 +454,15 @@ export function useUpdateScheduleMode() {
     useSWRMutation(
       '/attendance/maintenance/schedule-mode',
       patchFetcher<{ enabled: boolean; note?: string }, ScheduleMode>,
+    ),
+  );
+}
+
+export function useUpdateSelfDeclared() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/attendance/maintenance/self-declared',
+      patchFetcher<{ enabled: boolean }, SelfDeclared>,
     ),
   );
 }

@@ -219,8 +219,9 @@ export const RouteItems = {
 
   attendanceMaintenance: {
     href: "/dashboard/attendance/maintenance",
-    // Schedule mode and data reset change attendance for everyone (and a
-    // reset is irreversible) — admin only, not HR; enforced server-side too.
+    // Schedule mode, self-declared check-in and data reset change attendance
+    // for everyone (and a reset is irreversible) — admin only, not HR;
+    // enforced server-side too.
     label: "نگهداری حضور و غیاب",
     roles: [Role.ADMIN],
     icon: <IconTool className="size-5" />

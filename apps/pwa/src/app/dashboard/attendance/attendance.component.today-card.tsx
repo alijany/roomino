@@ -76,7 +76,7 @@ export function AttendanceTodayCard({ className }: { className?: string }) {
 }
 
 function CardBody({ today, onChange }: { today: MyToday; onChange: () => void }) {
-  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange);
+  const { locating, busy, offerRemote, lastError, locationIssue, retryLocation, doCheckIn, doCheckOut } = useCheckInFlow(onChange, today.selfDeclared);
   const status = useTodayStatus(today);
   const [formOpen, setFormOpen] = useState(false);
   const { mode, untracked, scheduleMode, punches, presumed, inTime, outTime, checkedIn, checkedOut, shiftMinutes, worked, progress, state, live } = status;
@@ -177,21 +177,36 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
               مشاهده کارکرد من
             </FooterLink>
           ) : (
-            <Button
-              size="lg"
-              variant={!checkedIn && state === 'off' ? 'outline' : 'primary'}
-              className={cn('w-full gap-2 lg:min-h-10 lg:text-sm', checkedIn && 'bg-slate-900 shadow-none hover:bg-slate-800')}
-              disabled={busy}
-              aria-busy={busy}
-              onClick={() => (checkedIn ? doCheckOut() : doCheckIn())}
-            >
-              {locating
-                ? <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
-                : checkedIn
-                  ? <IconLogout className="size-5" aria-hidden="true" />
-                  : <IconLogin className="size-5" aria-hidden="true" />}
-              {locating ? 'در حال دریافت موقعیت...' : checkedIn ? 'ثبت خروج' : 'ثبت ورود'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                variant={!checkedIn && state === 'off' ? 'outline' : 'primary'}
+                className={cn('grow gap-2 lg:min-h-10 lg:text-sm', checkedIn && 'bg-slate-900 shadow-none hover:bg-slate-800')}
+                disabled={busy}
+                aria-busy={busy}
+                onClick={() => (checkedIn ? doCheckOut() : doCheckIn())}
+              >
+                {locating
+                  ? <IconCurrentLocation className="size-5 animate-pulse" aria-hidden="true" />
+                  : checkedIn
+                    ? <IconLogout className="size-5" aria-hidden="true" />
+                    : <IconLogin className="size-5" aria-hidden="true" />}
+                {locating ? 'در حال دریافت موقعیت...' : checkedIn ? 'ثبت خروج' : 'ثبت ورود'}
+              </Button>
+              {/* Nothing refuses a self-declared check-in, so remote is said up front. */}
+              {today.selfDeclared && !checkedIn && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="shrink-0 gap-2 lg:min-h-10 lg:text-sm"
+                  disabled={busy}
+                  onClick={() => doCheckIn(true)}
+                >
+                  <IconHome className="size-5" aria-hidden="true" />
+                  دورکاری
+                </Button>
+              )}
+            </div>
           )}
         </div>
         )}

@@ -16,15 +16,23 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import { RESET_CONFIRMATION } from '../attendance.constants';
-import { ResetAttendanceDto, UpdateScheduleModeDto } from '../dtos/setup.dto';
+import {
+  ResetAttendanceDto,
+  UpdateScheduleModeDto,
+  UpdateSelfDeclaredDto,
+} from '../dtos/setup.dto';
 import { AttendanceMaintenanceService } from '../services/attendance-maintenance.service';
+import { AttendanceSettingsService } from '../services/attendance-settings.service';
 import { ScheduleModeService } from '../services/schedule-mode.service';
-import { toScheduleModePeriodView } from '../utils/attendance-view.util';
+import {
+  toScheduleModePeriodView,
+  toUserBrief,
+} from '../utils/attendance-view.util';
 
 /**
- * Module-wide controls: schedule mode and wiping data. Admin only — not
- * HR, who run attendance day to day: these change it for everyone, and a
- * reset can't be undone.
+ * Module-wide controls: schedule mode, self-declared check-in and wiping
+ * data. Admin only — not HR, who run attendance day to day: these change it
+ * for everyone, and a reset can't be undone.
  */
 @Controller('attendance/maintenance')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,6 +41,7 @@ export class MaintenanceController {
   constructor(
     private readonly maintenance: AttendanceMaintenanceService,
     private readonly scheduleMode: ScheduleModeService,
+    private readonly settings: AttendanceSettingsService,
   ) {}
 
   @Get()
@@ -42,6 +51,26 @@ export class MaintenanceController {
       counts: await this.maintenance.summary(),
       confirmation: RESET_CONFIRMATION,
       scheduleMode: await this.scheduleModeView(),
+      selfDeclared: await this.selfDeclaredView(),
+    };
+  }
+
+  @Patch('self-declared')
+  @Roles(Role.ADMIN)
+  async updateSelfDeclared(
+    @CurrentUser() user: UserEntity,
+    @Body() dto: UpdateSelfDeclaredDto,
+  ) {
+    await this.settings.updateSelfDeclared(dto, user);
+    return this.selfDeclaredView();
+  }
+
+  private async selfDeclaredView() {
+    const row = await this.settings.find();
+    return {
+      enabled: row?.selfDeclared ?? false,
+      changedAt: row?.selfDeclaredChangedAt ?? null,
+      changedBy: toUserBrief(row?.selfDeclaredChangedBy) ?? null,
     };
   }
 

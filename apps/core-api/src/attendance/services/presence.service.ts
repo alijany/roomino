@@ -32,6 +32,7 @@ import {
 } from '../utils/attendance-time.util';
 import { AttendanceModeService } from './attendance-mode.service';
 import { AttendanceNotificationService } from './attendance-notification.service';
+import { AttendanceSettingsService } from './attendance-settings.service';
 import { AttendanceService } from './attendance.service';
 import { EmployeeService } from './employee.service';
 import { HolidayService } from './holiday.service';
@@ -70,6 +71,7 @@ export class PresenceService {
     private readonly holidays: HolidayService,
     private readonly attendance: AttendanceService,
     private readonly notifications: AttendanceNotificationService,
+    private readonly settings: AttendanceSettingsService,
   ) {}
 
   /** The declaration on a day, if any. */
@@ -198,7 +200,8 @@ export class PresenceService {
    * check-in means: from inside the workplace's radius (anywhere, when their
    * profile doesn't use GPS), or else as remote work — allowed outright on a
    * remote day, otherwise filed as a remote-day request for approval, exactly
-   * as a remote check-in does. Idempotent.
+   * as a remote check-in does. With self-declared check-in on, no position is
+   * kept and the radius doesn't apply, as for a check-in. Idempotent.
    */
   async declare(
     profile: EmployeeProfileEntity,
@@ -228,14 +231,17 @@ export class PresenceService {
     }
 
     const workplace = profile.workplace;
+    const selfDeclared = await this.settings.selfDeclared();
+    const { lat, lng }: CheckInDto = selfDeclared ? {} : dto;
     const distance =
-      workplace && dto.lat !== undefined && dto.lng !== undefined
-        ? distanceMeters(workplace.lat, workplace.lng, dto.lat, dto.lng)
+      workplace && lat !== undefined && lng !== undefined
+        ? distanceMeters(workplace.lat, workplace.lng, lat, lng)
         : null;
     const inRange =
-      Boolean(workplace) &&
-      (!profile.useGps ||
-        (distance !== null && distance <= workplace.radiusMeters));
+      selfDeclared ||
+      (Boolean(workplace) &&
+        (!profile.useGps ||
+          (distance !== null && distance <= workplace.radiusMeters)));
     const remoteStatus = await this.attendance.remoteStatus(profile, today);
 
     let workMode: WorkMode;
@@ -265,8 +271,8 @@ export class PresenceService {
           date: today,
           declaredAt: new Date(),
           workMode,
-          lat: dto.lat ?? null,
-          lng: dto.lng ?? null,
+          lat: lat ?? null,
+          lng: lng ?? null,
           distanceM: distance !== null ? Math.round(distance) : null,
         });
         em.persist(row);
@@ -282,7 +288,9 @@ export class PresenceService {
             durationMinutes: MINUTES_PER_WORKDAY,
             description:
               AUTO_REMOTE_NOTE +
-              (distance !== null
+              (selfDeclared
+                ? ' (خوداظهاری)'
+                : distance !== null
                 ? ` (فاصله از محل کار: ${Math.round(distance)} متر)`
                 : ' (بدون موقعیت مکانی)'),
           });

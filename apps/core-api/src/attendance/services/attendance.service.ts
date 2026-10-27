@@ -33,6 +33,7 @@ import {
 } from '../utils/attendance-time.util';
 import { isFixedRemoteDay, scheduleFor } from '../utils/attendance-shift.util';
 import { AttendanceNotificationService } from './attendance-notification.service';
+import { AttendanceSettingsService } from './attendance-settings.service';
 import { EmployeeService } from './employee.service';
 import { AttendanceModeService } from './attendance-mode.service';
 import {
@@ -58,8 +59,11 @@ export interface CheckInResult {
  *
  * In schedule mode (see `ScheduleModePeriodEntity`), and for people in
  * «بدون ثبت» (see `AttendanceMode`), check-in/out are refused outright;
- * corrections by reviewers still work. After a check-out, time worked past
- * the shift's end is suggested as overtime for the approver.
+ * corrections by reviewers still work. With self-declared check-in on (see
+ * `AttendanceSettingsEntity`), no position is taken and the radius doesn't
+ * apply: a check-in is an office day unless the person says remote. After a
+ * check-out, time worked past the shift's end is suggested as overtime for
+ * the approver.
  */
 @Injectable()
 export class AttendanceService {
@@ -72,6 +76,7 @@ export class AttendanceService {
     private readonly modes: AttendanceModeService,
     private readonly overtime: OvertimeSuggestionService,
     private readonly employees: EmployeeService,
+    private readonly settings: AttendanceSettingsService,
   ) {}
 
   /**
@@ -198,11 +203,16 @@ export class AttendanceService {
       };
     }
 
-    const distance = this.distanceTo(profile, dto.lat, dto.lng);
+    // Self-declared: whatever position the client sent is not kept, and the
+    // person's word stands in for the radius.
+    const selfDeclared = await this.settings.selfDeclared();
+    const { lat, lng }: CheckInDto = selfDeclared ? {} : dto;
+    const distance = this.distanceTo(profile, lat, lng);
     const inRange =
-      Boolean(workplace) &&
-      (!profile.useGps ||
-        (distance !== null && distance <= workplace.radiusMeters));
+      selfDeclared ||
+      (Boolean(workplace) &&
+        (!profile.useGps ||
+          (distance !== null && distance <= workplace.radiusMeters)));
     const remoteStatus = await this.remoteStatus(profile, today);
 
     let mode: WorkMode;
@@ -242,10 +252,14 @@ export class AttendanceService {
         em.assign(row, {
           workplace: workplace ?? null,
           checkInAt: new Date(),
-          checkInLat: dto.lat ?? null,
-          checkInLng: dto.lng ?? null,
+          checkInLat: lat ?? null,
+          checkInLng: lng ?? null,
           checkInDistanceM: distance !== null ? Math.round(distance) : null,
-          checkInSource: dto.lat !== undefined ? AttendanceSource.GPS : null,
+          checkInSource: selfDeclared
+            ? AttendanceSource.SELF
+            : lat !== undefined
+            ? AttendanceSource.GPS
+            : null,
           status: AttendanceStatus.PRESENT,
           workMode: mode,
         });
@@ -262,7 +276,9 @@ export class AttendanceService {
             durationMinutes: MINUTES_PER_WORKDAY,
             description:
               'ثبت خودکار: ورود دورکاری' +
-              (distance !== null
+              (selfDeclared
+                ? ' (خوداظهاری)'
+                : distance !== null
                 ? ` (فاصله از محل کار: ${Math.round(distance)} متر)`
                 : ' (بدون موقعیت مکانی)'),
           });
@@ -299,7 +315,7 @@ export class AttendanceService {
     };
   }
 
-  /** Check out. A remote day skips the radius check. */
+  /** Check out. A remote day, or self-declared check-in, skips the radius check. */
   async checkOut(
     profile: EmployeeProfileEntity,
     dto: CheckOutDto,
@@ -320,9 +336,12 @@ export class AttendanceService {
       };
     }
 
-    const distance = this.distanceTo(profile, dto.lat, dto.lng);
+    const selfDeclared = await this.settings.selfDeclared();
+    const { lat, lng }: CheckOutDto = selfDeclared ? {} : dto;
+    const distance = this.distanceTo(profile, lat, lng);
 
     if (
+      !selfDeclared &&
       attendance.workMode !== WorkMode.REMOTE &&
       profile.useGps &&
       workplace
@@ -342,10 +361,14 @@ export class AttendanceService {
 
     this.em.assign(attendance, {
       checkOutAt: new Date(),
-      checkOutLat: dto.lat ?? null,
-      checkOutLng: dto.lng ?? null,
+      checkOutLat: lat ?? null,
+      checkOutLng: lng ?? null,
       checkOutDistanceM: distance !== null ? Math.round(distance) : null,
-      checkOutSource: dto.lat !== undefined ? AttendanceSource.GPS : null,
+      checkOutSource: selfDeclared
+        ? AttendanceSource.SELF
+        : lat !== undefined
+        ? AttendanceSource.GPS
+        : null,
     });
     await this.em.flush();
 

@@ -319,6 +319,8 @@ export function DayList({
                   )}
                   {day.attendance?.checkInSource === 'manual' && <span>ورود دستی</span>}
                   {day.attendance?.checkOutSource === 'manual' && <span>خروج دستی</span>}
+                  {day.attendance?.checkInSource === 'self' && <span>ورود خوداظهاری</span>}
+                  {day.attendance?.checkOutSource === 'self' && <span>خروج خوداظهاری</span>}
                 </div>
 
                 <DayMap day={day} workplace={workplace} />

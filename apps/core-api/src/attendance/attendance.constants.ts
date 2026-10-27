@@ -31,6 +31,8 @@ export enum AttendanceSource {
   GPS = 'gps',
   WIFI = 'wifi',
   MANUAL = 'manual',
+  /** Self-declared check-in was on: nobody was located (see `AttendanceSettingsEntity`). */
+  SELF = 'self',
 }
 
 /** Stored status of an attendance row (the report derives a richer one). */

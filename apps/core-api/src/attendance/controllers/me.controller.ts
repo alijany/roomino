@@ -23,6 +23,7 @@ import { CheckInDto, CheckOutDto } from '../dtos/attendance.dto';
 import { PeriodQueryDto } from '../dtos/common.dto';
 import { CreateRequestDto, ListRequestsDto } from '../dtos/request.dto';
 import { AttendanceExportService } from '../services/attendance-export.service';
+import { AttendanceSettingsService } from '../services/attendance-settings.service';
 import { AttendanceService } from '../services/attendance.service';
 import { EmployeeService } from '../services/employee.service';
 import { HolidayService } from '../services/holiday.service';
@@ -60,6 +61,7 @@ export class MeController {
     private readonly scheduleMode: ScheduleModeService,
     private readonly presence: PresenceService,
     private readonly overtime: OvertimeSuggestionService,
+    private readonly settings: AttendanceSettingsService,
   ) {}
 
   /**
@@ -94,6 +96,7 @@ export class MeController {
       declaration,
       suggestion,
       forgotten,
+      selfDeclared,
     ] = await Promise.all([
       this.attendance.findDay(profile.id, today),
       this.holidays.isHoliday(today),
@@ -106,6 +109,7 @@ export class MeController {
       this.presence.on(profile.id, today),
       this.overtime.on(profile.id, today),
       this.attendance.missingCheckOut(profile),
+      this.settings.selfDeclared(),
     ]);
     const todayRow = report.days.find((d) => d.date === today);
 
@@ -155,6 +159,8 @@ export class MeController {
       overtimeSuggestion: suggestion,
       /** A recent day with a check-in and no check-out, to put right. */
       missingCheckOut: forgotten,
+      /** Self-declared check-in: don't ask for a position — none is checked. */
+      selfDeclared,
     };
   }
 

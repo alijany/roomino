@@ -28,7 +28,7 @@ answers `{ hasProfile: false }` so the UI can explain rather than 403.
 |---|---|---|
 | Workplaces, shifts (write), job groups, work policies, employees, holidays (write), all requests, company reports, corrections, grants | `admin`, `hr` | `@Roles` on every handler (`RolesGuard` reads handler metadata only) |
 | Shifts and holidays (read) | anyone signed in | — |
-| `/attendance/maintenance` — row counts, schedule mode, reset | `admin` only (not HR — these change attendance for everyone, and a reset can't be undone) | `@Roles` |
+| `/attendance/maintenance` — row counts, schedule mode, self-declared check-in, reset | `admin` only (not HR — these change attendance for everyone, and a reset can't be undone) | `@Roles` |
 | `/attendance/me/**` — today, check-in/out, own report, own requests | anyone with an **active** profile | `EmployeeService.requireOwn` |
 | `/attendance/team/**` — board, requests, member report/corrections/schedule | approvers of ≥1 job group | `EmployeeService.requireApprover` + `teamMemberOrFail` on every call |
 
@@ -141,6 +141,30 @@ lock. A reset never touches the periods.
 
 `GET /attendance/me` returns `scheduleMode`, the admin's note, `todayStatus`
 and `manualRequests` (today's manual requests still pending or rejected).
+
+## Self-declared check-in (ورود بدون موقعیت مکانی)
+
+For when locating people isn't wanted or doesn't work, but times still
+should be: an admin switches it on with `PATCH
+/attendance/maintenance/self-declared` `{ enabled }`. While it's on:
+
+- check-in, check-out and «امروز هستم» take **no position**: a `lat`/`lng`
+  the client sends anyway is dropped, nothing is measured against the
+  workplace radius, and a missing workplace is no obstacle. The person's word
+  is taken.
+- a check-in is an **office** day unless the person says `remote: true` —
+  nothing refuses it, so the client offers «دورکاری» up front. Remote without
+  permission files the pending `remote_daily` request as usual, its
+  description ending «(خوداظهاری)».
+- times are recorded with `AttendanceSource.SELF` (`self`); the report's day
+  list and the CSV show «خوداظهاری».
+
+`GET /attendance/me` returns `selfDeclared`, and the client skips geolocation
+when it's true. Unlike schedule mode it's a flag, not periods
+(`AttendanceSettingsEntity`, one row, id 1): it changes how a day is
+recorded, not how it is measured, and every row keeps its source. It takes
+effect at once both ways. Schedule mode, when on, still refuses check-in/out
+outright. A reset never touches it.
 
 ## Attendance modes (نوع حضور)
 
@@ -280,4 +304,4 @@ now caps the suggested overtime of «ساعت‌دار».)
 `lint` type-checks; `docs/attendance-e2e/` holds the behavioural suites
 against a real Postgres: `01-attendance.sh` (89 checks — flows and access),
 `02-calculations.mjs` (74 — the arithmetic of a planted month, and races)
-and `03-maintenance.sh` (54 — reset and schedule mode, run after 01).
+and `03-maintenance.sh` (77 — reset, schedule mode and self-declared check-in, run after 01).

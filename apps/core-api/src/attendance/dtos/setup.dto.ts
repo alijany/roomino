@@ -230,3 +230,8 @@ export class UpdateScheduleModeDto {
   @MaxLength(500, { message: 'پیام برای پرسنل حداکثر ۵۰۰ نویسه است' })
   note?: string;
 }
+
+export class UpdateSelfDeclaredDto {
+  @IsBoolean({ message: 'روشن یا خاموش بودن ورود خوداظهاری را مشخص کنید' })
+  enabled: boolean;
+}

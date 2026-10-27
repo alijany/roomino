@@ -6,7 +6,7 @@ a real Postgres, like the finance suites.
 | Suite | What | How |
 |---|---|---|
 | `01-attendance.sh` | flows and access — who can do what | `curl` + `jq` + `psql` |
-| `03-maintenance.sh` | admin maintenance — reset (validation, both scopes) and schedule mode; run right after `01`, on its database | `curl` + `jq` + `psql` |
+| `03-maintenance.sh` | admin maintenance — reset (validation, both scopes), schedule mode and self-declared check-in; run right after `01`, on its database | `curl` + `jq` + `psql` |
 | `04-attendance-modes.sh` | the three attendance modes — mode per group and per person and its history, «منعطف» without delay, overtime from the check-out (nothing / recorded / awaiting approval, caps, supersede, decline), the forgotten check-out prompt, «بدون ثبت» (refused check-in, «امروز هستم» (located, remote fallback), days-based report and CSV, undeclared days absent, «حاضر بود» by HR and by team approvers, leave and recorded times, CSV, reset); run on its own fresh database | `curl` + `jq` + `psql`, Node 18+ |
 | `02-calculations.mjs` | the arithmetic — every day of a planted month, the summary, caps, shift history; and races (double taps, two reviewers at once) | Node 18+, `psql` |
 
@@ -81,7 +81,11 @@ idempotence · user deletion with and without history.
 ## What `03-maintenance.sh` covers
 
 Admin-only access (HR refused) · reset validation leaves data intact · a
-`records` reset keeps profiles, setup and approvers · schedule mode:
+`records` reset keeps profiles, setup and approvers · self-declared check-in:
+validation, off by default (a far check-in refused), on — no position asked
+or kept even when sent, an office day by default, check-out from anywhere,
+«امروز هستم» from anywhere, remote filed for approval as «خوداظهاری», the
+CSV source, off again at once, survives a reset · schedule mode:
 validation, on/off the same day undone, the note, check-in/out refused for
 everyone, the board · a planted week (the period's start moved back in the
 database, holidays cleared): a day with nothing recorded counts in full, a
