@@ -167,7 +167,7 @@ export const RouteItems = {
   },
   attendanceMyReport: {
     href: "/dashboard/attendance/my-report",
-    label: "کارکرد من",
+    label: "گزارشات من",
     roles: false as const,
     icon: <IconCalendarStats className="size-5" />
   },
@@ -244,21 +244,23 @@ export const routeGroups: RouteGroup[] = [
     icon: <IconFingerprint className="size-5" />,
     routes: [
       RouteItems.attendanceHome,
-      RouteItems.attendanceMyReport,
       RouteItems.attendanceMyRequests,
+      RouteItems.attendanceMyReport,
     ]
   },
-  {
-    id: "finance",
-    workspace: "personal",
-    label: "درخواست‌ها و تأییدها",
-    description: "درخواست‌های پرداخت من و کارهای در انتظار تأیید",
-    icon: <IconReceipt className="size-5" />,
-    routes: [
-      RouteItems.financeMyRequests,
-      RouteItems.financeApprovals,
-    ]
-  },
+  // Hidden for now — re-add the group below to bring "درخواست‌ها و تأییدها"
+  // back to the personal sidebar.
+  // {
+  //   id: "finance",
+  //   workspace: "personal",
+  //   label: "درخواست‌ها و تأییدها",
+  //   description: "درخواست‌های پرداخت من و کارهای در انتظار تأیید",
+  //   icon: <IconReceipt className="size-5" />,
+  //   routes: [
+  //     RouteItems.financeMyRequests,
+  //     RouteItems.financeApprovals,
+  //   ]
+  // },
   {
     id: "advance-request",
     workspace: "personal",
