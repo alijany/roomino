@@ -26,6 +26,7 @@ import {
   IconUser,
   IconUsers,
   IconUsersGroup,
+  IconWallet,
 } from "@tabler/icons-react";
 import { Role } from "../auth/auth.constants.roles";
 
@@ -140,6 +141,23 @@ export const RouteItems = {
     roles: [Role.FINANCE],
     icon: <IconBuildingBank className="size-5" />
   },
+  // --- مساعده مالی (advances) ------------------------------------------------
+  // Personal: submit and track my own requests. Decisions are made from the
+  // management queue below, not here — this page is personnel-facing only.
+  advanceRequest: {
+    href: "/dashboard/advance-request",
+    label: "مساعده",
+    roles: false as const,
+    icon: <IconWallet className="size-5" />
+  },
+  // Management: the CEO/finance-manager review queue where approve/reject
+  // actually happens.
+  advanceRequestReview: {
+    href: "/dashboard/advance-request/review",
+    label: "مساعده‌ها",
+    roles: [Role.CEO, Role.FINANCE_MANAGER, Role.ADMIN],
+    icon: <IconChecklist className="size-5" />
+  },
   // --- Attendance & leave ------------------------------------------------------
   attendanceHome: {
     href: "/dashboard/attendance",
@@ -149,7 +167,7 @@ export const RouteItems = {
   },
   attendanceMyReport: {
     href: "/dashboard/attendance/my-report",
-    label: "کارکرد من",
+    label: "گزارشات من",
     roles: false as const,
     icon: <IconCalendarStats className="size-5" />
   },
@@ -226,19 +244,31 @@ export const routeGroups: RouteGroup[] = [
     icon: <IconFingerprint className="size-5" />,
     routes: [
       RouteItems.attendanceHome,
-      RouteItems.attendanceMyReport,
       RouteItems.attendanceMyRequests,
+      RouteItems.attendanceMyReport,
     ]
   },
+  // Hidden for now — re-add the group below to bring "درخواست‌ها و تأییدها"
+  // back to the personal sidebar.
+  // {
+  //   id: "finance",
+  //   workspace: "personal",
+  //   label: "درخواست‌ها و تأییدها",
+  //   description: "درخواست‌های پرداخت من و کارهای در انتظار تأیید",
+  //   icon: <IconReceipt className="size-5" />,
+  //   routes: [
+  //     RouteItems.financeMyRequests,
+  //     RouteItems.financeApprovals,
+  //   ]
+  // },
   {
-    id: "finance",
+    id: "advance-request",
     workspace: "personal",
-    label: "درخواست‌ها و تأییدها",
-    description: "درخواست‌های پرداخت من و کارهای در انتظار تأیید",
-    icon: <IconReceipt className="size-5" />,
+    label: "مالی",
+    description: "درخواست مساعده و تأییدهای در انتظار من",
+    icon: <IconWallet className="size-5" />,
     routes: [
-      RouteItems.financeMyRequests,
-      RouteItems.financeApprovals,
+      RouteItems.advanceRequest,
     ]
   },
   {
@@ -270,6 +300,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.financeReports,
       RouteItems.financeSources,
       RouteItems.financeSettings,
+      RouteItems.advanceRequestReview,
     ]
   },
   {

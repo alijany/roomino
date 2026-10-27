@@ -16,10 +16,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import { RESET_CONFIRMATION } from '../attendance.constants';
-import {
-  ResetAttendanceDto,
-  UpdateScheduleModeDto,
-} from '../dtos/setup.dto';
+import { ResetAttendanceDto, UpdateScheduleModeDto } from '../dtos/setup.dto';
 import { AttendanceMaintenanceService } from '../services/attendance-maintenance.service';
 import { ScheduleModeService } from '../services/schedule-mode.service';
 import { toScheduleModePeriodView } from '../utils/attendance-view.util';
