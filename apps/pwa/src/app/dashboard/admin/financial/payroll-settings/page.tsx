@@ -8,7 +8,8 @@ import { DataView } from '@/ui/molecules';
 import { FormModal } from '@/app/dashboard/attendance/attendance.component.layout';
 import { IconPlus, IconReceiptTax } from '@tabler/icons-react';
 import { getYear } from 'date-fns-jalali';
-import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { usePayrollYear, usePayrollYears, useSavePayrollYear, useStartPayrollYear } from './payroll-settings.api';
 import { Draft, GroupPanel, InclusionPanel, YearSetup } from './payroll-settings.component.panels';
@@ -23,7 +24,9 @@ export default function PayrollSettingsPage() {
   return (
     <RoleProtectedRoute allowedRoles={RouteItems.payrollSettings.roles}>
       <DashbaordLayout>
-        <PayrollSettingsContent />
+        <Suspense fallback={<DataView isLoading />}>
+          <PayrollSettingsContent />
+        </Suspense>
       </DashbaordLayout>
     </RoleProtectedRoute>
   );
@@ -31,7 +34,13 @@ export default function PayrollSettingsPage() {
 
 function PayrollSettingsContent() {
   const years = usePayrollYears();
-  const [picked, setPicked] = useState<number | null>(null);
+  // The chosen year lives in the address (`?year=1404`), so a refresh or a shared link keeps it.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fromUrl = Number(searchParams.get('year'));
+  const picked = Number.isInteger(fromUrl) && fromUrl > 0 ? fromUrl : null;
+  const setPicked = (value: number) => router.replace(`${pathname}?year=${value}`);
   const [newYearOpen, setNewYearOpen] = useState(false);
   const [newYear, setNewYear] = useState('');
 
