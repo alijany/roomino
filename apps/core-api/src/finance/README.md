@@ -45,6 +45,7 @@ Do not divide or multiply by ten anywhere else.
 | `PaymentSourceEntity` | The company's own accounts. `Role.FINANCE` only, at the controller. Card numbers are last-4 only. |
 | `VendorEntity` / `PayeeAccountEntity` | The طرف‌حساب directory and where each wants to be paid. `kind` (domestic/foreign) is operational: a foreign vendor cannot be paid directly from Iran. |
 | `RecurringExpenseEntity` | A *schedule*, not a payment. Each cycle materialises an ordinary request. `calendar` picks Gregorian or Jalali month arithmetic. |
+| `PayrollSettingEntity` | The legal payroll parameters of one Jalali year — **one row per year, one column per parameter** (rial / real percent / days and hours), plus an `inclusion` JSON of the insurance and tax treatment per item. Labels, groups, derivations and the official figures live in `payroll-setting.catalog.ts`, not in the table. Admin-only. |
 
 **The payee is snapshot onto the request, not looked up through the FK.**
 `vendorId`/`payeeAccountId` record where the details came from; `payeeName`,
@@ -127,6 +128,18 @@ silently losing the audit entry. Don't reintroduce `getDetailOrFail` on the way
 out of a transition.
 
 ---
+
+### Payroll settings
+
+`/finance/payroll-settings` (admin): `GET` the years, `GET :year` a year as the
+page shows it (an official year not yet saved is returned read-only,
+`exists: false`), `POST :year { copyFrom? }` to start a year from the official
+figures or another saved year, `PUT :year { values?, inclusion? }` to change
+some of it. A derived figure (monthly minimum, child allowance, insurance
+ceiling, eidi cap, eidi tax exemption) follows its sources when they change
+unless it is set by hand in the same call. Percents are real percents
+(`7` is 7%), with at most two decimals. To add a parameter: a column on the
+entity, a row in `PAYROLL_PARAMETERS`, an official figure per year.
 
 ## Endpoints
 

@@ -6,6 +6,7 @@ import { S3StorageModule } from '../storage/s3-storage.module';
 import { ApprovalRuleController } from './controllers/approval-rule.controller';
 import { ExpenseCategoryController } from './controllers/expense-category.controller';
 import { FinanceReportController } from './controllers/finance-report.controller';
+import { PayrollSettingController } from './controllers/payroll-setting.controller';
 import { PaymentRequestController } from './controllers/payment-request.controller';
 import { PaymentSourceController } from './controllers/payment-source.controller';
 import { RecurringExpenseController } from './controllers/recurring-expense.controller';
@@ -15,6 +16,7 @@ import { ApprovalStepEntity } from './entities/approval-step.entity';
 import { ExpenseCategoryEntity } from './entities/expense-category.entity';
 import { FinanceActivityEntity } from './entities/finance-activity.entity';
 import { PayeeAccountEntity } from './entities/payee-account.entity';
+import { PayrollSettingEntity } from './entities/payroll-setting.entity';
 import { PaymentRequestEntity } from './entities/payment-request.entity';
 import { PaymentSourceEntity } from './entities/payment-source.entity';
 import { PaymentEntity } from './entities/payment.entity';
@@ -29,6 +31,7 @@ import { FinanceBootstrapService } from './services/finance-bootstrap.service';
 import { FinanceNotificationService } from './services/finance-notification.service';
 import { FinanceReportService } from './services/finance-report.service';
 import { FinanceScheduleService } from './services/finance-schedule.service';
+import { PayrollSettingService } from './services/payroll-setting.service';
 import { PaymentRequestService } from './services/payment-request.service';
 import { PaymentSourceService } from './services/payment-source.service';
 import { RecurringExpenseService } from './services/recurring-expense.service';
@@ -58,6 +61,7 @@ import { VendorService } from './services/vendor.service';
       VendorEntity,
       PayeeAccountEntity,
       RecurringExpenseEntity,
+      PayrollSettingEntity,
     ]),
     NotificationModule,
     RolesModule,
@@ -74,6 +78,7 @@ import { VendorService } from './services/vendor.service';
     VendorService,
     RecurringExpenseService,
     FinanceReportService,
+    PayrollSettingService,
     FinanceScheduleService,
     FinanceBootstrapService,
   ],
@@ -85,6 +90,7 @@ import { VendorService } from './services/vendor.service';
     VendorController,
     RecurringExpenseController,
     FinanceReportController,
+    PayrollSettingController,
   ],
   exports: [PaymentRequestService],
 })
