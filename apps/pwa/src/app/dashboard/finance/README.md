@@ -45,6 +45,7 @@ for existing call sites.
 | `reports` | finance, admin | monthly close + CSV export |
 | `sources` | finance | the company's own accounts |
 | `settings` | admin | the approval matrix |
+| `/dashboard/admin/financial/payroll-settings` | admin | the legal payroll parameters per Jalali year: grouped inputs, «رسمی / ویرایش‌شده», start a year from the official figures or another year |
 | `/dashboard/finance` | finance, admin | KPIs, trend, breakdowns, upcoming |
 
 The employee surface and the Finance surface are deliberately different

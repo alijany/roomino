@@ -17,6 +17,7 @@ import {
   IconMailbox,
   IconNotification,
   IconReceipt,
+  IconReceiptTax,
   IconReportAnalytics,
   IconReportMoney,
   IconReportSearch,
@@ -233,6 +234,13 @@ export const RouteItems = {
     roles: [Role.ADMIN],
     icon: <IconSettings className="size-5" />
   },
+
+  payrollSettings: {
+    href: "/dashboard/admin/financial/payroll-settings",
+    label: "تنظیمات حقوق و دستمزد",
+    roles: [Role.ADMIN],
+    icon: <IconReceiptTax className="size-5" />
+  },
 };
 
 // Define routes with role requirements
@@ -301,6 +309,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.financeReports,
       RouteItems.financeSources,
       RouteItems.financeSettings,
+      RouteItems.payrollSettings,
       RouteItems.advanceRequestReview,
     ]
   },
