@@ -23,7 +23,7 @@ export function GroupPanel({
   return (
     <section className="ui-surface space-y-4 p-4 lg:p-5">
       <h2 className="font-semibold text-slate-700">{title}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {items.map((item) => (
           <Field key={item.key} item={item} value={draft[item.key] ?? item.value ?? 0} onChange={(v) => onChange(item.key, v)} />
         ))}
