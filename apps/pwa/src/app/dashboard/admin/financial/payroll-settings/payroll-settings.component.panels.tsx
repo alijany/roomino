@@ -38,7 +38,7 @@ function Field({ item, value, onChange }: { item: PayrollItem; value: number; on
   return (
     <div className="space-y-1.5">
       {item.kind === 'money' && (
-        <CurrencyInput label={`${item.label} (ریال)`} unit="rial" value={value} onValueChange={(v) => onChange(v ?? 0)} />
+        <CurrencyInput label={item.label} unit="rial" value={value} onValueChange={(v) => onChange(v ?? 0)} />
       )}
       {item.kind !== 'money' && (
         <Input
