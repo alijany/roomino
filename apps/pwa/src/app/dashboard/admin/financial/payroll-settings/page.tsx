@@ -147,6 +147,10 @@ function PayrollSettingsContent() {
         </div>
       </div>
 
+      <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700" role="note">
+        همه‌ی مبالغ این صفحه به «ریال» هستند.
+      </p>
+
       <DataView
         data={year ? data.data : years.data}
         error={year ? data.error : years.error}
