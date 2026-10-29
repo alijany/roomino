@@ -62,10 +62,17 @@ export function scheduleFor(
   return { start, end, scheduled: Math.max(0, minutes) };
 }
 
+/** A person's fixed weekly remote days: their own and their job group's. */
+export function fixedRemoteDays(profile: EmployeeProfileEntity): number[] {
+  const own = profile.remoteDays ?? [];
+  const group = profile.jobGroup?.remoteDays ?? [];
+  return [...new Set([...own, ...group].map(Number))].sort((a, b) => a - b);
+}
+
 /** Whether a civil date is one of a person's fixed weekly remote days. */
 export function isFixedRemoteDay(
   profile: EmployeeProfileEntity,
   date: string,
 ): boolean {
-  return (profile.remoteDays ?? []).map(Number).includes(iranWeekday(date));
+  return fixedRemoteDays(profile).includes(iranWeekday(date));
 }

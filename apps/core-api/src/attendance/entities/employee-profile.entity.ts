@@ -30,7 +30,12 @@ export class EmployeeProfileEntity extends BaseEntity {
   @ManyToOne(() => WorkplaceEntity)
   workplace: WorkplaceEntity;
 
-  @ManyToOne(() => JobGroupEntity, { nullable: true, deleteRule: 'set null' })
+  // Eager: the group's fixed remote days count wherever a profile is checked.
+  @ManyToOne(() => JobGroupEntity, {
+    nullable: true,
+    deleteRule: 'set null',
+    eager: true,
+  })
   jobGroup?: JobGroupEntity;
 
   @ManyToOne(() => WorkPolicyEntity, { nullable: true, deleteRule: 'set null' })

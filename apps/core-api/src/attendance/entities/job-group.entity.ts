@@ -27,6 +27,13 @@ export class JobGroupEntity extends BaseEntity {
   @Enum({ items: () => AttendanceMode, default: AttendanceMode.TRACKED })
   attendanceMode: AttendanceMode = AttendanceMode.TRACKED;
 
+  /**
+   * Fixed weekly remote days for every member, 0 = شنبه … 6 = جمعه. They add to
+   * a member's own `remoteDays`; neither replaces the other.
+   */
+  @Property({ type: 'json', nullable: true })
+  remoteDays?: number[];
+
   @ManyToMany(() => UserEntity, undefined, {
     pivotTable: 'attendance_job_group_approver',
     joinColumn: 'job_group_id',

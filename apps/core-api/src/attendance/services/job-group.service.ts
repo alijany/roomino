@@ -11,6 +11,13 @@ import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { JobGroupEntity } from '../entities/job-group.entity';
 import { AttendanceModeService } from './attendance-mode.service';
 
+/** Weekdays once each, in order; none is stored as null. */
+function normalizeRemoteDays(days?: number[]): number[] | undefined {
+  if (!days) return undefined;
+  const unique = [...new Set(days.map(Number))].sort((a, b) => a - b);
+  return unique.length ? unique : undefined;
+}
+
 @Injectable()
 export class JobGroupService {
   constructor(
@@ -86,6 +93,7 @@ export class JobGroupService {
     const group = this.em.create(JobGroupEntity, {
       name: dto.name,
       ...(dto.attendanceMode ? { attendanceMode: dto.attendanceMode } : {}),
+      remoteDays: normalizeRemoteDays(dto.remoteDays),
     });
     group.approvers.set(await this.approvers(dto.approverIds));
     await this.em.persistAndFlush(group);
@@ -101,6 +109,8 @@ export class JobGroupService {
     group.name = dto.name;
     if (dto.attendanceMode !== undefined)
       group.attendanceMode = dto.attendanceMode;
+    if (dto.remoteDays !== undefined)
+      group.remoteDays = normalizeRemoteDays(dto.remoteDays);
     if (dto.approverIds) {
       group.approvers.set(await this.approvers(dto.approverIds));
     }

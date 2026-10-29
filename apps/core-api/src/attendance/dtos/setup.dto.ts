@@ -157,6 +157,15 @@ export class SaveJobGroupDto {
   @IsOptional()
   @IsEnum(AttendanceMode, { message: 'نوع حضور نامعتبر است' })
   attendanceMode?: AttendanceMode;
+
+  /** Fixed weekly remote days of the whole group, 0 = شنبه … 6 = جمعه; replaces the set. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  remoteDays?: number[];
 }
 
 // --- work policies -----------------------------------------------------------

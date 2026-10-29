@@ -166,6 +166,16 @@ recorded, not how it is measured, and every row keeps its source. It takes
 effect at once both ways. Schedule mode, when on, still refuses check-in/out
 outright. A reset never touches it.
 
+## Fixed remote days of a job group
+
+`JobGroupEntity.remoteDays` (0 = شنبه … 6 = جمعه) are fixed weekly remote days
+for every member. They add to the person's own `remoteDays` — neither replaces
+the other — through `fixedRemoteDays` / `isFixedRemoteDay`, which every place
+that asks «is this a fixed remote day» uses (check-in, the report, the board).
+A profile loads its group eagerly so the days are always at hand. Set in the
+group's form; the employee form and «تیم من» show the group's days beside the
+person's own.
+
 ## Attendance modes (نوع حضور)
 
 How a person's presence is recorded and measured. Set per **job group**

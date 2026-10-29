@@ -89,6 +89,7 @@ export function toJobGroupView(group: JobGroupEntity, employeeCount?: number) {
     id: group.id,
     name: group.name,
     attendanceMode: group.attendanceMode,
+    remoteDays: group.remoteDays ?? [],
     approvers: group.approvers.isInitialized()
       ? group.approvers.getItems().map(toUserBrief)
       : [],
@@ -161,6 +162,8 @@ export function toEmployeeView(
     attendanceMode: resolveMode(profile),
     attendanceModeOverride: profile.attendanceModeOverride ?? null,
     remoteDays: profile.remoteDays ?? [],
+    // The group's, which add to the person's own.
+    groupRemoteDays: profile.jobGroup?.remoteDays ?? [],
     active: profile.active,
     currentShift: currentShift
       ? {

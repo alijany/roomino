@@ -183,6 +183,8 @@ export interface JobGroup {
   id: number;
   name: string;
   attendanceMode: AttendanceMode;
+  /** Fixed weekly remote days of every member, 0 = شنبه … 6 = جمعه. */
+  remoteDays: number[];
   approvers: UserBrief[];
   employeeCount: number | null;
 }
@@ -191,6 +193,7 @@ export interface JobGroupInput {
   name: string;
   approverIds?: number[];
   attendanceMode?: AttendanceMode;
+  remoteDays?: number[];
 }
 
 export interface PolicyRule {
@@ -270,6 +273,8 @@ export interface Employee {
   /** The person's own choice; null follows the job group. */
   attendanceModeOverride: AttendanceMode | null;
   remoteDays: number[];
+  /** The job group's fixed remote days, which add to the person's own. */
+  groupRemoteDays: number[];
   active: boolean;
   currentShift: { id: number; name: string; startDate: string } | null;
 }

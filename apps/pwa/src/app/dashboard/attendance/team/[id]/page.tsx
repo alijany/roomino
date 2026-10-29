@@ -13,6 +13,7 @@ import { useShifts, useTeamMember, useTeamMemberReport, useUpdateTeamMember } fr
 import { Field, PageHeader, Panel } from '../../attendance.component.layout';
 import { MemberReport } from '../../attendance.component.member-report';
 import { WeekdayPicker } from '../../attendance.component.weekday-picker';
+import { WEEKDAY_LABELS } from '../../attendance.constants';
 import { Employee, PeriodQuery } from '../../attendance.types';
 import { currentJalaliMonth, errorMessage, fa, fromCivilDate, tehranToday, toCivilDate } from '../../attendance.util';
 
@@ -106,7 +107,7 @@ function ScheduleForm({ member, onSaved }: { member: Employee; onSaved: () => vo
           <ToggleSwitch label={active ? 'فعال' : 'غیرفعال'} checked={active} onChange={setActive} />
         </Field>
       </div>
-      <Field label="روزهای دورکاری ثابت">
+      <Field label="روزهای دورکاری ثابت" hint={member.groupRemoteDays.length ? `روزهای ثابت گروه شغلی هم دورکاری است: ${member.groupRemoteDays.map((d) => WEEKDAY_LABELS[d]).join('، ')}.` : undefined}>
         <WeekdayPicker value={remoteDays} onChange={setRemoteDays} />
       </Field>
       <div>

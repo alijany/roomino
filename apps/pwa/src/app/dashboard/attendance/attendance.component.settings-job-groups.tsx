@@ -10,6 +10,8 @@ import { toast } from 'react-toastify';
 import { useApproverCandidates, useDeleteJobGroup, useJobGroups, useSaveJobGroup } from './attendance.api';
 import { AttendanceModeBadge, Field, FormModal } from './attendance.component.layout';
 import { AttendanceModePicker } from './attendance.component.mode-picker';
+import { WeekdayPicker } from './attendance.component.weekday-picker';
+import { WEEKDAY_LABELS } from './attendance.constants';
 import { AttendanceMode, JobGroup, UserBrief } from './attendance.types';
 import { errorMessage, fa } from './attendance.util';
 
@@ -61,6 +63,11 @@ export function JobGroupsSettings() {
                     {fa(group.employeeCount ?? 0)} عضو
                     <AttendanceModeBadge mode={group.attendanceMode} />
                   </div>
+                  {group.remoteDays.length > 0 && (
+                    <div className="mt-1 text-xs text-slate-500">
+                      دورکاری ثابت: {group.remoteDays.map((d) => WEEKDAY_LABELS[d]).join('، ')}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-1">
                   <Button variant="outline" size="sm" className="!px-2" onClick={() => setEditing(group)} aria-label="ویرایش">
@@ -120,6 +127,7 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
   const save = useSaveJobGroup();
   const [name, setName] = useState(group?.name ?? '');
   const [mode, setMode] = useState<AttendanceMode>(group?.attendanceMode ?? AttendanceMode.TRACKED);
+  const [remoteDays, setRemoteDays] = useState<number[]>(group?.remoteDays ?? []);
   const [approvers, setApprovers] = useState<UserBrief[]>(group?.approvers ?? []);
   const [search, setSearch] = useState('');
   const candidates = useApproverCandidates(search, search.trim().length > 0);
@@ -131,7 +139,7 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
 
   const handleSave = async () => {
     try {
-      await save.submit({ id: group?.id, data: { name: name.trim(), approverIds: approvers.map((a) => a.id), attendanceMode: mode } });
+      await save.submit({ id: group?.id, data: { name: name.trim(), approverIds: approvers.map((a) => a.id), attendanceMode: mode, remoteDays } });
       toast.success(group ? 'گروه شغلی ویرایش شد' : 'گروه شغلی ایجاد شد');
       onSaved();
       onClose();
@@ -166,6 +174,9 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
         }
       >
         <AttendanceModePicker value={mode} onChange={(next) => next && setMode(next)} />
+      </Field>
+      <Field label="روزهای دورکاری ثابت" hint="برای همه‌ی اعضای گروه؛ به روزهای دورکاری خود هر عضو اضافه می‌شود. در این روزها ورود و خروج از هر جایی پذیرفته و کل موظفی شیفت کارکرد حساب می‌شود.">
+        <WeekdayPicker value={remoteDays} onChange={setRemoteDays} />
       </Field>
       <Field label="تاییدکنندگان">
         <div className="mb-2 flex flex-wrap gap-1">

@@ -251,7 +251,7 @@ function AssignmentFields({
         />
       </Field>
 
-      <Field label="روزهای دورکاری ثابت" hint="در این روزها ورود و خروج از هر جایی پذیرفته و کل موظفی شیفت کارکرد حساب می‌شود.">
+      <Field label="روزهای دورکاری ثابت" hint={`در این روزها ورود و خروج از هر جایی پذیرفته و کل موظفی شیفت کارکرد حساب می‌شود.${groupOfPerson?.remoteDays.length ? ` روزهای ثابت گروه «${groupOfPerson.name}» هم جدا از اینها دورکاری است: ${groupOfPerson.remoteDays.map((d) => WEEKDAY_LABELS[d]).join('، ')}.` : ''}`}>
         <WeekdayPicker value={value.remoteDays ?? []} onChange={(remoteDays) => onChange({ remoteDays })} />
       </Field>
 
