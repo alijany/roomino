@@ -55,6 +55,12 @@ export const RouteItems = {
     roles: [Role.ADMIN, Role.HR],
     icon: <IconDoor className="size-5" />
   },
+  siteSettings: {
+    href: "/dashboard/admin/settings",
+    label: "تنظیمات سایت",
+    roles: [Role.ADMIN, Role.CEO],
+    icon: <IconSettings className="size-5" />
+  },
   users: {
     href: "/dashboard/users",
     label: "کاربران",
@@ -323,6 +329,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.rooms,
       RouteItems.users,
       RouteItems.reports,
+      RouteItems.siteSettings,
     ]
   },
 ];

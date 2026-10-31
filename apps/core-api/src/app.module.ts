@@ -12,6 +12,7 @@ import { postgresModuleFactory } from './libs/orm/orm.provider.base';
 import { MeetingModule } from './meeting/meeting.module';
 import { NotificationModule } from './notification/notification.module';
 import { RolesModule } from './roles/roles.module';
+import { SettingsModule } from './settings/settings.module';
 import { S3StorageModule } from './storage/s3-storage.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { S3StorageModule } from './storage/s3-storage.module';
     AttendanceModule,
     AuthModule,
     RolesModule,
+    SettingsModule,
     S3StorageModule,
   ],
 })

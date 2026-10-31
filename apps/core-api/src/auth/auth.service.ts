@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import parsePhoneNumberFromString from 'libphonenumber-js';
 import { Role } from 'src/roles/roles.constants';
 import { InvitationStatus } from 'src/roles/roles.entity';
+import { SiteSettingsService } from 'src/settings/site-settings.service';
 import { SmsService } from 'src/sms/sms.service';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly smsService: SmsService,
+    private readonly siteSettings: SiteSettingsService,
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
@@ -141,6 +143,15 @@ export class AuthService {
     return otp.toString();
   }
 
+  /** New accounts are refused while the admin or the CEO has closed registration. */
+  private async assertRegistrationOpen() {
+    if (await this.siteSettings.get('registrationClosed')) {
+      throw new ForbiddenException(
+        'ثبت‌نام کاربر جدید فعلاً بسته است. با مدیر تماس بگیرید.',
+      );
+    }
+  }
+
   /**
    * Send OTP for login/registration
    * Charges the user themselves (if they exist)
@@ -156,6 +167,7 @@ export class AuthService {
       phone: validatedPhone.number,
     });
     const isNewUser = !existingUser;
+    if (isNewUser) await this.assertRegistrationOpen();
 
     const cacheKey = `otp:${validatedPhone.number}`;
     const otp = this.generateOtp(+this.configService.get('OTP_LENGTH', 4));
@@ -310,6 +322,7 @@ export class AuthService {
 
     let isNewUser = false;
     if (!user) {
+      await this.assertRegistrationOpen();
       // If user doesn't exist, create a basic profile.
       // You might want more details or a different flow here.
       try {

@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // Import ConfigModule
 import { JwtModule } from '@nestjs/jwt';
 import { NormalizeNumbersPipe } from 'src/libs/utils/pipe.normalizeNumbers';
+import { SettingsModule } from 'src/settings/settings.module';
 import { SmsModule } from 'src/sms/sms.module';
 import { RolesModule } from '../roles/roles.module';
 import { UserModule } from '../user/user.module';
@@ -41,6 +42,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UserModule,
     SmsModule,
     RolesModule,
+    SettingsModule,
   ],
   providers: [
     AuthService,
