@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
+import { Role } from '@/components/auth/auth.constants.roles';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
@@ -33,6 +35,8 @@ export default function PayrollSettingsPage() {
 }
 
 function PayrollSettingsContent() {
+  // The CEO and the finance manager look; the admin changes.
+  const canEdit = useAuth().hasRole(Role.ADMIN);
   const years = usePayrollYears();
   // The chosen year lives in the address (`?year=1404`), so a refresh or a shared link keeps it.
   const router = useRouter();
@@ -144,11 +148,13 @@ function PayrollSettingsContent() {
               placeholder="سال"
             />
           </div>
-          <Button variant="outline" className="gap-1" onClick={openNewYear}>
-            <IconPlus className="size-4" />
-            سال جدید
-          </Button>
-          {dirty && (
+          {canEdit && (
+            <Button variant="outline" className="gap-1" onClick={openNewYear}>
+              <IconPlus className="size-4" />
+              سال جدید
+            </Button>
+          )}
+          {canEdit && dirty && (
             <Button disabled={save.isLoading} onClick={handleSave}>
               {save.isLoading ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
             </Button>
@@ -170,7 +176,10 @@ function PayrollSettingsContent() {
           data.refresh();
         }}
       >
-        {year && data.data && !data.data.exists && (
+        {year && data.data && !data.data.exists && !canEdit && (
+          <p className="py-6 text-center text-sm text-slate-400">تنظیمات این سال هنوز ساخته نشده است.</p>
+        )}
+        {year && data.data && !data.data.exists && canEdit && (
           <YearSetup
             year={year}
             hasOfficial={data.data.hasOfficial}
@@ -188,11 +197,13 @@ function PayrollSettingsContent() {
                 title={group}
                 items={items.filter((i) => i.group === group)}
                 draft={draft}
+                readOnly={!canEdit}
                 onChange={(key, value) => setDraft((prev) => ({ ...prev, [key]: value }))}
               />
             ))}
             <InclusionPanel
               rows={Object.values(inclusion)}
+              readOnly={!canEdit}
               onChange={(key, change) => setInclusion((prev) => ({ ...prev, [key]: { ...prev[key], ...change } }))}
             />
           </div>

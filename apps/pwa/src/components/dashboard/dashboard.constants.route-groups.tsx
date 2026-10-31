@@ -246,7 +246,7 @@ export const RouteItems = {
   payroll: {
     href: "/dashboard/admin/financial/payroll",
     label: "حقوق و دستمزد",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconReportMoney className="size-5" />
   },
 
@@ -260,14 +260,14 @@ export const RouteItems = {
   salaryHistory: {
     href: "/dashboard/admin/financial/salary-history",
     label: "تاریخچه‌ی حقوق",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconTrendingUp className="size-5" />
   },
 
   payrollSettings: {
     href: "/dashboard/admin/financial/payroll-settings",
     label: "تنظیمات حقوق و دستمزد",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconReceiptTax className="size-5" />
   },
 };

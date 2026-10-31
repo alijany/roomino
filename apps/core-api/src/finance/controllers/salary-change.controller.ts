@@ -28,6 +28,9 @@ import {
 import { SalaryChangeStatus, SalaryChangeType } from '../finance.constants';
 import { SalaryChangeService } from '../services/salary-change.service';
 
+/** Who can look at payroll; changing it stays with the admin. */
+const VIEWERS = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+
 /** Salary history of everyone. Admin-only: this is the most sensitive data in the system. */
 @Controller('finance/salary-changes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,7 +39,7 @@ export class SalaryChangeController {
   constructor(private readonly salaries: SalaryChangeService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   async list(
     @Query('userId') userId?: string,
     @Query('text') text?: string,
@@ -61,7 +64,7 @@ export class SalaryChangeController {
   }
 
   @Get('overview')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   async overview(@Query('period', ParseIntPipe) period: number) {
     return { items: await this.salaries.overview(period) };
   }

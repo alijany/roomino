@@ -14,31 +14,34 @@ export function GroupPanel({
   items,
   draft,
   onChange,
+  readOnly,
 }: {
   title: string;
   items: PayrollItem[];
   draft: Draft;
   onChange: (key: string, value: number) => void;
+  /** Viewers see the figures and cannot change them. */
+  readOnly?: boolean;
 }) {
   return (
     <section className="ui-surface space-y-4 p-4 lg:p-5">
       <h2 className="font-semibold text-slate-700">{title}</h2>
       <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {items.map((item) => (
-          <Field key={item.key} item={item} value={draft[item.key] ?? item.value ?? 0} onChange={(v) => onChange(item.key, v)} />
+          <Field key={item.key} item={item} value={draft[item.key] ?? item.value ?? 0} readOnly={readOnly} onChange={(v) => onChange(item.key, v)} />
         ))}
       </div>
     </section>
   );
 }
 
-function Field({ item, value, onChange }: { item: PayrollItem; value: number; onChange: (value: number) => void }) {
+function Field({ item, value, onChange, readOnly }: { item: PayrollItem; value: number; onChange: (value: number) => void; readOnly?: boolean }) {
   const differs = item.official != null && value !== item.official;
 
   return (
     <div className="space-y-1.5">
       {item.kind === 'money' && (
-        <CurrencyInput label={item.label} unit="rial" value={value} onValueChange={(v) => onChange(v ?? 0)} />
+        <CurrencyInput label={item.label} unit="rial" value={value} disabled={readOnly} onValueChange={(v) => onChange(v ?? 0)} />
       )}
       {item.kind !== 'money' && (
         <Input
@@ -51,6 +54,7 @@ function Field({ item, value, onChange }: { item: PayrollItem; value: number; on
           max={item.kind === 'percent' ? 100 : undefined}
           step={item.kind === 'percent' ? 0.01 : 1}
           value={Number.isFinite(value) ? value : ''}
+          disabled={readOnly}
           onChange={(e) => onChange(Number(e.target.value))}
         />
       )}
@@ -62,14 +66,14 @@ function Field({ item, value, onChange }: { item: PayrollItem; value: number; on
         {differs && (
           <>
             <Badge tone="info">ویرایش‌شده</Badge>
-            <button
+            {!readOnly && <button
               type="button"
               onClick={() => onChange(item.official as number)}
               className="inline-flex items-center gap-0.5 text-slate-500 hover:text-slate-800"
             >
               <IconArrowBackUp className="size-3.5" aria-hidden="true" />
               مقدار رسمی
-            </button>
+            </button>}
           </>
         )}
       </div>
@@ -81,8 +85,10 @@ function Field({ item, value, onChange }: { item: PayrollItem; value: number; on
 export function InclusionPanel({
   rows,
   onChange,
+  readOnly,
 }: {
   rows: PayrollInclusion[];
+  readOnly?: boolean;
   onChange: (key: string, change: Partial<Pick<PayrollInclusion, 'insurable' | 'taxable'>>) => void;
 }) {
   return (
@@ -100,12 +106,14 @@ export function InclusionPanel({
                 label="بیمه"
                 size="sm"
                 checked={row.insurable}
+                disabled={readOnly}
                 onChange={(checked) => onChange(row.key, { insurable: checked })}
               />
               <ToggleSwitch
                 label="مالیات"
                 size="sm"
                 checked={row.taxable}
+                disabled={readOnly}
                 onChange={(checked) => onChange(row.key, { taxable: checked })}
               />
             </div>

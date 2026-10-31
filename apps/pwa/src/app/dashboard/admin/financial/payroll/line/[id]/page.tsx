@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
+import { Role } from '@/components/auth/auth.constants.roles';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
@@ -55,7 +57,10 @@ function LineContent() {
 }
 
 function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
+  // The CEO and the finance manager look; the admin changes.
+  const canEdit = useAuth().hasRole(Role.ADMIN);
   const locked = slip.status === 'final';
+  const frozen = locked || !canEdit;
   const [form, setForm] = useState<LineFormState>(() => formOf(slip));
   const [rareOpen, setRareOpen] = useState(() => hasUncommonInputs(formOf(slip)));
   const [reopening, setReopening] = useState(false);
@@ -132,7 +137,7 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
               فیش حقوقی
             </Button>
           </Link>
-          {locked ? (
+          {!canEdit ? null : locked ? (
             <Button variant="outline" className="gap-1 border-amber-200 text-amber-700" onClick={() => setReopening(true)}>
               <IconLockOpen className="size-4" />
               بازکردن قطعی
@@ -150,7 +155,7 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
         </div>
       </div>
 
-      {locked && (
+      {locked && canEdit && (
         <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
           این ماه برای این نفر قطعی شده و قابل تغییر نیست؛ برای اصلاح «بازکردن قطعی» را بزنید.
         </p>
@@ -158,8 +163,8 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <div className="space-y-4">
-          <InputsCard form={form} set={set} locked={locked} flat={flat} open={rareOpen} onToggle={() => setRareOpen((o) => !o)} />
-          <AdvancesCard lineId={slip.id} locked={locked} onChanged={(advance) => {
+          <InputsCard form={form} set={set} locked={frozen} flat={flat} open={rareOpen} onToggle={() => setRareOpen((o) => !o)} />
+          <AdvancesCard lineId={slip.id} locked={frozen} onChanged={(advance) => {
               set('advance', advance);
               refresh();
             }} />

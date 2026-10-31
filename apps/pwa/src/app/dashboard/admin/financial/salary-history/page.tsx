@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
+import { Role } from '@/components/auth/auth.constants.roles';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
@@ -77,6 +79,8 @@ function SalaryHistoryContent() {
     month: 'number',
     onlyLatest: 'boolean',
   });
+  // The CEO and the finance manager look; the admin changes.
+  const canEdit = useAuth().hasRole(Role.ADMIN);
   const [form, setForm] = useState<'change' | 'bulk' | null>(null);
   const [removing, setRemoving] = useState<SalaryChange | null>(null);
   const [editing, setEditing] = useState<SalaryChange | null>(null);
@@ -125,7 +129,7 @@ function SalaryHistoryContent() {
           <h1>تاریخچه‌ی حقوق</h1>
           <p>هر تغییر حقوق از یک ماه به بعد؛ حقوق هر ماه آخرین تغییر تا همان ماه است</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {canEdit && <div className="flex flex-wrap gap-2">
           {proposals.length > 0 && (
             <Button variant="outline" className="gap-1 border-sky-200 text-sky-700" onClick={() => setConfirming(proposals)}>
               <IconCheck className="size-4" />
@@ -140,7 +144,7 @@ function SalaryHistoryContent() {
             <IconPlus className="size-4" />
             ثبت تغییر
           </Button>
-        </div>
+        </div>}
       </div>
 
       <div className="ui-surface flex grow flex-col gap-3 overflow-hidden p-2 lg:p-3">
@@ -259,7 +263,7 @@ function SalaryHistoryContent() {
                 {
                   key: 'actions',
                   header: '',
-                  render: (c) => (
+                  render: (c) => !canEdit ? null : (
                     <div className="flex gap-1">
                       {c.status === 'proposed' && (
                         <>

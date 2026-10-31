@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
+import { Role } from '@/components/auth/auth.constants.roles';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
@@ -91,6 +93,8 @@ function PayrollContent() {
   const [text, setText] = useDebouncedFilterText(filters.text, (value) => setFilters((prev) => ({ ...prev, text: value || undefined })));
 
   const { data, error, isLoading, refresh } = usePayrollMonth(period);
+  // The CEO and the finance manager look; the admin changes.
+  const canEdit = useAuth().hasRole(Role.ADMIN);
   const generate = useGeneratePayroll();
   const recalculate = useRecalculatePayroll();
   const finalize = useFinalizePayroll();
@@ -215,6 +219,8 @@ function PayrollContent() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {canEdit && (
+          <>
         <Button className="gap-1" disabled={generate.isLoading || isFinal} onClick={handleGenerate}>
           <IconPlus className="size-4" />
           ساخت ردیف‌ها
@@ -238,11 +244,13 @@ function PayrollContent() {
           <IconCheck className="size-4" />
           قطعی کردن ماه
         </Button>
+          </>
+        )}
         <Button variant="outline" className="gap-1" disabled={!month?.items.length} onClick={() => setBankOpen(true)}>
           <IconBuildingBank className="size-4" />
           خروجی بانک
         </Button>
-        {month?.items.some((l) => l.status === 'final') && (
+        {canEdit && month?.items.some((l) => l.status === 'final') && (
           <Button
             variant="outline"
             className="gap-1 border-amber-200 text-amber-700"
@@ -373,7 +381,7 @@ function PayrollContent() {
                             <IconPencil className="size-4" />
                           </Button>
                         </Link>
-                        {l.status === 'draft' && (
+                        {canEdit && l.status === 'draft' && (
                           <>
                             <Button variant="outline" size="sm" className="!px-2 border-none text-emerald-600" aria-label="قطعی کردن این ردیف" onClick={() => setFinalizingLine(l)}>
                               <IconCheck className="size-4" />
@@ -386,9 +394,9 @@ function PayrollContent() {
                         {l.status === 'final' && (
                           <>
                             <Badge tone="success">قطعی</Badge>
-                            <Button variant="outline" size="sm" className="!px-2 border-none text-amber-600" aria-label="بازکردن قطعی این ردیف" title="بازکردن قطعی" onClick={() => setReopening(l)}>
+                            {canEdit && <Button variant="outline" size="sm" className="!px-2 border-none text-amber-600" aria-label="بازکردن قطعی این ردیف" title="بازکردن قطعی" onClick={() => setReopening(l)}>
                               <IconLockOpen className="size-4" />
-                            </Button>
+                            </Button>}
                           </>
                         )}
                       </div>

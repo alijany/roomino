@@ -29,6 +29,9 @@ import {
 import { PayrollService } from '../services/payroll.service';
 import { bankWorkbook } from '../utils/payroll-bank.util';
 
+/** Who can look at payroll; changing it stays with the admin. */
+const VIEWERS = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+
 /**
  * Monthly payroll. Admin-only. A month is its lines: `generate` adds a draft
  * for everyone who works in it, `PATCH lines/:id` enters a person's inputs,
@@ -42,14 +45,14 @@ export class PayrollController {
   constructor(private readonly payroll: PayrollService) {}
 
   @Get(':period')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   view(@Param('period', ParseIntPipe) period: number) {
     return this.payroll.view(period);
   }
 
   /** The month's bank transfers, as rows. */
   @Get(':period/bank')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   bank(
     @Param('period', ParseIntPipe) period: number,
     @Query('lineId') lineId?: string,
@@ -59,7 +62,7 @@ export class PayrollController {
 
   /** The same, as an Excel file; `rows` limits it to chosen transfers (`lineId:kind`, comma-separated). */
   @Get(':period/bank/xlsx')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   async bankXlsx(
     @Param('period', ParseIntPipe) period: number,
     @Res() res: Response,
@@ -137,7 +140,7 @@ export class PayrollController {
 
   /** One line with the person's identity, for the payslip. */
   @Get('lines/:id')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   payslip(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.payslip(id);
   }
@@ -151,7 +154,7 @@ export class PayrollController {
 
   /** A person's approved advances: still owed, and those already taken off this line. */
   @Get('lines/:id/advances')
-  @Roles(Role.ADMIN)
+  @Roles(...VIEWERS)
   advances(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.advances(id);
   }
