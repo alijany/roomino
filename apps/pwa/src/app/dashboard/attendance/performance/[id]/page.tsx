@@ -66,9 +66,8 @@ function EmployeeReportContent() {
             </div>
           )
         }
-        actions={
-          <Link
-            href={performanceHref(
+        back={{
+          href: performanceHref(
               {
                 ...performanceQueryFromSearch(searchParams),
                 y: undefined,
@@ -79,13 +78,9 @@ function EmployeeReportContent() {
               },
               undefined,
               performanceViewFromSearch(searchParams),
-            )}
-            className="flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            <IconArrowRight className="size-4" />
-            همه پرسنل
-          </Link>
-        }
+            ),
+          label: 'بازگشت به همه پرسنل',
+        }}
       />
 
       <DataView data={e} error={employee.error} isLoading={employee.isLoading} onRetry={employee.refresh}>

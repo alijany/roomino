@@ -1,10 +1,11 @@
 'use client';
 
+import { BackButton } from '@/ui/molecules/back-button';
 import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Modal } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { IconX } from '@tabler/icons-react';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   ATTENDANCE_MODE_META,
   BOARD_STATUS_META,
@@ -19,14 +20,18 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  back,
 }: {
   icon: ReactNode;
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Where an inner page goes back to: an icon button before the title. */
+  back?: { href: string; label: string };
 }) {
   return (
     <div className="ui-page-header">
+      {back && <BackButton href={back.href} label={back.label} />}
       <div className="ui-page-icon">
         {icon}
       </div>
@@ -127,6 +132,7 @@ export function FormModal({
   children,
   footer,
   wide = false,
+  xl = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -134,12 +140,14 @@ export function FormModal({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** Wider still, for a form with two panels side by side. */
+  xl?: boolean;
 }) {
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className={`rounded-t-2xl bg-white ${wide ? 'lg:min-w-[720px]' : 'lg:min-w-[480px]'}`}
+      className={`rounded-t-2xl bg-white ${xl ? 'lg:min-w-[1040px]' : wide ? 'lg:min-w-[720px]' : 'lg:min-w-[480px]'}`}
     >
       <div className="flex min-h-0 flex-col">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 p-5">
@@ -178,66 +186,102 @@ export function Field({
   );
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+// Working hours, and quarter-hour minutes: what a day's times are in practice.
+const HOURS = Array.from({ length: 10 }, (_, i) => String(i + 8).padStart(2, '0'));
+const MINUTES = ['00', '15', '30', '45'];
 const selectClass =
-  'min-w-0 grow cursor-pointer appearance-none bg-transparent px-1 py-2 text-center tabular-nums focus:outline-none disabled:cursor-default disabled:text-slate-300';
+  'w-full min-w-0 cursor-pointer appearance-none bg-transparent px-1 pb-1.5 pt-0.5 text-center tabular-nums focus:outline-none disabled:cursor-default disabled:text-slate-300';
 
 /**
  * A 24-hour `"HH:mm"` picker. The native `<input type="time">` follows the
  * browser's locale and shows AM/PM, which a 24-hour workplace can't use.
+ *
+ * Two labelled lists, hour on the left and minutes on the right, like a clock. Picking an
+ * hour fills the minutes with 00; picking minutes first leaves the hour open and
+ * the value empty, so a time is never made up from a half-finished choice.
  */
 export function TimeInput({
   value,
   onChange,
   disabled,
   className,
+  compact,
   'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
+  /** Without the small labels, for a row of many times. */
+  compact?: boolean;
   'aria-label'?: string;
 }) {
-  const [h = '', m = ''] = value ? value.split(':') : [];
+  const [valueH = '', valueM = ''] = value ? value.split(':') : [];
+  // Minutes chosen before an hour; kept here until the hour comes.
+  const [pendingM, setPendingM] = useState('');
+  const h = valueH;
+  // Minutes read 00 until chosen.
+  const m = valueM || pendingM || '00';
+  const hourMissing = !h && !!pendingM;
+  // A time saved outside the lists (an old 18:20) is still shown, not blanked.
+  const hours = h && !HOURS.includes(h) ? [...HOURS, h].sort() : HOURS;
+  const minutes = !MINUTES.includes(m) ? [...MINUTES, m].sort() : MINUTES;
+
+  const setHour = (hour: string) => {
+    if (!hour) {
+      setPendingM(m);
+      onChange('');
+      return;
+    }
+    setPendingM('');
+    onChange(`${hour}:${m || '00'}`);
+  };
+  const setMinute = (minute: string) => {
+    if (!h) {
+      setPendingM(minute);
+      return;
+    }
+    onChange(`${h}:${minute}`);
+  };
+
+  const box = cn(
+    'min-w-0 flex-1 rounded-xl border bg-white px-2 text-slate-700 focus-within:border-slate-400',
+    !compact && 'pt-1',
+    compact && 'py-1',
+    disabled && 'bg-slate-50',
+  );
 
   return (
-    <div
-      dir="ltr"
-      role="group"
-      aria-label={ariaLabel}
-      className={cn(
-        'flex items-center rounded-xl border border-slate-200 bg-white px-2 text-slate-700 focus-within:border-slate-400',
-        disabled && 'bg-slate-50',
-        className,
-      )}
-    >
-      <select
-        aria-label="ساعت"
-        className={selectClass}
-        disabled={disabled}
-        value={h}
-        onChange={(e) => onChange(e.target.value ? `${e.target.value}:${m || '00'}` : '')}
-      >
-        <option value="">--</option>
-        {HOURS.map((hour) => (
-          <option key={hour} value={hour}>{hour}</option>
-        ))}
-      </select>
-      <span aria-hidden="true" className="text-slate-400">:</span>
-      <select
-        aria-label="دقیقه"
-        className={selectClass}
-        disabled={disabled}
-        value={m}
-        onChange={(e) => onChange(e.target.value ? `${h || '00'}:${e.target.value}` : '')}
-      >
-        <option value="">--</option>
-        {MINUTES.map((minute) => (
-          <option key={minute} value={minute}>{minute}</option>
-        ))}
-      </select>
+    <div dir="ltr" role="group" aria-label={ariaLabel} className={cn('flex items-stretch gap-2', className)}>
+      <div className={cn(box, hourMissing ? 'border-amber-400' : 'border-slate-200')}>
+        {!compact && <div className="text-center text-[11px] text-slate-400">ساعت</div>}
+        <select
+          aria-label="ساعت"
+          className={selectClass}
+          disabled={disabled}
+          value={h}
+          onChange={(e) => setHour(e.target.value)}
+        >
+          <option value="">--</option>
+          {hours.map((hour) => (
+            <option key={hour} value={hour}>{hour}</option>
+          ))}
+        </select>
+      </div>
+      <div className={cn(box, 'border-slate-200')}>
+        {!compact && <div className="text-center text-[11px] text-slate-400">دقیقه</div>}
+        <select
+          aria-label="دقیقه"
+          className={selectClass}
+          disabled={disabled}
+          value={m}
+          onChange={(e) => setMinute(e.target.value)}
+        >
+          {minutes.map((minute) => (
+            <option key={minute} value={minute}>{minute}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

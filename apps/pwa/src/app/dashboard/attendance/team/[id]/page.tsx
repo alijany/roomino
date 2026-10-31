@@ -34,14 +34,7 @@ export default function TeamMemberPage() {
             icon={<Avatar src={m?.user.profilePicture} name={m?.user.name} className="size-full rounded-[inherit]" />}
             title={m?.user.name ?? 'عضو تیم'}
             subtitle={m ? `${fa(m.personnelCode)} · ${m.jobGroup?.name ?? ''}` : undefined}
-            actions={
-              <Link href="/dashboard/attendance/team">
-                <Button variant="outline" size="sm" className="gap-1">
-                  <IconArrowRight className="size-4" />
-                  تیم من
-                </Button>
-              </Link>
-            }
+            back={{ href: '/dashboard/attendance/team', label: 'بازگشت به تیم من' }}
           />
           <DataView data={m} error={member.error} isLoading={member.isLoading} onRetry={member.refresh}>
             {m && (

@@ -33,14 +33,7 @@ export default function TeamRequestsPage() {
             icon={<IconClipboardList className="size-6" />}
             title="درخواست‌های تیم"
             subtitle="تایید یا رد شما نهایی است و اثر آن (مانده مرخصی، تردد) بلافاصله اعمال می‌شود."
-            actions={
-              <Link href="/dashboard/attendance/team">
-                <Button variant="outline" size="sm" className="gap-1">
-                  <IconArrowRight className="size-4" />
-                  تیم من
-                </Button>
-              </Link>
-            }
+            back={{ href: '/dashboard/attendance/team', label: 'بازگشت به تیم من' }}
           />
           <Panel className="grow gap-2 overflow-hidden">
             <Tabs

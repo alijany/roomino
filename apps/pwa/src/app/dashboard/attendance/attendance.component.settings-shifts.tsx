@@ -261,9 +261,9 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
               />
             </div>
             <div className="flex items-center gap-1">
-              <TimeInput aria-label={`شروع ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(v) => setDay(i, { startTime: v })} />
+              <TimeInput compact aria-label={`شروع ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.startTime} onChange={(v) => setDay(i, { startTime: v })} />
               <span className="text-slate-400">تا</span>
-              <TimeInput aria-label={`پایان ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(v) => setDay(i, { endTime: v })} />
+              <TimeInput compact aria-label={`پایان ${WEEKDAY_LABELS[i]}`} className={timeInput} disabled={!day.isActive} value={day.endTime} onChange={(v) => setDay(i, { endTime: v })} />
             </div>
             {day.isActive && (
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500">
@@ -273,9 +273,9 @@ function ShiftForm({ shift, onClose, onSaved }: { shift: Shift | null; onClose: 
             )}
             {day.isActive && day.hasSecondPart && (
               <div className="flex items-center gap-1">
-                <TimeInput aria-label={`شروع پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondStartTime} onChange={(v) => setDay(i, { secondStartTime: v })} />
+                <TimeInput compact aria-label={`شروع پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondStartTime} onChange={(v) => setDay(i, { secondStartTime: v })} />
                 <span className="text-slate-400">تا</span>
-                <TimeInput aria-label={`پایان پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondEndTime} onChange={(v) => setDay(i, { secondEndTime: v })} />
+                <TimeInput compact aria-label={`پایان پاره دوم ${WEEKDAY_LABELS[i]}`} className={timeInput} value={day.secondEndTime} onChange={(v) => setDay(i, { secondEndTime: v })} />
               </div>
             )}
             {day.isActive && (
