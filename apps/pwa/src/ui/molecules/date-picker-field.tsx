@@ -18,6 +18,8 @@ interface DatePickerFieldProps {
   minSelectableDate?: Date;
   className?: string;
   disabled?: boolean;
+  /** Leave the label out of the button (it is shown beside it instead). */
+  hideLabel?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function DatePickerField({
   minSelectableDate,
   className,
   disabled,
+  hideLabel,
 }: DatePickerFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const min = minSelectableDate ?? subYears(TZDate.tz(TEHRAN_TZ, new Date()), 2);
@@ -49,7 +52,7 @@ export function DatePickerField({
         onClick={() => setIsOpen(true)}
       >
         <IconCalendar className="size-4 text-slate-400" />
-        <span className="text-slate-500">{label}:</span>
+        {!hideLabel && <span className="text-slate-500">{label}:</span>}
         <span className="font-semibold tabular-nums text-slate-700">
           {format(value, 'yyyy/MM/dd')}
         </span>

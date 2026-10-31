@@ -13,7 +13,7 @@ import { ReactNode } from "react";
  */
 export interface TableColumn<T> {
   key: string;
-  header: string;
+  header: ReactNode;
   /** Cell content. */
   render: (row: T) => ReactNode;
   /** Right-align and use tabular figures — for amounts and dates. */
