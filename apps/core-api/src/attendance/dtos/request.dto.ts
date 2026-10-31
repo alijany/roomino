@@ -59,6 +59,34 @@ export class CreateRequestDto {
   @IsOptional() @IsString() @MaxLength(2000) description?: string;
 }
 
+/** A reviewer's correction of a pending request's date or time; the type stays. */
+export class UpdateRequestDto {
+  @IsOptional()
+  @Digits()
+  @Matches(DATE_PATTERN, { message: 'تاریخ شروع نامعتبر است' })
+  dateFrom?: string;
+  @IsOptional()
+  @Digits()
+  @Matches(DATE_PATTERN, { message: 'تاریخ پایان نامعتبر است' })
+  dateTo?: string;
+  @IsOptional()
+  @Digits()
+  @Matches(DATE_PATTERN, { message: 'تاریخ نامعتبر است' })
+  date?: string;
+  @IsOptional()
+  @Digits()
+  @Matches(CLOCK_PATTERN, { message: 'ساعت شروع نامعتبر است' })
+  timeFrom?: string;
+  @IsOptional()
+  @Digits()
+  @Matches(CLOCK_PATTERN, { message: 'ساعت پایان نامعتبر است' })
+  timeTo?: string;
+  @IsOptional()
+  @Digits()
+  @Matches(CLOCK_PATTERN, { message: 'ساعت تردد نامعتبر است' })
+  manualTime?: string;
+}
+
 /** A grant: created already approved, on someone else's behalf. */
 export class GrantRequestDto extends CreateRequestDto {}
 

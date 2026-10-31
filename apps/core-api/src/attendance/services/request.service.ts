@@ -28,7 +28,11 @@ import {
   RequestTypeLabels,
   WorkMode,
 } from '../attendance.constants';
-import { CreateRequestDto, ListRequestsDto } from '../dtos/request.dto';
+import {
+  CreateRequestDto,
+  ListRequestsDto,
+  UpdateRequestDto,
+} from '../dtos/request.dto';
 import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
 import { AttendanceEntity } from '../entities/attendance.entity';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
@@ -430,7 +434,11 @@ export class RequestService {
    * overtime, …) twice. Two timed requests on one day only clash when their
    * hours overlap; two manual punches only when they're the same direction.
    */
-  private async assertNoOverlap(profileId: number, fields: RequestFields) {
+  private async assertNoOverlap(
+    profileId: number,
+    fields: RequestFields,
+    exceptId?: number,
+  ) {
     const category = categoryOf(fields.type);
     if (category === RequestCategory.OTHER) return;
 
@@ -451,6 +459,7 @@ export class RequestService {
     );
     const candidates = await this.em.find(AttendanceRequestEntity, {
       employee: profileId,
+      ...(exceptId ? { id: { $ne: exceptId } } : {}),
       type: { $in: types },
       status: { $in: [RequestStatus.PENDING, RequestStatus.APPROVED] },
       $or: [
@@ -663,6 +672,35 @@ export class RequestService {
       approved.employee.user.id,
     );
     return approved;
+  }
+
+  /**
+   * A reviewer corrects the date or time of a pending request before deciding
+   * on it. The type and the person stay; the shape's rules, the clash check
+   * and the duration are redone. As with a grant, the policy cap is not applied.
+   */
+  async edit(id: number, dto: UpdateRequestDto, reviewer: UserEntity) {
+    const request = await this.getOrFail(id);
+    this.assertReviewable(request, reviewer);
+
+    const fields = this.normalize({
+      type: request.type,
+      dateFrom: dto.dateFrom ?? request.dateFrom ?? undefined,
+      dateTo: dto.dateTo ?? request.dateTo ?? undefined,
+      date: dto.date ?? request.date ?? undefined,
+      timeFrom: dto.timeFrom ?? request.timeFrom ?? undefined,
+      timeTo: dto.timeTo ?? request.timeTo ?? undefined,
+      manualTime: dto.manualTime ?? request.manualTime ?? undefined,
+      manualDirection: request.manualDirection ?? undefined,
+      description: request.description ?? undefined,
+    });
+    await this.assertNoOverlap(request.employee.id, fields, request.id);
+
+    Object.assign(request, fields, {
+      durationMinutes: this.durationOf(fields),
+    });
+    await this.em.flush();
+    return this.reload(id);
   }
 
   async reject(id: number, reviewer: UserEntity, note?: string) {

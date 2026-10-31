@@ -26,7 +26,11 @@ import {
 } from '../dtos/attendance.dto';
 import { PeriodQueryDto } from '../dtos/common.dto';
 import { UpdateTeamMemberDto } from '../dtos/employee.dto';
-import { ListRequestsDto, RejectRequestDto } from '../dtos/request.dto';
+import {
+  ListRequestsDto,
+  RejectRequestDto,
+  UpdateRequestDto,
+} from '../dtos/request.dto';
 import { AttendanceExportService } from '../services/attendance-export.service';
 import { AttendanceService } from '../services/attendance.service';
 import { EmployeeService } from '../services/employee.service';
@@ -105,6 +109,16 @@ export class TeamController {
     const request = await this.requests.getOrFail(id);
     await this.employees.teamMemberOrFail(userId, request.employee.id);
     return request;
+  }
+
+  @Patch('requests/:id')
+  async edit(
+    @CurrentUser() user: UserEntity,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(NormalizeNumbersPipe) dto: UpdateRequestDto,
+  ) {
+    await this.teamRequest(user.id, id);
+    return toRequestView(await this.requests.edit(id, dto, user));
   }
 
   @Post('requests/:id/approve')

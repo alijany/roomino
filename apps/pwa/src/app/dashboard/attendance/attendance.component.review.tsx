@@ -1,13 +1,14 @@
 'use client';
 
 import { Button, Input, ToggleSwitch } from '@/ui/atoms';
+import { DatePickerField } from '@/ui/molecules';
 import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { ReviewBase, useApproveRequest, useCorrectAttendance, CorrectionBase, useRejectRequest } from './attendance.api';
+import { ReviewBase, useApproveRequest, useEditRequest, useCorrectAttendance, CorrectionBase, useRejectRequest } from './attendance.api';
 import { RequestAttachments } from './attendance.component.attachments';
 import { FormModal, RequestStatusBadge, TimeField } from './attendance.component.layout';
 import { AttendanceRequest, RequestStatus } from './attendance.types';
-import { requestDurationLabel, errorMessage, fa, jalaliDateTime, jalaliLabel } from './attendance.util';
+import { requestDurationLabel, errorMessage, fa, fromCivilDate, jalaliDateTime, jalaliLabel, shapeOf, toCivilDate } from './attendance.util';
 import { PersonLabel } from '@/ui/molecules';
 
 /** Approve/reject buttons for one pending request, with the reject note modal. */
@@ -25,6 +26,7 @@ export function ReviewActions({
   const approve = useApproveRequest(base);
   const reject = useRejectRequest(base);
   const [rejecting, setRejecting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [note, setNote] = useState('');
 
   if (request.status !== RequestStatus.PENDING) return null;
@@ -55,6 +57,11 @@ export function ReviewActions({
       <Button size={size} disabled={approve.isLoading} onClick={handleApprove}>
         {approve.isLoading ? 'در حال تایید...' : 'تایید'}
       </Button>
+      {['range', 'timed', 'manual'].includes(shapeOf(request.type) ?? '') && (
+        <Button size={size} variant="outline" disabled={approve.isLoading} onClick={() => setEditing(true)}>
+          ویرایش
+        </Button>
+      )}
       <Button
         size={size}
         variant="outline"
@@ -67,6 +74,16 @@ export function ReviewActions({
       >
         رد
       </Button>
+
+      <EditRequestModal
+        request={editing ? request : null}
+        base={base}
+        onClose={() => setEditing(false)}
+        onDone={() => {
+          setEditing(false);
+          onDone();
+        }}
+      />
 
       <FormModal
         isOpen={rejecting}
@@ -93,6 +110,116 @@ export function ReviewActions({
         />
       </FormModal>
     </div>
+  );
+}
+
+/** A reviewer corrects the date or time of a pending request before deciding. */
+function EditRequestModal({
+  request,
+  base,
+  onClose,
+  onDone,
+}: {
+  request: AttendanceRequest | null;
+  base: ReviewBase;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const edit = useEditRequest(base);
+  // The caller opens it by passing the request; keep the last one while it fades out.
+  const last = useRef(request);
+  if (request) last.current = request;
+  const r = last.current;
+
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [date, setDate] = useState('');
+  const [timeFrom, setTimeFrom] = useState('');
+  const [timeTo, setTimeTo] = useState('');
+  const [manualTime, setManualTime] = useState('');
+  const [loadedId, setLoadedId] = useState<number | null>(null);
+
+  // Start from the request's own values each time it is opened.
+  if (request && loadedId !== request.id) {
+    setLoadedId(request.id);
+    setDateFrom(request.dateFrom ?? '');
+    setDateTo(request.dateTo ?? request.dateFrom ?? '');
+    setDate(request.date ?? '');
+    setTimeFrom(request.timeFrom ?? '');
+    setTimeTo(request.timeTo ?? '');
+    setManualTime(request.manualTime ?? '');
+  }
+  if (!request && loadedId !== null) setLoadedId(null);
+
+  if (!r) return null;
+  const shape = shapeOf(r.type);
+  const rangeInvalid = shape === 'range' && dateTo < dateFrom;
+  const timeInvalid = shape === 'timed' && (!timeFrom || !timeTo || timeTo <= timeFrom);
+
+  const handleSave = async () => {
+    const data =
+      shape === 'range'
+        ? { dateFrom, dateTo }
+        : shape === 'timed'
+          ? { date, timeFrom, timeTo }
+          : { date, manualTime };
+    try {
+      await edit.submit({ id: r.id, data });
+      toast.success('تاریخ و ساعت درخواست اصلاح شد');
+      onDone();
+    } catch (error) {
+      toast.error(errorMessage(error, 'ویرایش انجام نشد'));
+    }
+  };
+
+  return (
+    <FormModal
+      isOpen={request !== null}
+      onClose={onClose}
+      title="ویرایش تاریخ و ساعت"
+      footer={
+        <>
+          <Button className="flex-1" disabled={edit.isLoading || rangeInvalid || timeInvalid} onClick={handleSave}>
+            {edit.isLoading ? 'در حال ذخیره...' : 'ذخیره'}
+          </Button>
+          <Button variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>
+            بازگشت
+          </Button>
+        </>
+      }
+    >
+      <RequestSummary request={r} />
+
+      {shape === 'range' && (
+        <div className="flex flex-wrap gap-3">
+          <DatePickerField
+            label="از تاریخ"
+            value={fromCivilDate(dateFrom)}
+            onSelect={(d) => {
+              const next = toCivilDate(d);
+              setDateFrom(next);
+              if (dateTo < next) setDateTo(next);
+            }}
+          />
+          <DatePickerField label="تا تاریخ" value={fromCivilDate(dateTo)} onSelect={(d) => setDateTo(toCivilDate(d))} />
+          {rangeInvalid && <p className="w-full text-xs text-rose-500">«تا تاریخ» نباید پیش از «از تاریخ» باشد.</p>}
+        </div>
+      )}
+
+      {(shape === 'timed' || shape === 'manual') && (
+        <DatePickerField label="تاریخ" value={fromCivilDate(date)} onSelect={(d) => setDate(toCivilDate(d))} />
+      )}
+
+      {shape === 'timed' && (
+        <div className="grid grid-cols-2 gap-3">
+          <TimeField label="از ساعت" value={timeFrom} onChange={setTimeFrom} />
+          <TimeField label="تا ساعت" value={timeTo} onChange={setTimeTo} />
+          {timeInvalid && timeFrom && timeTo && <p className="col-span-2 text-xs text-rose-500">ساعت پایان باید بعد از ساعت شروع باشد.</p>}
+        </div>
+      )}
+
+      {shape === 'manual' && <TimeField label="ساعت" value={manualTime} onChange={setManualTime} />}
+    </FormModal>
   );
 }
 

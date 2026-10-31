@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -19,7 +20,11 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
-import { ListRequestsDto, RejectRequestDto } from '../dtos/request.dto';
+import {
+  ListRequestsDto,
+  RejectRequestDto,
+  UpdateRequestDto,
+} from '../dtos/request.dto';
 import { RequestService } from '../services/request.service';
 import { toRequestView } from '../utils/attendance-view.util';
 
@@ -41,6 +46,16 @@ export class RequestController {
   @Roles(Role.ADMIN, Role.HR)
   async detail(@Param('id', ParseIntPipe) id: number) {
     return toRequestView(await this.requests.getOrFail(id));
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN, Role.HR)
+  async edit(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserEntity,
+    @Body(NormalizeNumbersPipe) dto: UpdateRequestDto,
+  ) {
+    return toRequestView(await this.requests.edit(id, dto, user));
   }
 
   @Post(':id/approve')

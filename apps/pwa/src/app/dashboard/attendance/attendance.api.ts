@@ -177,6 +177,17 @@ export function useApproveRequest(base: ReviewBase) {
   );
 }
 
+export type RequestEdit = Partial<
+  Pick<RequestInput, 'dateFrom' | 'dateTo' | 'date' | 'timeFrom' | 'timeTo' | 'manualTime'>
+>;
+
+/** A reviewer's correction of a pending request's date or time. */
+export function useEditRequest(base: ReviewBase) {
+  return useDynamicMutation(`${base}/edit`, ({ id, data }: { id: number; data: RequestEdit }) =>
+    patchFetcher<RequestEdit, AttendanceRequest>(`${base}/${id}`, { arg: data }),
+  );
+}
+
 export function useRejectRequest(base: ReviewBase) {
   return useDynamicMutation(`${base}/reject`, ({ id, note }: { id: number; note: string }) =>
     postFetcher<{ note: string }, AttendanceRequest>(`${base}/${id}/reject`, { arg: { note } }),
