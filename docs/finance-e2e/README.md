@@ -21,6 +21,8 @@ created database:
 | 1 | `bash 01-spine.sh` | own DB |
 | 2 | `bash 02-vendors-recurring.sh && bash 03-reports.sh` | suite 3 counts the schedule suite 2 creates, and asserts absolute totals that suite 1's payments would inflate |
 | 3 | `bash 04-destination-fork.sh` | own DB |
+| 6 | `bash 07-payroll.sh` | own DB; builds on the salary and settings APIs. Same `API` / `TOK`. |
+| 5 | `bash 06-salary-changes.sh` | own DB; also covers the identity fields on a user. Same `API` / `TOK` as suite 5. |
 | 4 | `bash 05-payroll-settings.sh` | own DB: it creates years 1405 and 1406. Takes `API` and `TOK` from the environment (defaults `127.0.0.1:4000`, `/var/tmp`). |
 
 Out of order, suite 3 fails nine checks that are arithmetic over the wrong rows,

@@ -213,3 +213,32 @@ export const ALLOWED_ATTACHMENT_MIME_TYPES = [
   'image/webp',
   'application/pdf',
 ];
+
+/**
+ * Why a person's salary changed. Never chosen by hand: the first entry is a
+ * start, a later one is a raise or a decrease according to how it compares
+ * with the one before it.
+ */
+export enum SalaryChangeType {
+  START = 'start',
+  RAISE = 'raise',
+  DECREASE = 'decrease',
+}
+
+export const SalaryChangeTypeLabels: Record<SalaryChangeType, string> = {
+  [SalaryChangeType.START]: 'شروع همکاری',
+  [SalaryChangeType.RAISE]: 'افزایش دوره‌ای',
+  [SalaryChangeType.DECREASE]: 'کاهش حقوق',
+};
+
+/** A proposed change is a draft for a meeting: it counts for nothing until it is confirmed. */
+export enum SalaryChangeStatus {
+  PROPOSED = 'proposed',
+  CONFIRMED = 'confirmed',
+}
+
+/** A payroll line is a draft (recomputed freely) until its month is finalised. */
+export enum PayrollLineStatus {
+  DRAFT = 'draft',
+  FINAL = 'final',
+}

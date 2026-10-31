@@ -24,6 +24,7 @@ import {
   IconRepeat,
   IconSettings,
   IconTool,
+  IconTrendingUp,
   IconUser,
   IconUsers,
   IconUsersGroup,
@@ -241,6 +242,21 @@ export const RouteItems = {
     icon: <IconSettings className="size-5" />
   },
 
+  payroll: {
+    href: "/dashboard/admin/financial/payroll",
+    label: "حقوق و دستمزد",
+    roles: [Role.ADMIN],
+    icon: <IconReportMoney className="size-5" />
+  },
+
+
+  salaryHistory: {
+    href: "/dashboard/admin/financial/salary-history",
+    label: "تاریخچه‌ی حقوق",
+    roles: [Role.ADMIN],
+    icon: <IconTrendingUp className="size-5" />
+  },
+
   payrollSettings: {
     href: "/dashboard/admin/financial/payroll-settings",
     label: "تنظیمات حقوق و دستمزد",
@@ -305,17 +321,22 @@ export const routeGroups: RouteGroup[] = [
     id: "finance-management",
     workspace: "management",
     label: "مدیریت مالی",
-    description: "پرداخت‌ها، طرف‌حساب‌ها، هزینه‌های دوره‌ای و گزارش‌های مالی",
+    description: "حقوق و دستمزد و درخواست‌های مساعده",
     icon: <IconCashBanknote className="size-5" />,
     routes: [
-      RouteItems.financeDashboard,
-      RouteItems.financeQueue,
-      RouteItems.financeVendors,
-      RouteItems.financeRecurring,
-      RouteItems.financeReports,
-      RouteItems.financeSources,
-      RouteItems.financeSettings,
+      // Hidden for now — add these back to bring the payments screens into the
+      // sidebar. The pages themselves still work at their addresses.
+      // RouteItems.financeDashboard,
+      // RouteItems.financeQueue,
+      // RouteItems.financeVendors,
+      // RouteItems.financeRecurring,
+      // RouteItems.financeReports,
+      // RouteItems.financeSources,
+      // RouteItems.financeSettings,
+      RouteItems.payroll,
       RouteItems.payrollSettings,
+      RouteItems.salaryHistory,
+      RouteItems.finalSettlement,
       RouteItems.advanceRequestReview,
     ]
   },

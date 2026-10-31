@@ -57,7 +57,7 @@ chk "inclusion flags change"           "$(echo "$D"|g "['inclusion'][9]['insurab
 chk "an unknown parameter is refused"  "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"nope":1}}')" "400"
 chk "a negative amount is refused"     "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"housing":-5}}')" "400"
 chk "a percent above 100 is refused"   "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"insWorker":101}}')" "400"
-chk "three decimals in a percent are refused" "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"insWorker":7.123}}')" "400"
+chk "five decimals in a percent are refused" "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"insWorker":7.12345}}')" "400"
 chk "an unknown inclusion item is refused" "$(code PUT /finance/payroll-settings/1405 "$ADM" '{"inclusion":{"nope":{"insurable":true,"taxable":true}}}')" "400"
 chk "Persian digits are accepted"      "$(echo "$(j PUT /finance/payroll-settings/1405 "$ADM" '{"values":{"housing":"۴۲۰۰۰۰۰۰"}}')"|v housing)" "42000000"
 

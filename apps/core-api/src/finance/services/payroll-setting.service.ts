@@ -162,6 +162,14 @@ export class PayrollSettingService extends BaseRepositoryService<PayrollSettingE
     return this.view(year);
   }
 
+  /** A saved year's parameters, for computing pay; null if the year was never saved. */
+  async forYear(year: number) {
+    const row = await this.repository.findOne({ year });
+    return row
+      ? { values: this.valuesOf(row), inclusion: row.inclusion }
+      : null;
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private assertYear(year: number) {
@@ -199,7 +207,8 @@ export class PayrollSettingService extends BaseRepositoryService<PayrollSettingE
     if (kind === 'money') return Number.isSafeInteger(value);
     if (kind === 'percent') {
       return (
-        value <= 100 && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6
+        value <= 100 &&
+        Math.abs(value * 10_000 - Math.round(value * 10_000)) < 1e-6
       );
     }
     return Number.isInteger(value) && value <= 10_000;

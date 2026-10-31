@@ -45,6 +45,8 @@ for existing call sites.
 | `reports` | finance, admin | monthly close + CSV export |
 | `sources` | finance | the company's own accounts |
 | `settings` | admin | the approval matrix |
+| `/dashboard/admin/financial/payroll` | admin | one month's pay for everyone (the month is in the address): generate lines, enter a person's inputs and see the figures, recalculate, finalise |
+| `/dashboard/admin/financial/salary-history` | admin | every salary change, newest first; record one (type the salary or the percent), a group raise with a preview, proposals for a meeting (badge «پیشنهادی», edit, confirm one or all), delete a proposal or a person's latest confirmed change |
 | `/dashboard/admin/financial/payroll-settings` | admin | the legal payroll parameters per Jalali year: grouped inputs, «رسمی / ویرایش‌شده», start a year from the official figures or another year |
 | `/dashboard/finance` | finance, admin | KPIs, trend, breakdowns, upcoming |
 

@@ -53,6 +53,7 @@
     "date-fns": "^4.1.0",
     "date-fns-jalali": "4.1.0-0",
     "duration-fns": "^3.0.2",
+    "exceljs": "4.4.0",
     "ioredis": "^5.5.0",
     "joi": "^17.13.3",
     "libphonenumber-js": "^1.11.16",

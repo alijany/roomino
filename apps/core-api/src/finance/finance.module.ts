@@ -6,17 +6,22 @@ import { S3StorageModule } from '../storage/s3-storage.module';
 import { ApprovalRuleController } from './controllers/approval-rule.controller';
 import { ExpenseCategoryController } from './controllers/expense-category.controller';
 import { FinanceReportController } from './controllers/finance-report.controller';
+import { PayrollController } from './controllers/payroll.controller';
 import { PayrollSettingController } from './controllers/payroll-setting.controller';
+import { SalaryChangeController } from './controllers/salary-change.controller';
 import { PaymentRequestController } from './controllers/payment-request.controller';
 import { PaymentSourceController } from './controllers/payment-source.controller';
 import { RecurringExpenseController } from './controllers/recurring-expense.controller';
 import { VendorController } from './controllers/vendor.controller';
+import { AdvanceDeductionEntity } from './entities/advance-deduction.entity';
 import { ApprovalRuleEntity } from './entities/approval-rule.entity';
 import { ApprovalStepEntity } from './entities/approval-step.entity';
 import { ExpenseCategoryEntity } from './entities/expense-category.entity';
 import { FinanceActivityEntity } from './entities/finance-activity.entity';
 import { PayeeAccountEntity } from './entities/payee-account.entity';
+import { PayrollLineEntity } from './entities/payroll-line.entity';
 import { PayrollSettingEntity } from './entities/payroll-setting.entity';
+import { SalaryChangeEntity } from './entities/salary-change.entity';
 import { PaymentRequestEntity } from './entities/payment-request.entity';
 import { PaymentSourceEntity } from './entities/payment-source.entity';
 import { PaymentEntity } from './entities/payment.entity';
@@ -31,7 +36,9 @@ import { FinanceBootstrapService } from './services/finance-bootstrap.service';
 import { FinanceNotificationService } from './services/finance-notification.service';
 import { FinanceReportService } from './services/finance-report.service';
 import { FinanceScheduleService } from './services/finance-schedule.service';
+import { PayrollService } from './services/payroll.service';
 import { PayrollSettingService } from './services/payroll-setting.service';
+import { SalaryChangeService } from './services/salary-change.service';
 import { PaymentRequestService } from './services/payment-request.service';
 import { PaymentSourceService } from './services/payment-source.service';
 import { RecurringExpenseService } from './services/recurring-expense.service';
@@ -50,6 +57,7 @@ import { VendorService } from './services/vendor.service';
 @Module({
   imports: [
     MikroOrmModule.forFeature([
+      AdvanceDeductionEntity,
       ExpenseCategoryEntity,
       PaymentSourceEntity,
       PaymentRequestEntity,
@@ -62,6 +70,8 @@ import { VendorService } from './services/vendor.service';
       PayeeAccountEntity,
       RecurringExpenseEntity,
       PayrollSettingEntity,
+      SalaryChangeEntity,
+      PayrollLineEntity,
     ]),
     NotificationModule,
     RolesModule,
@@ -79,6 +89,8 @@ import { VendorService } from './services/vendor.service';
     RecurringExpenseService,
     FinanceReportService,
     PayrollSettingService,
+    SalaryChangeService,
+    PayrollService,
     FinanceScheduleService,
     FinanceBootstrapService,
   ],
@@ -91,6 +103,8 @@ import { VendorService } from './services/vendor.service';
     RecurringExpenseController,
     FinanceReportController,
     PayrollSettingController,
+    SalaryChangeController,
+    PayrollController,
   ],
   exports: [PaymentRequestService],
 })

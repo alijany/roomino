@@ -371,8 +371,9 @@ export const OFFICIAL_PAYROLL: Record<number, PayrollValues> = {
     taxRate3: 20,
     taxRate4: 25,
     taxRate5: 30,
-    taxOvertimeRate: 10,
-    taxInsuranceFraction: 29,
+    taxOvertimeRate: 0,
+    // 2/7 of the worker's insurance is deducted from taxable income.
+    taxInsuranceFraction: 28.5714,
     taxNoncash: 17,
     overtimeRate: 40,
     nightRate: 35,

@@ -12,7 +12,7 @@ export interface PayrollInclusion {
  *
  * Units: money is in rial (the canonical unit, a bigint that reads back as a
  * string — use `readBigint`); percentages are real percents (`7` is 7%) in a
- * `numeric(5,2)` that also reads back as a string; days and hours are plain
+ * `numeric(7,4)` (four decimals, so 2/7 as a percent fits) that also reads back as a string; days and hours are plain
  * integers. `PAYROLL_PARAMETERS` in `payroll-setting.catalog.ts` carries the
  * label, group and official value of each column.
  */
@@ -70,49 +70,49 @@ export class PayrollSettingEntity extends BaseEntity {
   eidiCap: number;
 
   // --- percentages ---
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   insWorker: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   insEmployer: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   insUnemployment: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxRate1: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxRate2: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxRate3: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxRate4: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxRate5: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxOvertimeRate: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxInsuranceFraction: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   taxNoncash: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   overtimeRate: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   nightRate: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   holidayRate: number;
 
-  @Property({ columnType: 'numeric(5,2)' })
+  @Property({ columnType: 'numeric(7,4)' })
   missionRate: number;
 
   // --- days and hours ---
