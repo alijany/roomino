@@ -23,7 +23,7 @@ import { errorMessage } from '../attendance.util';
  * on their own groups from «تیم من»; this queue covers everyone.
  */
 export default function RequestQueuePage() {
-  const [filters, setFilters] = useState<RequestFilterDto>({ status: RequestStatus.PENDING, limit: 15 });
+  const [filters, setFilters] = useState<RequestFilterDto>({ status: RequestStatus.PENDING, limit: 20 });
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [deleting, setDeleting] = useState<AttendanceRequest | null>(null);
   const { data, error, isLoading, refresh } = useRequests(filters);
@@ -108,7 +108,7 @@ export default function RequestQueuePage() {
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
                     <Pagination
-                      itemPerPage={filters.limit || 15}
+                      itemPerPage={filters.limit || 20}
                       page={(filters.page || 0) + 1}
                       totalCount={data.meta.total}
                       onNavigate={(page) => {

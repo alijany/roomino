@@ -115,7 +115,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
 
                         <Input
                             id="firstName"
-                            label='نام (اختیاری)'
+                            label='نام'
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             placeholder="نام"
@@ -123,7 +123,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
 
                         <Input
                             id="lastName"
-                            label='نام خانوادگی (اختیاری)'
+                            label='نام خانوادگی'
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             placeholder="نام خانوادگی"
@@ -131,7 +131,7 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
 
                         <Input
                             id="jobTitle"
-                            label='عنوان شغلی (اختیاری)'
+                            label='عنوان شغلی'
                             value={jobTitle}
                             onChange={(e) => setJobTitle(e.target.value)}
                             placeholder="مثلاً کارشناس مالی"

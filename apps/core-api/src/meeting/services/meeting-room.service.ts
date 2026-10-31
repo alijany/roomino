@@ -15,7 +15,7 @@ export class MeetingRoomService extends BaseRepositoryService<MeetingRoomEntity>
     super(repository);
   }
 
-  listPaginated(page = 0, limit = 10, onlyActive = false) {
+  listPaginated(page = 0, limit = 20, onlyActive = false) {
     return this.findAll(onlyActive ? { active: true } : {}, {
       orderBy: { created_at: 'DESC' },
       limit,

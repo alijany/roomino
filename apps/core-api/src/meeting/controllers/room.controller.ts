@@ -30,7 +30,7 @@ export class RoomController {
   @Get()
   @Roles(Role.ADMIN, Role.HR)
   async list(@Query() query: ListQueryDto) {
-    const { page = 0, limit = 10 } = query;
+    const { page = 0, limit = 20 } = query;
     const [items, total] = await this.roomService.listPaginated(page, limit);
     return {
       items,

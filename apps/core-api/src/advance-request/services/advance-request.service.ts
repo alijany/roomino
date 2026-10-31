@@ -212,7 +212,7 @@ export class AdvanceRequestService extends BaseRepositoryService<AdvanceRequestE
 
   async listForUser(user: UserEntity, query: ListAdvanceRequestsDto) {
     const page = query.page ?? 0;
-    const limit = query.limit ?? 10;
+    const limit = query.limit ?? 20;
 
     const filters: FilterQuery<AdvanceRequestEntity>[] = [
       this.visibilityFilter(user),

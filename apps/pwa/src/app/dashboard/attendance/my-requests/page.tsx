@@ -33,7 +33,7 @@ export default function MyRequestsPage() {
 }
 
 function MyRequestsContent() {
-  const [filters, setFilters] = useState<RequestFilterDto>({ status: 'all', limit: 10 });
+  const [filters, setFilters] = useState<RequestFilterDto>({ status: 'all', limit: 20 });
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [cancelling, setCancelling] = useState<AttendanceRequest | null>(null);
@@ -116,7 +116,7 @@ function MyRequestsContent() {
               {data?.meta && data.meta.pageCount > 1 && (
                 <div className="pt-6">
                   <Pagination
-                    itemPerPage={filters.limit || 10}
+                    itemPerPage={filters.limit || 20}
                     page={(filters.page || 0) + 1}
                     totalCount={data.meta.total}
                     onNavigate={(page) => {

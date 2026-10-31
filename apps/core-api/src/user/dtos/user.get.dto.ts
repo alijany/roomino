@@ -21,7 +21,7 @@ export class UsersGetDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 10;
+  limit?: number = 20;
 
   // NOTE: don't use @Type(() => Boolean) here — class-transformer's
   // automatic conversion is just `Boolean(value)`, so the query string

@@ -41,7 +41,7 @@ export default function PaymentQueuePage() {
   const [formOpen, setFormOpen] = useState(false);
 
   const filters = useMemo<RequestFilterDto>(() => {
-    const base: RequestFilterDto = { page, limit: 10, text: text || undefined };
+    const base: RequestFilterDto = { page, limit: 20, text: text || undefined };
 
     switch (tab) {
       case 'payable':

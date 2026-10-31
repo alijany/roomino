@@ -88,7 +88,7 @@ export class UserController {
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
   }> {
-    const { page = 0, limit = 10, text, role, status, ...rest } = filters;
+    const { page = 0, limit = 20, text, role, status, ...rest } = filters;
     const today = new Date().toLocaleDateString('sv-SE', {
       timeZone: 'Asia/Tehran',
     });

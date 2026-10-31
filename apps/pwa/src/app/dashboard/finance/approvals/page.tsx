@@ -54,7 +54,7 @@ export default function ApprovalsPage() {
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
                     <Pagination
-                      itemPerPage={filters.limit || 10}
+                      itemPerPage={filters.limit || 20}
                       page={(filters.page || 0) + 1}
                       totalCount={data.meta.total}
                       onNavigate={(page) => {

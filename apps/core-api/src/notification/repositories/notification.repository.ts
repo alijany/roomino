@@ -59,7 +59,7 @@ export class NotificationRepository
   }> {
     const {
       page = 0,
-      limit = 10,
+      limit = 20,
       text,
       status,
       type,

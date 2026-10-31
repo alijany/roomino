@@ -180,7 +180,7 @@ export class PaymentRequestService extends BaseRepositoryService<PaymentRequestE
 
   async listForUser(user: UserEntity, query: ListPaymentRequestsDto) {
     const page = query.page ?? 0;
-    const limit = query.limit ?? 10;
+    const limit = query.limit ?? 20;
 
     const filters: FilterQuery<PaymentRequestEntity>[] = [
       this.visibilityFilter(user),

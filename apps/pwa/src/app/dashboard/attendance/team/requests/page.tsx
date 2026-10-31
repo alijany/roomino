@@ -16,7 +16,7 @@ import { AttendanceRequest, RequestFilterDto, RequestStatus } from '../../attend
 
 /** درخواست‌های تیم — the approver's queue. Decisions here are final. */
 export default function TeamRequestsPage() {
-  const [filters, setFilters] = useState<RequestFilterDto>({ status: RequestStatus.PENDING, limit: 15 });
+  const [filters, setFilters] = useState<RequestFilterDto>({ status: RequestStatus.PENDING, limit: 20 });
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const { data, error, isLoading, refresh } = useTeamRequests(filters);
 
@@ -63,7 +63,7 @@ export default function TeamRequestsPage() {
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
                     <Pagination
-                      itemPerPage={filters.limit || 15}
+                      itemPerPage={filters.limit || 20}
                       page={(filters.page || 0) + 1}
                       totalCount={data.meta.total}
                       onNavigate={(page) => {

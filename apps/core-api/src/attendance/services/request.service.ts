@@ -308,7 +308,7 @@ export class RequestService {
    */
   async list(query: ListRequestsDto, scope?: number[]) {
     const page = query.page ?? 0;
-    const limit = query.limit ?? 15;
+    const limit = query.limit ?? 20;
     const status = query.status ?? RequestStatus.PENDING;
     const like = query.text?.trim()
       ? { $ilike: `%${query.text.trim()}%` }

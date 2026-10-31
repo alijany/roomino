@@ -40,7 +40,7 @@ export default function NotificationsPage() {
     const [selectedCategory, setSelectedCategory] = useState<'all' | NotificationCategory>('all');
 
     const [filters, setFilters] = useState<NotificationsFilters>({
-        limit: 10,
+        limit: 20,
         page: 0,
         text: searchText,
     });
@@ -338,10 +338,10 @@ export default function NotificationsPage() {
                                 </div>
                             </div>
 
-                            {data?.meta && data.meta.total > (filters.limit || 10) && (
+                            {data?.meta && data.meta.total > (filters.limit || 20) && (
                                 <div className='border-t border-slate-100 px-3 py-2.5 lg:px-4 lg:py-3'>
                                     <Pagination
-                                        itemPerPage={filters.limit || 10}
+                                        itemPerPage={filters.limit || 20}
                                         page={(filters.page || 0) + 1}
                                         totalCount={data.meta.total}
                                         onNavigate={page => {

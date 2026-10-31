@@ -41,7 +41,7 @@ import {
  * which is what removes the "do you have their Sheba?" round trip.
  */
 export default function VendorsPage() {
-  const [filters, setFilters] = useState<VendorFilterDto>({ limit: 12 });
+  const [filters, setFilters] = useState<VendorFilterDto>({ limit: 20 });
   const [formOpen, setFormOpen] = useState(false);
   const [accountFor, setAccountFor] = useState<Vendor | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Vendor | null>(null);
@@ -227,7 +227,7 @@ export default function VendorsPage() {
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
                     <Pagination
-                      itemPerPage={filters.limit || 12}
+                      itemPerPage={filters.limit || 20}
                       page={(filters.page || 0) + 1}
                       totalCount={data.meta.total}
                       onNavigate={(page) => {

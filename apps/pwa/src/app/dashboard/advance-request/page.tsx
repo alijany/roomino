@@ -95,7 +95,7 @@ export default function AdvanceRequestPage() {
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
                     <Pagination
-                      itemPerPage={data.meta.limit || 10}
+                      itemPerPage={data.meta.limit || 20}
                       page={page + 1}
                       totalCount={data.meta.total}
                       onNavigate={(nextPage) => {
