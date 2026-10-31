@@ -8,16 +8,19 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DataView, Pagination } from '@/ui/molecules';
 import { IconFilterOff, IconSearch, IconUsers } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useDebouncedFilterText, useUrlFilters } from '@/libs/url/url.hook.use-url-filters';
+import { Suspense } from 'react';
 import { useUsers } from './users.api';
 import { AddUserForm } from './users.component.add-user';
 import { UsersTable } from './users.component.table';
-import { UserFilterDto } from './users.types';
+import { UserFilterDto, UserStatusFilter } from './users.types';
 
 const STATUS_ITEMS = [
     { value: 'all', label: 'همه وضعیت‌ها' },
-    { value: 'approved', label: 'تایید شده' },
+    { value: 'active', label: 'فعال' },
+    { value: 'probation', label: 'آزمایشی' },
     { value: 'pending', label: 'در انتظار تایید' },
+    { value: 'ended', label: 'پایان همکاری' },
 ];
 
 const ROLE_ITEMS = [
@@ -26,7 +29,25 @@ const ROLE_ITEMS = [
 ];
 
 export default function UsersPage() {
-    const [filters, setFilters] = useState<UserFilterDto>({});
+    return (
+        <Suspense fallback={<DataView isLoading />}>
+            <UsersContent />
+        </Suspense>
+    );
+}
+
+function UsersContent() {
+    // The filters and the page live in the address, so a refresh keeps them.
+    const [filters, setFilters] = useUrlFilters<UserFilterDto>({
+        text: 'string',
+        role: 'string',
+        status: 'string',
+        page: 'number',
+        limit: 'number',
+    });
+    const [text, setText] = useDebouncedFilterText(filters.text, (value) =>
+        setFilters(prev => ({ ...prev, text: value || undefined, page: undefined })),
+    );
     const { hasRole } = useAuth();
     const isAdmin = hasRole(Role.ADMIN);
 
@@ -37,7 +58,7 @@ export default function UsersPage() {
     };
 
     const count = data?.meta?.total ?? 0;
-    const hasFilters = Boolean(filters.text || filters.role || filters.isApproved !== undefined);
+    const hasFilters = Boolean(filters.text || filters.role || filters.status);
 
     return (
         <RoleProtectedRoute allowedRoles={RouteItems.users.roles}>
@@ -64,28 +85,31 @@ export default function UsersPage() {
                                 <Input
                                     icon={<IconSearch className="size-4 text-slate-400" />}
                                     placeholder="نام، موبایل، کد پرسنلی یا عنوان"
-                                    value={filters.text ?? ''}
-                                    onChange={(e) => setFilters(prev => ({ ...prev, text: e.target.value || undefined, page: 0 }))}
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
                                 />
                             </div>
                             <div className="w-40">
                                 <Dropdown
                                     items={ROLE_ITEMS}
                                     value={filters.role ?? 'all'}
-                                    onChange={(value) => setFilters(prev => ({ ...prev, role: value && value !== 'all' ? (value as Role) : undefined, page: 0 }))}
+                                    onChange={(value) => setFilters(prev => ({ ...prev, role: value && value !== 'all' ? (value as Role) : undefined, page: undefined }))}
                                     variant="outline"
                                 />
                             </div>
                             <div className="w-40">
                                 <Dropdown
                                     items={STATUS_ITEMS}
-                                    value={filters.isApproved === undefined ? 'all' : filters.isApproved ? 'approved' : 'pending'}
-                                    onChange={(value) => setFilters(prev => ({ ...prev, isApproved: value === 'approved' ? true : value === 'pending' ? false : undefined, page: 0 }))}
+                                    value={filters.status ?? 'all'}
+                                    onChange={(value) => setFilters(prev => ({ ...prev, status: value && value !== 'all' ? (value as UserStatusFilter) : undefined, page: undefined }))}
                                     variant="outline"
                                 />
                             </div>
                             {hasFilters && (
-                                <Button variant="ghost" size="sm" className="gap-1 text-slate-500" onClick={() => setFilters({})}>
+                                <Button variant="ghost" size="sm" className="gap-1 text-slate-500" onClick={() => {
+                                    setFilters({});
+                                    setText('');
+                                }}>
                                     <IconFilterOff className="size-4" />
                                     پاک کردن فیلترها
                                 </Button>

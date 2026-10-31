@@ -2,6 +2,7 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -43,4 +44,12 @@ export class UsersGetDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+
+  /**
+   * Where the person stands: `pending` (not approved yet), `active` (here now),
+   * `probation` (on a trial period) or `ended` (cooperation over).
+   */
+  @IsOptional()
+  @IsIn(['pending', 'active', 'probation', 'ended'])
+  status?: 'pending' | 'active' | 'probation' | 'ended';
 }

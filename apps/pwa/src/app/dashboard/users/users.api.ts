@@ -72,7 +72,7 @@ export function useUpdateUserName() {
   const swrMutation = useSWRMutation(
     '/users/name',
     (_key: string, { arg }: { arg: { id: number; data: UpdateUserNameDto } }) =>
-      patchFetcher<UpdateUserNameDto, Pick<User, 'id' | 'name' | 'firstName' | 'lastName' | 'personnelCode' | 'jobTitle'>>(`/users/${arg.id}`, { arg: arg.data })
+      patchFetcher<UpdateUserNameDto, Pick<User, 'id' | 'name' | 'firstName' | 'lastName' | 'phone' | 'nationalId' | 'personnelCode' | 'jobTitle' | 'hireDate' | 'endDate' | 'insuranceNumber' | 'sheba' | 'email'>>(`/users/${arg.id}`, { arg: arg.data })
   );
   return useSwrMutationHelper(swrMutation);
 }

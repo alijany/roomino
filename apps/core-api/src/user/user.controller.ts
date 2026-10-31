@@ -39,8 +39,22 @@ function toUserListItem(user: UserEntity) {
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
     phone: user.phone,
+    nationalId: user.nationalId ?? null,
     personnelCode: user.personnelCode ?? null,
     jobTitle: user.jobTitle ?? null,
+    hireDate: user.hireDate ?? null,
+    endDate: user.endDate ?? null,
+    probationEndDate: user.probationEndDate ?? null,
+    insuranceNumber: user.insuranceNumber ?? null,
+    sheba: user.sheba ?? null,
+    email: user.email ?? null,
+    married: user.married,
+    childrenCount: user.childrenCount,
+    insured: user.insured,
+    insuranceType: user.insuranceType,
+    taxExempt: user.taxExempt,
+    agreementType: user.agreementType,
+    salaryMode: user.salaryMode,
     profilePicture: user.profilePicture ?? null,
     isApproved: user.isApproved,
     roles: user.roles
@@ -74,25 +88,46 @@ export class UserController {
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
   }> {
-    const { page = 0, limit = 10, text, role, ...rest } = filters;
+    const { page = 0, limit = 10, text, role, status, ...rest } = filters;
+    const today = new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tehran',
+    });
+    // Here now: approved, and cooperation not over.
+    const here = {
+      isApproved: true,
+      $or: [{ endDate: null }, { endDate: { $gte: today } }],
+    };
+    const byStatus =
+      status === 'pending'
+        ? { isApproved: false }
+        : status === 'active'
+        ? here
+        : status === 'probation'
+        ? { ...here, probationEndDate: { $gte: today } }
+        : status === 'ended'
+        ? { endDate: { $lt: today } }
+        : {};
     const like = text?.trim() ? { $ilike: `%${text.trim()}%` } : null;
 
     const [users, total] = await this.userService.findAll(
       {
-        ...rest,
-        ...(role ? { roles: { role } } : {}),
-        ...(like
-          ? {
-              $or: [
-                { firstName: like },
-                { lastName: like },
-                { phone: like },
-                { personnelCode: like },
-                { jobTitle: like },
-              ],
-            }
-          : {}),
-      },
+        $and: [
+          rest,
+          byStatus,
+          role ? { roles: { role } } : {},
+          like
+            ? {
+                $or: [
+                  { firstName: like },
+                  { lastName: like },
+                  { phone: like },
+                  { personnelCode: like },
+                  { jobTitle: like },
+                ],
+              }
+            : {},
+        ],
+      } as never,
       {
         orderBy: { created_at: 'DESC' },
         limit,
@@ -243,19 +278,51 @@ export class UserController {
   ) {
     await this.userService.updateProfile(id, {
       firstName: dto.firstName,
-      lastName: dto.lastName ?? '',
+      lastName: dto.lastName,
     });
+    if (dto.phone !== undefined) {
+      await this.userService.updatePhoneNumber(id, dto.phone);
+    }
     const user = await this.userService.updateStaffDetails(id, {
       personnelCode: dto.personnelCode,
       jobTitle: dto.jobTitle,
+      nationalId: dto.nationalId,
+      hireDate: dto.hireDate,
+      endDate: dto.endDate,
+      probationEndDate: dto.probationEndDate,
+      insuranceNumber: dto.insuranceNumber,
+      sheba: dto.sheba,
+      email: dto.email,
+      married: dto.married,
+      childrenCount: dto.childrenCount,
+      insured: dto.insured,
+      insuranceType: dto.insuranceType,
+      taxExempt: dto.taxExempt,
+      agreementType: dto.agreementType,
+      salaryMode: dto.salaryMode,
     });
     return {
       id: user.id,
       name: user.name,
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
+      phone: user.phone,
+      nationalId: user.nationalId ?? null,
       personnelCode: user.personnelCode ?? null,
       jobTitle: user.jobTitle ?? null,
+      hireDate: user.hireDate ?? null,
+      endDate: user.endDate ?? null,
+      probationEndDate: user.probationEndDate ?? null,
+      insuranceNumber: user.insuranceNumber ?? null,
+      sheba: user.sheba ?? null,
+      email: user.email ?? null,
+      married: user.married,
+      childrenCount: user.childrenCount,
+      insured: user.insured,
+      insuranceType: user.insuranceType,
+      taxExempt: user.taxExempt,
+      agreementType: user.agreementType,
+      salaryMode: user.salaryMode,
     };
   }
 }

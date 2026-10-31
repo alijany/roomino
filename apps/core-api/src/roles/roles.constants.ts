@@ -11,7 +11,7 @@ export enum Role {
 export const RoleLabels: Record<Role, string> = {
   [Role.ADMIN]: 'ادمین',
   [Role.CEO]: 'مدیر عامل',
-  [Role.FINANCE]: 'مالی',
+  [Role.FINANCE]: 'کارشناس مالی',
   [Role.FINANCE_MANAGER]: 'مدیر مالی',
   [Role.APPROVER]: 'تأییدکننده',
   [Role.HR]: 'منابع انسانی',

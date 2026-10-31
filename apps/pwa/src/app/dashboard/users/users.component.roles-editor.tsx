@@ -53,6 +53,7 @@ export function RolesEditor({ user, onChanged }: { user: User; onChanged: () => 
                     </span>
                 ))}
                 {addable.length > 0 && (
+                    <span className="inline-block">
                     <Dropdown
                         items={addable}
                         value={null}
@@ -67,6 +68,7 @@ export function RolesEditor({ user, onChanged }: { user: User; onChanged: () => 
                             </span>
                         )}
                     />
+                    </span>
                 )}
             </div>
             {error && <p className="text-xs text-rose-600" role="alert">{error}</p>}

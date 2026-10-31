@@ -18,6 +18,8 @@ import { ApprovalStepEntity } from 'src/finance/entities/approval-step.entity';
 import { FinanceActivityEntity } from 'src/finance/entities/finance-activity.entity';
 import { PaymentRequestEntity } from 'src/finance/entities/payment-request.entity';
 import { PaymentEntity } from 'src/finance/entities/payment.entity';
+import { PayrollLineEntity } from 'src/finance/entities/payroll-line.entity';
+import { SalaryChangeEntity } from 'src/finance/entities/salary-change.entity';
 import { RequestAttachmentEntity } from 'src/finance/entities/request-attachment.entity';
 import { ReservationEntity } from 'src/meeting/entities/reservation.entity';
 import { BaseRepositoryService } from 'src/libs/orm/orm.repository.service.base';
@@ -28,6 +30,18 @@ import { RolesService } from 'src/roles/roles.service';
 import { InviteUserDto } from './dtos/invitation.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import { UserEntity } from './user.entity';
+
+/** The Iranian national ID: ten digits, the last a check digit over the first nine. */
+export function isValidNationalId(value: string): boolean {
+  if (!/^\d{10}$/.test(value) || /^(\d)\1{9}$/.test(value)) return false;
+  const sum = value
+    .slice(0, 9)
+    .split('')
+    .reduce((acc, d, i) => acc + Number(d) * (10 - i), 0);
+  const rest = sum % 11;
+  const check = Number(value[9]);
+  return rest < 2 ? check === rest : check === 11 - rest;
+}
 
 @Injectable()
 export class UserService extends BaseRepositoryService<UserEntity> {
@@ -134,7 +148,16 @@ export class UserService extends BaseRepositoryService<UserEntity> {
 
     const paymentsMade = await this.em.count(PaymentEntity, { paidBy: id });
 
-    if (financeFootprint > 0 || paymentsMade > 0) {
+    const salaryHistory = await this.em.count(SalaryChangeEntity, { user: id });
+
+    const payrollLines = await this.em.count(PayrollLineEntity, { user: id });
+
+    if (
+      financeFootprint > 0 ||
+      paymentsMade > 0 ||
+      salaryHistory > 0 ||
+      payrollLines > 0
+    ) {
       throw new ConflictException(
         'این کاربر سابقه مالی دارد و قابل حذف نیست. به جای حذف، نقش‌های او را بردارید.',
       );
@@ -344,7 +367,24 @@ export class UserService extends BaseRepositoryService<UserEntity> {
    */
   async updateStaffDetails(
     userId: number,
-    details: { personnelCode?: string; jobTitle?: string },
+    details: {
+      personnelCode?: string;
+      jobTitle?: string;
+      nationalId?: string;
+      hireDate?: string;
+      endDate?: string;
+      probationEndDate?: string;
+      insuranceNumber?: string;
+      sheba?: string;
+      email?: string;
+      married?: boolean;
+      childrenCount?: number;
+      insured?: boolean;
+      insuranceType?: string;
+      taxExempt?: boolean;
+      agreementType?: string;
+      salaryMode?: string;
+    },
   ): Promise<UserEntity> {
     const user = await this.findOne({ id: userId });
     if (!user) {
@@ -367,6 +407,78 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (details.jobTitle !== undefined) {
       user.jobTitle = details.jobTitle || undefined;
     }
+    if (details.nationalId !== undefined) {
+      if (details.nationalId && !isValidNationalId(details.nationalId)) {
+        throw new BadRequestException('کد ملی نامعتبر است');
+      }
+      if (details.nationalId && details.nationalId !== user.nationalId) {
+        const clash = await this.findOne({
+          nationalId: details.nationalId,
+          id: { $ne: userId },
+        });
+        if (clash) throw new ConflictException('این کد ملی قبلاً ثبت شده است');
+      }
+      user.nationalId = details.nationalId || undefined;
+    }
+
+    // Empty clears; the rest is kept as given (already validated).
+    const hire =
+      details.hireDate !== undefined
+        ? details.hireDate || undefined
+        : user.hireDate;
+    const end =
+      details.endDate !== undefined
+        ? details.endDate || undefined
+        : user.endDate;
+    if (hire && end && end < hire) {
+      throw new BadRequestException(
+        'تاریخ پایان همکاری نمی‌تواند قبل از تاریخ شروع باشد',
+      );
+    }
+    const probation =
+      details.probationEndDate !== undefined
+        ? details.probationEndDate || undefined
+        : user.probationEndDate;
+    if (probation) {
+      if (!hire) {
+        throw new BadRequestException(
+          'برای دوره آزمایشی ابتدا تاریخ شروع همکاری را وارد کنید',
+        );
+      }
+      if (probation < hire) {
+        throw new BadRequestException(
+          'پایان دوره آزمایشی نمی‌تواند قبل از شروع همکاری باشد',
+        );
+      }
+      // The law allows up to three months, and that only for skilled work.
+      const limit = new Date(`${hire}T12:00:00Z`);
+      limit.setUTCDate(limit.getUTCDate() + 90);
+      if (probation > limit.toISOString().slice(0, 10)) {
+        throw new BadRequestException(
+          'دوره آزمایشی حداکثر سه ماه (۹۰ روز) از شروع همکاری است',
+        );
+      }
+    }
+    if (details.probationEndDate !== undefined)
+      user.probationEndDate = probation;
+    if (details.hireDate !== undefined) user.hireDate = hire;
+    if (details.endDate !== undefined) user.endDate = end;
+    if (details.insuranceNumber !== undefined) {
+      user.insuranceNumber = details.insuranceNumber || undefined;
+    }
+    if (details.sheba !== undefined) user.sheba = details.sheba || undefined;
+    if (details.email !== undefined) user.email = details.email || undefined;
+    if (details.married !== undefined) user.married = details.married;
+    if (details.childrenCount !== undefined)
+      user.childrenCount = details.childrenCount;
+    if (details.insured !== undefined) user.insured = details.insured;
+    if (details.insuranceType !== undefined)
+      user.insuranceType = details.insuranceType;
+    if (details.taxExempt !== undefined) user.taxExempt = details.taxExempt;
+    if (details.agreementType !== undefined)
+      user.agreementType = details.agreementType;
+
+    if (details.salaryMode !== undefined) user.salaryMode = details.salaryMode;
 
     await this.persistAndFlush(user);
     return user;
