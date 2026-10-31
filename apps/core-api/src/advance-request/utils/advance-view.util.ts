@@ -2,6 +2,7 @@ import { UserEntity } from '../../user/user.entity';
 import {
   AdvanceRequestListItem,
   AdvanceApprovalStepView,
+  AdvanceSettlement,
   UserSummary,
 } from '../advance-request.types';
 import { AdvanceApprovalStepEntity } from '../entities/advance-approval-step.entity';
@@ -21,6 +22,7 @@ export function toUserSummary(user?: UserEntity): UserSummary | undefined {
 
 export function toListItem(
   request: AdvanceRequestEntity,
+  settlement?: AdvanceSettlement | null,
 ): AdvanceRequestListItem {
   return {
     id: request.id,
@@ -31,6 +33,7 @@ export function toListItem(
     pendingRole: request.pendingRole,
     decidedAt: request.decidedAt,
     created_at: request.created_at,
+    settlement: settlement ?? null,
   };
 }
 

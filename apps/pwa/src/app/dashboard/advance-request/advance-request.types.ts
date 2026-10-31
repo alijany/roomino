@@ -35,6 +35,31 @@ export interface AdvanceRequestPermissions {
   canDecide: boolean;
   canReject: boolean;
   canCancel: boolean;
+  /** Finance may record a settlement made by hand. */
+  canSettle: boolean;
+}
+
+/** One piece of a settlement; `period` (Jalali YYYYMM) is null for one made by hand. */
+export interface AdvanceSettlementPiece {
+  id: number;
+  kind: 'payroll' | 'manual';
+  period: number | null;
+  amount: number;
+  at: string;
+  note: string | null;
+  recordedBy: string | null;
+}
+
+/** Where an approved advance stands against the pay it is taken off. */
+export interface AdvanceSettlement {
+  status: 'unsettled' | 'partial' | 'settled';
+  /** Rial taken off so far, and rial still owed. */
+  deducted: number;
+  remaining: number;
+  /** The day the last piece was taken off, once nothing is owed. */
+  settledAt: string | null;
+  /** Each piece: taken off a pay month, or settled by hand. */
+  deductions: AdvanceSettlementPiece[];
 }
 
 export interface AdvanceRequest {
@@ -46,6 +71,8 @@ export interface AdvanceRequest {
   pendingRole?: Role;
   decidedAt?: string;
   created_at: string;
+  /** Only for an approved request. */
+  settlement?: AdvanceSettlement | null;
 }
 
 export interface AdvanceRequestDetail extends AdvanceRequest {
@@ -73,6 +100,13 @@ export interface AdvanceRequestFilterDto {
   status?: AdvanceRequestStatus[];
   from?: string;
   to?: string;
+}
+
+export interface CreateSettlementDto {
+  amount: number;
+  /** `YYYY-MM-DD`; today when omitted. */
+  paidOn?: string;
+  note?: string;
 }
 
 export interface CreateAdvanceRequestDto {

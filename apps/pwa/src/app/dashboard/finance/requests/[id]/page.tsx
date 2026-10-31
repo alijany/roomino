@@ -5,7 +5,7 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { formatMoney } from '@/libs/format/format.util';
 import { cn } from '@/libs/style/style.util.helpers';
 import { Avatar, Button } from '@/ui/atoms';
-import { DataView } from '@/ui/molecules';
+import { BackButton, DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import {
   IconAlertCircle,
@@ -165,15 +165,9 @@ export default function PaymentRequestDetailPage() {
     <ProtectedRoute>
       <DashbaordLayout>
         <div className="flex grow flex-col gap-3 overflow-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-fit gap-2 border-none"
-            onClick={() => router.back()}
-          >
-            <IconArrowRight className="size-4" />
-            بازگشت
-          </Button>
+          <div className="flex items-center gap-3">
+            <BackButton label="بازگشت" />
+          </div>
 
           <DataView
             data={data}

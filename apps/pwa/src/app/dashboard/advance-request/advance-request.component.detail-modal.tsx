@@ -8,6 +8,7 @@ import { IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useAdvanceRequest, useCancelAdvanceRequest } from './advance-request.api';
+import { SettlementDetails } from './advance-request.component.settlement';
 import { StatusBadge } from './advance-request.component.status-badge';
 import { StepBadge } from './advance-request.component.step-badge';
 import { STATUS_META } from './advance-request.constants';
@@ -26,7 +27,7 @@ interface RequestDetailModalProps {
  * requester can still withdraw their own request before it's decided.
  */
 export function RequestDetailModal({ requestId, onClose, onChanged }: RequestDetailModalProps) {
-  const { data, isLoading } = useAdvanceRequest(requestId ?? undefined);
+  const { data, isLoading, refresh } = useAdvanceRequest(requestId ?? undefined);
   const cancel = useCancelAdvanceRequest();
   const [cancelOpen, setCancelOpen] = useState(false);
 
@@ -85,6 +86,20 @@ export function RequestDetailModal({ requestId, onClose, onChanged }: RequestDet
                 {data.status === AdvanceRequestStatus.REJECTED && data.lastDecisionComment && (
                   <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-800">
                     دلیل رد: {data.lastDecisionComment}
+                  </div>
+                )}
+
+                {data.settlement && (
+                  <div className="border-t border-slate-100 pt-3">
+                    <SettlementDetails
+                      settlement={data.settlement}
+                      requestId={data.id}
+                      canSettle={data.permissions.canSettle}
+                      onChanged={() => {
+                        refresh();
+                        onChanged();
+                      }}
+                    />
                   </div>
                 )}
 

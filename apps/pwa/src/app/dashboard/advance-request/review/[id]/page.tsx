@@ -6,7 +6,7 @@ import { RouteItems } from '@/components/dashboard/dashboard.constants.route-gro
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { formatMoney } from '@/libs/format/format.util';
 import { Avatar, Button } from '@/ui/atoms';
-import { DataView } from '@/ui/molecules';
+import { BackButton, DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { IconArrowRight, IconCheck, IconX } from '@tabler/icons-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ import {
   useRejectAdvanceRequest,
 } from '../../advance-request.api';
 import { DecisionKind, DecisionModal } from '../../advance-request.component.decision-modal';
+import { SettlementDetails } from '../../advance-request.component.settlement';
 import { StatusBadge } from '../../advance-request.component.status-badge';
 import { StepBadge } from '../../advance-request.component.step-badge';
 import { STATUS_META } from '../../advance-request.constants';
@@ -80,15 +81,9 @@ export default function AdvanceRequestDetailPage() {
     <RoleProtectedRoute allowedRoles={RouteItems.advanceRequestReview.roles}>
       <DashbaordLayout>
         <div className="flex grow flex-col gap-3 overflow-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-fit gap-2 border-none"
-            onClick={() => router.back()}
-          >
-            <IconArrowRight className="size-4" />
-            بازگشت
-          </Button>
+          <div className="flex items-center gap-3">
+            <BackButton label="بازگشت" />
+          </div>
 
           <DataView
             data={data}
@@ -172,6 +167,17 @@ export default function AdvanceRequestDetailPage() {
                         لغو درخواست
                       </Button>
                     )}
+                  </div>
+                )}
+
+                {data.settlement && (
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-5">
+                    <SettlementDetails
+                      settlement={data.settlement}
+                      requestId={data.id}
+                      canSettle={data.permissions.canSettle}
+                      onChanged={refresh}
+                    />
                   </div>
                 )}
 

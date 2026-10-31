@@ -1,5 +1,5 @@
 import { useSwrHelper, useSwrMutationHelper } from '@/libs/api/api.hook.use-swr-helper';
-import { fetcher, postFetcher } from '@/libs/api/api.util.fetcher';
+import { deleteFetcher, fetcher, postFetcher } from '@/libs/api/api.util.fetcher';
 import { withQuery } from '@/libs/api/api.util.query';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
@@ -8,6 +8,7 @@ import {
   AdvanceRequestDetail,
   AdvanceRequestFilterDto,
   CreateAdvanceRequestDto,
+  CreateSettlementDto,
   GetAdvanceRequestsResponse,
 } from './advance-request.types';
 
@@ -57,3 +58,25 @@ export const useApproveAdvanceRequest = () =>
 export const useRejectAdvanceRequest = () =>
   useAdvanceRequestAction<{ comment: string }>('reject');
 export const useCancelAdvanceRequest = () => useAdvanceRequestAction('cancel');
+
+/** Records money paid back by hand against an approved advance. */
+export function useSettleAdvance() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/advance-requests/settle',
+      (_key: string, { arg }: { arg: { id: number; data: CreateSettlementDto } }) =>
+        postFetcher<CreateSettlementDto, AdvanceRequest>(`/advance-requests/${arg.id}/settlements`, { arg: arg.data })
+    )
+  );
+}
+
+/** Takes back a settlement made by hand. */
+export function useRemoveSettlement() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/advance-requests/unsettle',
+      (_key: string, { arg }: { arg: { id: number; settlementId: number } }) =>
+        deleteFetcher<AdvanceRequest>(`/advance-requests/${arg.id}/settlements/${arg.settlementId}`)
+    )
+  );
+}

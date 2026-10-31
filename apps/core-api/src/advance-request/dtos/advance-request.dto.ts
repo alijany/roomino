@@ -7,6 +7,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -72,4 +73,23 @@ export class ReasonRequiredDto {
   @IsNotEmpty({ message: 'نوشتن دلیل الزامی است' })
   @MaxLength(1000)
   comment: string;
+}
+
+/** A settlement made by hand: money paid back outside the payroll. */
+export class CreateSettlementDto {
+  @Type(() => Number)
+  @IsInt({ message: 'مبلغ باید عدد صحیح (ریال) باشد' })
+  @Min(1, { message: 'مبلغ باید بزرگ‌تر از صفر باشد' })
+  amount: number;
+
+  /** `YYYY-MM-DD`; defaults to today. */
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'تاریخ نامعتبر است' })
+  paidOn?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  note?: string;
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -17,6 +18,7 @@ import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { UserEntity } from '../../user/user.entity';
 import {
   CreateAdvanceRequestDto,
+  CreateSettlementDto,
   DecisionDto,
   ListAdvanceRequestsDto,
   ReasonRequiredDto,
@@ -42,7 +44,12 @@ export class AdvanceRequestController {
   ) {
     const { items, meta } = await this.requests.listForUser(user, query);
 
-    return { items: items.map(toListItem), meta };
+    const settlements = await this.requests.settlementsFor(items);
+
+    return {
+      items: items.map((r) => toListItem(r, settlements.get(r.id))),
+      meta,
+    };
   }
 
   @Get(':id')
@@ -52,8 +59,10 @@ export class AdvanceRequestController {
   ) {
     const request = await this.requests.getDetailOrFail(id, user);
 
+    const settlements = await this.requests.settlementsFor([request]);
+
     return {
-      ...toListItem(request),
+      ...toListItem(request, settlements.get(request.id)),
       lastDecisionComment: request.lastDecisionComment,
       approvalSteps: request.approvalSteps
         .getItems()
@@ -90,6 +99,33 @@ export class AdvanceRequestController {
   ) {
     const request = await this.requests.reject(id, user, dto.comment);
     return toListItem(request);
+  }
+
+  /** Record money paid back by hand (finance manager, admin). */
+  @Post(':id/settlements')
+  async settle(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(NormalizeNumbersPipe) dto: CreateSettlementDto,
+    @CurrentUser() user: UserEntity,
+  ) {
+    const request = await this.requests.addSettlement(id, user, dto);
+    const settlements = await this.requests.settlementsFor([request]);
+    return toListItem(request, settlements.get(request.id));
+  }
+
+  @Delete(':id/settlements/:settlementId')
+  async unsettle(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('settlementId', ParseIntPipe) settlementId: number,
+    @CurrentUser() user: UserEntity,
+  ) {
+    const request = await this.requests.removeSettlement(
+      id,
+      settlementId,
+      user,
+    );
+    const settlements = await this.requests.settlementsFor([request]);
+    return toListItem(request, settlements.get(request.id));
   }
 
   @Post(':id/cancel')

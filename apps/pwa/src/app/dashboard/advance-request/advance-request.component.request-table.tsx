@@ -4,6 +4,7 @@ import { formatMoney } from '@/libs/format/format.util';
 import { Button } from '@/ui/atoms';
 import { PersonLabel, Table, TableColumn } from '@/ui/molecules';
 import { IconEye } from '@tabler/icons-react';
+import { SettlementBadge } from './advance-request.component.settlement';
 import { StatusBadge } from './advance-request.component.status-badge';
 import { AdvanceRequest } from './advance-request.types';
 import { formatJalali } from './advance-request.util';
@@ -39,13 +40,6 @@ export function RequestTable({ requests, showRequester = true, onViewDetails }: 
       ),
     },
     {
-      key: 'reason',
-      header: 'توضیح',
-      render: (row) => (
-        <span className="text-slate-600">{row.reason || '—'}</span>
-      ),
-    },
-    {
       key: 'created',
       header: 'تاریخ درخواست',
       numeric: true,
@@ -54,17 +48,14 @@ export function RequestTable({ requests, showRequester = true, onViewDetails }: 
       ),
     },
     {
-      key: 'decided',
-      header: 'تاریخ تأیید',
-      numeric: true,
-      render: (row) => (
-        <span className="text-sm text-slate-600">{formatJalali(row.decidedAt)}</span>
-      ),
-    },
-    {
       key: 'status',
       header: 'وضعیت',
       render: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: 'settlement',
+      header: 'تسویه',
+      render: (row) => <SettlementBadge settlement={row.settlement} />,
     },
     {
       key: 'view',

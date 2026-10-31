@@ -1,6 +1,7 @@
 import { EntityRepository, FilterQuery, QueryOrder } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -17,15 +18,19 @@ import {
   AdvanceRequestStatus,
   TERMINAL_ADVANCE_STATUSES,
 } from '../advance-request.constants';
-import { AdvanceRequestPermissions } from '../advance-request.types';
+import {
+  AdvanceRequestPermissions,
+  AdvanceSettlement,
+} from '../advance-request.types';
 import {
   AdvanceRequestScope,
   CreateAdvanceRequestDto,
   ListAdvanceRequestsDto,
 } from '../dtos/advance-request.dto';
 import { AdvanceApprovalStepEntity } from '../entities/advance-approval-step.entity';
+import { AdvanceDeductionEntity } from '../../finance/entities/advance-deduction.entity';
 import { AdvanceRequestEntity } from '../entities/advance-request.entity';
-import { assertSafeAmount } from '../utils/money.util';
+import { assertSafeAmount, readBigint } from '../utils/money.util';
 import { AdvanceRequestActivityService } from './advance-request-activity.service';
 import { AdvanceRequestNotificationService } from './advance-request-notification.service';
 
@@ -43,6 +48,112 @@ export class AdvanceRequestService extends BaseRepositoryService<AdvanceRequestE
     super(repository);
   }
 
+  /**
+   * How far each approved request has been taken off pay: nothing, part, or
+   * all of it. Worked out from the payroll deductions, so giving a piece back
+   * or deleting a payroll line is reflected at once.
+   */
+  async settlementsFor(requests: AdvanceRequestEntity[]) {
+    const approved = requests.filter(
+      (r) => r.status === AdvanceRequestStatus.APPROVED,
+    );
+    const result = new Map<number, AdvanceSettlement>();
+    if (!approved.length) return result;
+
+    const rows = await this.em.find(
+      AdvanceDeductionEntity,
+      { request: { $in: approved.map((r) => r.id) } },
+      {
+        populate: ['line', 'recordedBy'],
+        orderBy: { created_at: QueryOrder.ASC },
+      },
+    );
+    for (const request of approved) {
+      const mine = rows.filter((d) => d.request.id === request.id);
+      const deducted = mine.reduce((sum, d) => sum + Number(d.amount), 0);
+      const remaining = Math.max(readBigint(request.amountRial) - deducted, 0);
+      result.set(request.id, {
+        status: !mine.length
+          ? 'unsettled'
+          : remaining > 0
+          ? 'partial'
+          : 'settled',
+        deducted,
+        remaining,
+        settledAt:
+          mine.length && remaining === 0
+            ? mine[mine.length - 1].paidOn ?? mine[mine.length - 1].created_at
+            : null,
+        deductions: mine.map((d) => ({
+          id: d.id,
+          kind: d.line ? ('payroll' as const) : ('manual' as const),
+          period: d.line?.period ?? null,
+          amount: Number(d.amount),
+          at: d.paidOn ?? d.created_at,
+          note: d.note ?? null,
+          recordedBy: d.recordedBy?.name ?? null,
+        })),
+      });
+    }
+    return result;
+  }
+
+  /** Record money paid back by hand against an approved advance. */
+  async addSettlement(
+    id: number,
+    user: UserEntity,
+    dto: { amount: number; paidOn?: string; note?: string },
+  ) {
+    if (!this.canSettle(user)) {
+      throw new ForbiddenException('ثبت تسویه فقط برای مدیر مالی و ادمین است');
+    }
+    const request = await this.loadFullOrFail(id);
+    if (request.status !== AdvanceRequestStatus.APPROVED) {
+      throw new ConflictException('فقط مساعده‌ی تأییدشده تسویه می‌شود');
+    }
+    const { remaining } = (await this.settlementsFor([request])).get(
+      request.id,
+    )!;
+    if (remaining <= 0) {
+      throw new ConflictException('این مساعده کامل تسویه شده است');
+    }
+    if (dto.amount > remaining) {
+      throw new BadRequestException(
+        `مبلغ نباید از مانده‌ی مساعده (${remaining.toLocaleString(
+          'fa-IR',
+        )} ریال) بیشتر باشد`,
+      );
+    }
+    this.em.create(AdvanceDeductionEntity, {
+      request,
+      amount: dto.amount,
+      paidOn: dto.paidOn ?? new Date().toISOString().slice(0, 10),
+      recordedBy: user,
+      note: dto.note?.trim() || undefined,
+    });
+    await this.em.flush();
+    return request;
+  }
+
+  /** Take back a manual settlement recorded by mistake; payroll ones go from the payroll line. */
+  async removeSettlement(id: number, settlementId: number, user: UserEntity) {
+    if (!this.canSettle(user)) {
+      throw new ForbiddenException('حذف تسویه فقط برای مدیر مالی و ادمین است');
+    }
+    const piece = await this.em.findOne(AdvanceDeductionEntity, {
+      id: settlementId,
+      request: id,
+    });
+    if (!piece) throw new NotFoundException('تسویه پیدا نشد');
+    if (piece.line) {
+      throw new ConflictException(
+        'این مبلغ از حقوق کسر شده؛ از صفحه‌ی حقوق برگردانده می‌شود',
+      );
+    }
+    await this.em.removeAndFlush(piece);
+    return this.loadFullOrFail(id);
+  }
+
   // ---------------------------------------------------------------------------
   // role helpers
   // ---------------------------------------------------------------------------
@@ -53,6 +164,13 @@ export class AdvanceRequestService extends BaseRepositoryService<AdvanceRequestE
 
   hasRole(user: UserEntity, role: Role): boolean {
     return this.rolesOf(user).includes(role);
+  }
+
+  /** Finance (the finance manager) and the admin record settlements. */
+  canSettle(user: UserEntity): boolean {
+    return (
+      this.hasRole(user, Role.FINANCE_MANAGER) || this.hasRole(user, Role.ADMIN)
+    );
   }
 
   private hasOversight(user: UserEntity): boolean {
@@ -246,6 +364,9 @@ export class AdvanceRequestService extends BaseRepositoryService<AdvanceRequestE
     return {
       canDecide,
       canReject: canDecide,
+      canSettle:
+        request.status === AdvanceRequestStatus.APPROVED &&
+        this.canSettle(user),
       canCancel:
         (isOwner || canManage) &&
         request.status === AdvanceRequestStatus.PENDING_APPROVAL,
