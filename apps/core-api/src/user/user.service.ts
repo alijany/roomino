@@ -382,6 +382,7 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       insured?: boolean;
       insuranceType?: string;
       taxExempt?: boolean;
+      cooperationEnded?: boolean;
       agreementType?: string;
       salaryMode?: string;
     },
@@ -435,6 +436,12 @@ export class UserService extends BaseRepositoryService<UserEntity> {
         'تاریخ پایان همکاری نمی‌تواند قبل از تاریخ شروع باشد',
       );
     }
+    const ended = details.cooperationEnded ?? user.cooperationEnded;
+    if (ended && !end) {
+      throw new BadRequestException(
+        'برای پایان همکاری تاریخ پایان را وارد کنید',
+      );
+    }
     const probation =
       details.probationEndDate !== undefined
         ? details.probationEndDate || undefined
@@ -475,6 +482,8 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (details.insuranceType !== undefined)
       user.insuranceType = details.insuranceType;
     if (details.taxExempt !== undefined) user.taxExempt = details.taxExempt;
+    if (details.cooperationEnded !== undefined)
+      user.cooperationEnded = details.cooperationEnded;
     if (details.agreementType !== undefined)
       user.agreementType = details.agreementType;
 

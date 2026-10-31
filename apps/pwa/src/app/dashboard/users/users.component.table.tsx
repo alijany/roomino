@@ -23,8 +23,8 @@ interface UsersTableProps {
 /** Where a person stands today, in one badge. */
 function StatusBadge({ user }: { user: User }) {
     const today = tehranToday();
+    if (user.cooperationEnded || (user.endDate && user.endDate < today)) return <Badge tone="neutral">پایان همکاری</Badge>;
     if (!user.isApproved) return <Badge tone="warning">در انتظار تایید</Badge>;
-    if (user.endDate && user.endDate < today) return <Badge tone="danger">پایان همکاری</Badge>;
     if (user.probationEndDate && user.probationEndDate >= today) return <Badge tone="warning">آزمایشی</Badge>;
     return <Badge tone="success">فعال</Badge>;
 }

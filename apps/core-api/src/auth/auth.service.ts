@@ -106,6 +106,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+    this.assertCooperating(user);
 
     // Generate new tokens
     const tokens = this.generateTokens(user, deviceId);
@@ -143,6 +144,15 @@ export class AuthService {
     return otp.toString();
   }
 
+  /** Someone whose cooperation is over cannot sign in. */
+  private assertCooperating(user?: { cooperationEnded?: boolean } | null) {
+    if (user?.cooperationEnded) {
+      throw new ForbiddenException(
+        'همکاری شما با مجموعه پایان یافته است و امکان ورود ندارید.',
+      );
+    }
+  }
+
   /** New accounts are refused while the admin or the CEO has closed registration. */
   private async assertRegistrationOpen() {
     if (await this.siteSettings.get('registrationClosed')) {
@@ -166,6 +176,7 @@ export class AuthService {
     const existingUser = await this.userService.findOne({
       phone: validatedPhone.number,
     });
+    this.assertCooperating(existingUser);
     const isNewUser = !existingUser;
     if (isNewUser) await this.assertRegistrationOpen();
 
@@ -320,6 +331,7 @@ export class AuthService {
       },
     );
 
+    this.assertCooperating(user);
     let isNewUser = false;
     if (!user) {
       await this.assertRegistrationOpen();

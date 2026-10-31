@@ -65,7 +65,7 @@ export function UserPicker({
   }, []);
 
   const { data, isLoading } = useSWR<{ items: PickableUser[] }>(
-    open && !value ? withQuery('/users', { text: debounced || undefined, limit: LIMIT + excludeIds.length }) : null,
+    open && !value ? withQuery('/users', { text: debounced || undefined, activeOnly: true, limit: LIMIT + excludeIds.length }) : null,
     fetcher,
     { keepPreviousData: true },
   );

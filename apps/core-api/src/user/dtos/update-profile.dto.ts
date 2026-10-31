@@ -146,6 +146,9 @@ export class UpdateUserNameDto {
 
   @IsOptional() @IsBoolean() taxExempt?: boolean;
 
+  /** Cooperation is over: no sign-in, and out of every list but the users list. */
+  @IsOptional() @IsBoolean() cooperationEnded?: boolean;
+
   @IsOptional()
   @IsIn(['gross', 'net'], { message: 'نوع توافق نامعتبر است' })
   agreementType?: string;

@@ -53,6 +53,7 @@ function toUserListItem(user: UserEntity) {
     insured: user.insured,
     insuranceType: user.insuranceType,
     taxExempt: user.taxExempt,
+    cooperationEnded: user.cooperationEnded,
     agreementType: user.agreementType,
     salaryMode: user.salaryMode,
     profilePicture: user.profilePicture ?? null,
@@ -88,13 +89,22 @@ export class UserController {
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
   }> {
-    const { page = 0, limit = 20, text, role, status, ...rest } = filters;
+    const {
+      page = 0,
+      limit = 20,
+      text,
+      role,
+      status,
+      activeOnly,
+      ...rest
+    } = filters;
     const today = new Date().toLocaleDateString('sv-SE', {
       timeZone: 'Asia/Tehran',
     });
     // Here now: approved, and cooperation not over.
     const here = {
       isApproved: true,
+      cooperationEnded: false,
       $or: [{ endDate: null }, { endDate: { $gte: today } }],
     };
     const byStatus =
@@ -105,7 +115,12 @@ export class UserController {
         : status === 'probation'
         ? { ...here, probationEndDate: { $gte: today } }
         : status === 'ended'
-        ? { endDate: { $lt: today } }
+        ? { $or: [{ cooperationEnded: true }, { endDate: { $lt: today } }] }
+        : activeOnly
+        ? {
+            cooperationEnded: false,
+            $or: [{ endDate: null }, { endDate: { $gte: today } }],
+          }
         : {};
     const like = text?.trim() ? { $ilike: `%${text.trim()}%` } : null;
 
@@ -298,6 +313,7 @@ export class UserController {
       insured: dto.insured,
       insuranceType: dto.insuranceType,
       taxExempt: dto.taxExempt,
+      cooperationEnded: dto.cooperationEnded,
       agreementType: dto.agreementType,
       salaryMode: dto.salaryMode,
     });
@@ -321,6 +337,7 @@ export class UserController {
       insured: user.insured,
       insuranceType: user.insuranceType,
       taxExempt: user.taxExempt,
+      cooperationEnded: user.cooperationEnded,
       agreementType: user.agreementType,
       salaryMode: user.salaryMode,
     };

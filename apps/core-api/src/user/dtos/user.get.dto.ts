@@ -52,4 +52,10 @@ export class UsersGetDto {
   @IsOptional()
   @IsIn(['pending', 'active', 'probation', 'ended'])
   status?: 'pending' | 'active' | 'probation' | 'ended';
+
+  /** For pickers: leave out people whose cooperation is over. */
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  activeOnly?: boolean;
 }

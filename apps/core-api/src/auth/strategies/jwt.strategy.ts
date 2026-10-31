@@ -35,6 +35,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
+      if (user.cooperationEnded) {
+        throw new UnauthorizedException('همکاری شما با مجموعه پایان یافته است');
+      }
 
       return user;
     } catch (error) {

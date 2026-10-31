@@ -106,6 +106,7 @@ export class EmployeeService {
       ...(query.workplaceId ? { workplace: query.workplaceId } : {}),
       ...(query.jobGroupId ? { jobGroup: query.jobGroupId } : {}),
       ...(query.activeOnly ? { active: true } : {}),
+      user: { cooperationEnded: false },
     } as FilterQuery<EmployeeProfileEntity>;
 
     const [items, total] = await this.em.findAndCount(
@@ -138,6 +139,7 @@ export class EmployeeService {
       EmployeeProfileEntity,
       {
         active: true,
+        user: { cooperationEnded: false },
         ...this.textFilter(filters.text),
         ...(filters.workplaceId ? { workplace: filters.workplaceId } : {}),
         ...(filters.jobGroupId ? { jobGroup: filters.jobGroupId } : {}),
@@ -162,6 +164,7 @@ export class EmployeeService {
     return this.em.find(
       UserEntity,
       {
+        cooperationEnded: false,
         ...(taken.length ? { id: { $nin: taken.map((p) => p.user.id) } } : {}),
         ...(like
           ? { $or: [{ firstName: like }, { lastName: like }, { phone: like }] }

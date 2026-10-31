@@ -11252,6 +11252,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "date"
+        },
+        "cooperation_ended": {
+          "name": "cooperation_ended",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
         }
       },
       "name": "user_entity",

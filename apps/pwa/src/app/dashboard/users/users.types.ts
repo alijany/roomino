@@ -33,6 +33,7 @@ export interface User {
   insured?: boolean;
   insuranceType?: 'worker' | 'board';
   taxExempt?: boolean;
+  cooperationEnded?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
   profilePicture?: string | null;
@@ -96,6 +97,7 @@ export interface UpdateUserNameDto {
   insured?: boolean;
   insuranceType?: 'worker' | 'board';
   taxExempt?: boolean;
+  cooperationEnded?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
 }

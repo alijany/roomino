@@ -69,12 +69,12 @@ function SectionCard({ id, icon: Icon, title, hint, children }: { id: string; ic
 /** The person at a glance: who, what they hold, and the dates that matter. */
 function UserHero({ user }: { user: User }) {
     const today = tehranToday();
-    const left = user.endDate && user.endDate < today;
+    const left = user.cooperationEnded || Boolean(user.endDate && user.endDate < today);
     const probation = user.probationEndDate ? (user.probationEndDate >= today ? 'در دوره‌ی آزمایشی' : 'آزمایشی بود') : null;
     const facts: Array<[string, string]> = [
         ['نقش', user.roles.length ? user.roles.map((r) => getRoleName(r.role)).join('، ') : '—'],
         ['شروع همکاری', user.hireDate ? jalaliLabel(user.hireDate) : '—'],
-        ['سابقه', user.hireDate ? tenureLabel(user.hireDate, user.endDate && user.endDate < today ? user.endDate : today) : '—'],
+        ['سابقه', user.hireDate ? tenureLabel(user.hireDate, left && user.endDate && user.endDate < today ? user.endDate : today) : '—'],
         ['نوع حقوق', SALARY_MODE_LABEL[user.salaryMode ?? 'regular']],
         ['کد پرسنلی', user.personnelCode ?? '—'],
     ];
@@ -88,8 +88,11 @@ function UserHero({ user }: { user: User }) {
                     <p className="text-sm text-slate-500">{user.jobTitle ?? 'عنوان شغلی ثبت نشده'}</p>
                     {(probation || left) && (
                         <div className="flex flex-wrap gap-1.5">
-                            {probation && <Badge tone={probation === 'آزمایشی بود' ? 'neutral' : 'warning'}>{probation}</Badge>}
-                            {left && <Badge tone="danger">پایان همکاری</Badge>}
+                            {left ? (
+                                <Badge tone="neutral">پایان همکاری</Badge>
+                            ) : (
+                                probation && <Badge tone={probation === 'آزمایشی بود' ? 'neutral' : 'warning'}>{probation}</Badge>
+                            )}
                         </div>
                     )}
                 </div>
@@ -154,6 +157,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [insured, setInsured] = useState(user.insured !== false);
     const [insuranceType, setInsuranceType] = useState<'worker' | 'board'>(user.insuranceType ?? 'worker');
     const [taxExempt, setTaxExempt] = useState(Boolean(user.taxExempt));
+    const [cooperationEnded, setCooperationEnded] = useState(Boolean(user.cooperationEnded));
     const [agreementType, setAgreementType] = useState<'gross' | 'net'>(user.agreementType ?? 'gross');
     const [salaryMode, setSalaryMode] = useState<'regular' | 'hybrid' | 'flat'>(user.salaryMode ?? 'regular');
     // A flat salary has no legal basis, so these facts do not move it.
@@ -178,6 +182,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         insured === (user.insured !== false) &&
         insuranceType === (user.insuranceType ?? 'worker') &&
         taxExempt === Boolean(user.taxExempt) &&
+        cooperationEnded === Boolean(user.cooperationEnded) &&
         agreementType === (user.agreementType ?? 'gross') &&
         salaryMode === (user.salaryMode ?? 'regular');
 
@@ -187,6 +192,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         !phone.trim() && 'موبایل',
         !personnelCode.trim() && 'کد پرسنلی',
         !jobTitle.trim() && 'عنوان شغلی',
+        cooperationEnded && !endDate && 'تاریخ پایان همکاری',
     ].filter(Boolean) as string[];
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -212,6 +218,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     insured,
                     insuranceType,
                     taxExempt,
+                    cooperationEnded,
                     agreementType,
                     salaryMode,
                 },
@@ -322,12 +329,11 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
 
             <SectionCard id="sec-identity" icon={IconId} title="اطلاعات هویتی و استخدامی" hint="تاریخ‌های همکاری، دوره‌ی آزمایشی و اطلاعات بانکی و بیمه">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
-                <div className="lg:col-span-4"><OptionalDate label="شروع همکاری" value={hireDate} onChange={setHireDate} /></div>
-                <div className="lg:col-span-4"><OptionalDate label="پایان همکاری" value={endDate} onChange={setEndDate} /></div>
-                <div className="lg:col-span-4"><OptionalDate label="پایان دوره آزمایشی" value={probationEndDate} onChange={setProbationEndDate} /></div>
+                <div className="lg:col-span-6"><OptionalDate label="شروع همکاری" value={hireDate} onChange={setHireDate} /></div>
+                <div className="lg:col-span-6"><OptionalDate label="پایان دوره آزمایشی" value={probationEndDate} onChange={setProbationEndDate} /></div>
                 <Input
                     id="edit-insurance-number"
-                    containerClassName="lg:col-span-3"
+                    containerClassName="lg:col-span-6"
                     packageId="edit-insurance-number"
                     label="شماره بیمه"
                     dir="ltr"
@@ -339,7 +345,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                 />
                 <Input
                     id="edit-sheba"
-                    containerClassName="lg:col-span-4 sm:col-span-2"
+                    containerClassName="lg:col-span-6"
                     packageId="edit-sheba"
                     label="شماره شبا"
                     dir="ltr"
@@ -351,7 +357,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                 />
                 <Input
                     id="edit-email"
-                    containerClassName="lg:col-span-5 sm:col-span-2"
+                    containerClassName="lg:col-span-12"
                     packageId="edit-email"
                     label="ایمیل"
                     dir="ltr"
@@ -446,7 +452,26 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
             </div>
         </form>
                 {below}
-                {danger}
+                <div className="grid gap-3 lg:grid-cols-2">
+                    <section className="flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/50 p-4 lg:p-5">
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-bold text-amber-700">پایان همکاری</h2>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                با روشن بودن، فرد نمی‌تواند وارد سیستم شود و در هیچ فهرستی جز فهرست کاربران دیده نمی‌شود. با دکمه‌ی ذخیره اعمال می‌شود.
+                            </p>
+                        </div>
+                        <PayrollToggle
+                            label="همکاری این فرد پایان یافته است"
+                            checked={cooperationEnded}
+                            onChange={(on) => {
+                                setCooperationEnded(on);
+                                if (!on) setEndDate('');
+                            }}
+                        />
+                        {cooperationEnded && <OptionalDate label="تاریخ پایان همکاری (الزامی)" value={endDate} onChange={setEndDate} />}
+                    </section>
+                    {danger}
+                </div>
             </div>
         </div>
     );

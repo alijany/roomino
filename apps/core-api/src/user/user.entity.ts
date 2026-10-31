@@ -62,6 +62,13 @@ export class UserEntity extends BaseEntity {
   @Property({ type: 'date', nullable: true })
   endDate?: string;
 
+  /**
+   * Cooperation is over: the person cannot sign in and drops out of every
+   * list except the users list. Switched by an admin; separate from `endDate`.
+   */
+  @Property({ default: false })
+  cooperationEnded: boolean = false;
+
   @Property({ nullable: true })
   insuranceNumber?: string;
 
