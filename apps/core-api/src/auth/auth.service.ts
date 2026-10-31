@@ -4,6 +4,8 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  HttpException,
+  HttpStatus,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -19,6 +21,18 @@ import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { JwtPayload } from './types/jwt-payload.interface';
 import { RefreshJwtPayload } from './types/refresh-jwt-payload.interface';
+
+/** Wrong codes allowed per sent code before it is thrown away. */
+const OTP_MAX_ATTEMPTS = 5;
+/** A new code for the same number only after this long. */
+const OTP_RESEND_SECONDS = 60;
+/** Codes sent to one number per hour. */
+const OTP_MAX_PER_HOUR = 5;
+/** Never shorter than this, whatever the environment says. */
+const OTP_MIN_LENGTH = 6;
+
+const tooMany = (message: string) =>
+  new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
 
 @Injectable()
 export class AuthService {
@@ -181,11 +195,18 @@ export class AuthService {
     if (isNewUser) await this.assertRegistrationOpen();
 
     const cacheKey = `otp:${validatedPhone.number}`;
-    const otp = this.generateOtp(+this.configService.get('OTP_LENGTH', 4));
+    await this.assertMaySendOtp(validatedPhone.number);
+    const length = Math.max(
+      OTP_MIN_LENGTH,
+      +this.configService.get('OTP_LENGTH', OTP_MIN_LENGTH) || OTP_MIN_LENGTH,
+    );
+    const otp = this.generateOtp(length);
     const ttl = +this.configService.get('OTP_EXPIRATION', 300); // 5 minutes
 
     try {
       await this.cacheManager.set(cacheKey, otp, ttl * 1000);
+      // A fresh code starts a fresh count of wrong guesses.
+      await this.cacheManager.del(`otp-attempts:${validatedPhone.number}`);
 
       if (process.env.NODE_ENV === 'development') {
         console.log(`OTP for ${validatedPhone.number}: ${otp}`);
@@ -217,19 +238,60 @@ export class AuthService {
    * @returns The validated phone number
    */
   async verifyOtpFromCache(cacheKey: string, otp: string): Promise<string> {
+    return this.checkOtp(cacheKey, otp, (message, locked) =>
+      locked ? tooMany(message) : new BadRequestException(message),
+    );
+  }
+
+  /**
+   * One code, a few guesses: each wrong guess is counted, and past
+   * `OTP_MAX_ATTEMPTS` the code is thrown away, so a four-to-six digit code
+   * cannot be walked through. A right guess removes the code.
+   */
+  private async checkOtp(
+    cacheKey: string,
+    otp: string,
+    fail: (message: string, locked?: boolean) => Error,
+  ): Promise<string> {
+    const attemptsKey = cacheKey.replace(/^otp:/, 'otp-attempts:');
     const storedOtp = await this.cacheManager.get<string>(cacheKey);
 
     if (!storedOtp) {
-      throw new BadRequestException('رمز یکبار مصرف منقضی شده یا یافت نشد.');
+      throw fail('رمز یکبار مصرف منقضی شده یا یافت نشد.');
     }
 
-    if (storedOtp !== otp) {
-      throw new BadRequestException('رمز یکبار مصرف نامعتبر است.');
+    if (typeof otp !== 'string' || storedOtp !== otp) {
+      const attempts =
+        ((await this.cacheManager.get<number>(attemptsKey)) ?? 0) + 1;
+      if (attempts >= OTP_MAX_ATTEMPTS) {
+        await this.cacheManager.del(cacheKey);
+        await this.cacheManager.del(attemptsKey);
+        throw fail('تعداد تلاش‌ها بیش از حد مجاز بود. دوباره کد بگیرید.', true);
+      }
+      await this.cacheManager.set(attemptsKey, attempts, 600 * 1000);
+      throw fail('رمز یکبار مصرف نامعتبر است.');
     }
 
-    // OTP is valid, remove it from cache
     await this.cacheManager.del(cacheKey);
+    await this.cacheManager.del(attemptsKey);
     return storedOtp;
+  }
+
+  /** One number gets a code a minute, and a few an hour — texts cost money and annoy. */
+  private async assertMaySendOtp(phone: string) {
+    const coolKey = `otp-cool:${phone}`;
+    if (await this.cacheManager.get(coolKey)) {
+      throw tooMany('کد تایید به تازگی ارسال شده است. کمی صبر کنید.');
+    }
+    const hourKey = `otp-hour:${phone}`;
+    const sent = (await this.cacheManager.get<number>(hourKey)) ?? 0;
+    if (sent >= OTP_MAX_PER_HOUR) {
+      throw tooMany(
+        'تعداد درخواست کد برای این شماره بیش از حد مجاز است. بعداً تلاش کنید.',
+      );
+    }
+    await this.cacheManager.set(coolKey, 1, OTP_RESEND_SECONDS * 1000);
+    await this.cacheManager.set(hourKey, sent + 1, 3600 * 1000);
   }
 
   /**
@@ -310,18 +372,9 @@ export class AuthService {
     }
 
     const cacheKey = `otp:${validatedPhone.number}`;
-    const storedOtp = await this.cacheManager.get<string>(cacheKey);
-
-    if (!storedOtp) {
-      throw new UnauthorizedException('رمز یکبار مصرف منقضی شده یا یافت نشد.');
-    }
-
-    if (storedOtp !== otp) {
-      throw new UnauthorizedException('رمز یکبار مصرف نامعتبر است.');
-    }
-
-    // OTP is valid, remove it from cache
-    await this.cacheManager.del(cacheKey);
+    await this.checkOtp(cacheKey, otp, (message, locked) =>
+      locked ? tooMany(message) : new UnauthorizedException(message),
+    );
 
     // Find or create user by phone number
     let user = await this.userService.findOne(

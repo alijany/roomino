@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'; // Added UnauthorizedException
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { NormalizeNumbersPipe } from 'src/libs/utils/pipe.normalizeNumbers';
 import { UserEntity } from '../user/user.entity';
 import { AuthService } from './auth.service';
@@ -35,11 +36,15 @@ export class AuthController {
   // --- OTP Endpoints ---
 
   @Post('otp/send')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async sendOtp(@Body(NormalizeNumbersPipe) sendOtpDto: SendOtpDto) {
     return this.authService.sendOtp(sendOtpDto.phoneNumber);
   }
 
   @Post('otp/verify')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async verifyOtp(@Body(NormalizeNumbersPipe) verifyOtpDto: VerifyOtpDto) {
     const result = await this.authService.verifyOtp(
       verifyOtpDto.phoneNumber,
@@ -59,6 +64,8 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     const refreshToken = refreshTokenDto.refresh_token;
 
@@ -80,6 +87,8 @@ export class AuthController {
   }
 
   @Patch('profile/phone')
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async updatePhoneNumber(
     @CurrentUser() user: UserEntity,
     @Body() updatePhoneDto: UpdatePhoneDto,

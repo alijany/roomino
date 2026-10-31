@@ -1,9 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { VersioningType } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Behind Traefik, so the client's address (what the rate limits key on) is
+  // the first hop of X-Forwarded-For rather than the proxy itself.
+  app.set('trust proxy', 1);
 
   // Configure API versioning
   app.enableVersioning({

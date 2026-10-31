@@ -3,6 +3,7 @@ import { CacheModule } from '@nestjs/cache-manager'; // Import CacheModule
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // Import ConfigModule
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { NormalizeNumbersPipe } from 'src/libs/utils/pipe.normalizeNumbers';
 import { SettingsModule } from 'src/settings/settings.module';
 import { SmsModule } from 'src/sms/sms.module';
@@ -17,6 +18,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
   imports: [
     ConfigModule,
+    // Rate limits for the sign-in routes (the guard is applied there, not app-wide).
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     CacheModule.registerAsync({
       // Configure CacheModule
       useFactory: (configService: ConfigService) => ({

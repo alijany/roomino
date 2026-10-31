@@ -129,11 +129,11 @@ export function PhoneChangeModal({
                 </label>
                 <Input
                   type="text"
-                  placeholder="****"
+                  placeholder="******"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   className="font-mono text-center text-2xl tracking-widest"
-                  maxLength={4}
+                  maxLength={6}
                 />
               </div>
 
