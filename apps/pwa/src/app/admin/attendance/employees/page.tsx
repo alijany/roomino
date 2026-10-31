@@ -106,7 +106,13 @@ export default function EmployeesPage() {
                       key: 'remote',
                       header: 'دورکاری ثابت',
                       hideOnMobile: true,
-                      render: (e) => (e.remoteDays.length ? e.remoteDays.map((d) => WEEKDAY_LABELS[d]).join('، ') : '—'),
+                      render: (e) => {
+                        if (!e.remoteDays.length) return '—';
+                        const names = e.remoteDays.map((d) => WEEKDAY_LABELS[d]).join('، ');
+                        // Two days fit; more would wrap the row, so the list moves to a tooltip.
+                        if (e.remoteDays.length <= 2) return names;
+                        return <span title={names} className="cursor-help whitespace-nowrap">{e.remoteDays.length} روز در هفته</span>;
+                      },
                     },
                     {
                       key: 'active',
