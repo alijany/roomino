@@ -24,6 +24,7 @@ import {
   IconRepeat,
   IconSettings,
   IconTool,
+  IconCalendarOff,
   IconTrendingUp,
   IconUser,
   IconUsers,
@@ -249,6 +250,12 @@ export const RouteItems = {
     icon: <IconReportMoney className="size-5" />
   },
 
+  finalSettlement: {
+    href: "/dashboard/admin/financial/final-settlement",
+    label: "تسویه حساب نهایی",
+    roles: [Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO],
+    icon: <IconCalendarOff className="size-5" />
+  },
 
   salaryHistory: {
     href: "/dashboard/admin/financial/salary-history",

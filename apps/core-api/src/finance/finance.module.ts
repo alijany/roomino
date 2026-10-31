@@ -13,6 +13,9 @@ import { PaymentRequestController } from './controllers/payment-request.controll
 import { PaymentSourceController } from './controllers/payment-source.controller';
 import { RecurringExpenseController } from './controllers/recurring-expense.controller';
 import { VendorController } from './controllers/vendor.controller';
+import { FinalSettlementController } from './controllers/final-settlement.controller';
+import { FinalSettlementEntity } from './entities/final-settlement.entity';
+import { FinalSettlementService } from './services/final-settlement.service';
 import { AdvanceDeductionEntity } from './entities/advance-deduction.entity';
 import { ApprovalRuleEntity } from './entities/approval-rule.entity';
 import { ApprovalStepEntity } from './entities/approval-step.entity';
@@ -58,6 +61,7 @@ import { VendorService } from './services/vendor.service';
   imports: [
     MikroOrmModule.forFeature([
       AdvanceDeductionEntity,
+      FinalSettlementEntity,
       ExpenseCategoryEntity,
       PaymentSourceEntity,
       PaymentRequestEntity,
@@ -91,6 +95,7 @@ import { VendorService } from './services/vendor.service';
     PayrollSettingService,
     SalaryChangeService,
     PayrollService,
+    FinalSettlementService,
     FinanceScheduleService,
     FinanceBootstrapService,
   ],
@@ -105,6 +110,7 @@ import { VendorService } from './services/vendor.service';
     PayrollSettingController,
     SalaryChangeController,
     PayrollController,
+    FinalSettlementController,
   ],
   exports: [PaymentRequestService],
 })
