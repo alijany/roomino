@@ -27,30 +27,30 @@ export function useRooms(filters?: RoomFilterDto) {
       .reduce((acc, [key, value]) => ({ ...acc, [key]: String(value) }), {}),
   ).toString();
 
-  const swr = useSWR<GetRoomsResponse>(`/rooms?${query}`, fetcher);
+  const swr = useSWR<GetRoomsResponse>(`/admin/rooms?${query}`, fetcher);
   return useSwrHelper(swr);
 }
 
 export function useAddRoom() {
   return useSwrMutationHelper(
-    useSWRMutation('/rooms', postFetcher<CreateRoomDto, Room>),
+    useSWRMutation('/admin/rooms', postFetcher<CreateRoomDto, Room>),
   );
 }
 
 export function useUpdateRoom() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/rooms',
+      '/admin/rooms',
       (_key: string, { arg }: { arg: { id: number; data: UpdateRoomDto } }) =>
-        patchFetcher<UpdateRoomDto, Room>(`/rooms/${arg.id}`, { arg: arg.data }),
+        patchFetcher<UpdateRoomDto, Room>(`/admin/rooms/${arg.id}`, { arg: arg.data }),
     ),
   );
 }
 
 export function useDeleteRoom() {
   return useSwrMutationHelper(
-    useSWRMutation('/rooms', (_key: string, { arg }: { arg: number }) =>
-      deleteFetcher<{ success: boolean }>(`/rooms/${arg}`),
+    useSWRMutation('/admin/rooms', (_key: string, { arg }: { arg: number }) =>
+      deleteFetcher<{ success: boolean }>(`/admin/rooms/${arg}`),
     ),
   );
 }
@@ -58,14 +58,14 @@ export function useDeleteRoom() {
 // ── Recurring locks ───────────────────────────────────────────────────────────
 
 export function useRecurring() {
-  const swr = useSWR<GetRecurringResponse>('/recurring-reservations', fetcher);
+  const swr = useSWR<GetRecurringResponse>('/admin/recurring-reservations', fetcher);
   return useSwrHelper(swr);
 }
 
 export function useAddRecurring() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/recurring-reservations',
+      '/admin/recurring-reservations',
       postFetcher<CreateRecurringDto, Recurring>,
     ),
   );
@@ -74,9 +74,9 @@ export function useAddRecurring() {
 export function useDeleteRecurring() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/recurring-reservations',
+      '/admin/recurring-reservations',
       (_key: string, { arg }: { arg: number }) =>
-        deleteFetcher<{ success: boolean }>(`/recurring-reservations/${arg}`),
+        deleteFetcher<{ success: boolean }>(`/admin/recurring-reservations/${arg}`),
     ),
   );
 }

@@ -6,10 +6,10 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { DataView } from '@/ui/molecules';
 import { IconLayoutDashboard } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { useBoard } from '../attendance.api';
-import { BoardOverview } from '../attendance.component.board-overview';
-import { PageHeader } from '../attendance.component.layout';
-import { jalaliLabel } from '../attendance.util';
+import { useBoard } from '@/app/dashboard/attendance/attendance.api';
+import { BoardOverview } from '@/app/dashboard/attendance/attendance.component.board-overview';
+import { PageHeader } from '@/app/dashboard/attendance/attendance.component.layout';
+import { jalaliLabel } from '@/app/dashboard/attendance/attendance.util';
 
 /** وضعیت امروز — who is in, remote, on leave or a mission, and what is waiting. Refreshes every minute. */
 export default function BoardPage() {
@@ -30,8 +30,8 @@ export default function BoardPage() {
             {data && (
               <BoardOverview
                 data={data}
-                onOpenRow={(row) => router.push(`/dashboard/attendance/performance/${row.employee.id}`)}
-                requests={{ base: '/attendance/requests', href: '/dashboard/attendance/requests' }}
+                onOpenRow={(row) => router.push(`/admin/attendance/performance/${row.employee.id}`)}
+                requests={{ base: '/admin/attendance/requests', href: '/admin/attendance/requests' }}
                 onChanged={refresh}
                 emptyMessage="هنوز پرسنلی تعریف نشده است."
               />

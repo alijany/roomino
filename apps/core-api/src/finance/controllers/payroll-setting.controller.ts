@@ -13,6 +13,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import {
@@ -28,8 +29,8 @@ const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
  * The legal payroll parameters, one set per Jalali year. Admin-only: these
  * figures decide everyone's pay.
  */
-@Controller('finance/payroll-settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/finance/payroll-settings')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class PayrollSettingController {
   constructor(private readonly settings: PayrollSettingService) {}

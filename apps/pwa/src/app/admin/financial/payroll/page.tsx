@@ -104,7 +104,7 @@ function PayrollContent() {
   const reopenMonth = useReopenPayrollMonth();
 
   const router = useRouter();
-  const lineHref = (l: PayrollLine) => `/dashboard/admin/financial/payroll/line/${l.id}`;
+  const lineHref = (l: PayrollLine) => `/admin/financial/payroll/line/${l.id}`;
   const [removing, setRemoving] = useState<PayrollLine | null>(null);
   const [finalizing, setFinalizing] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
@@ -371,7 +371,7 @@ function PayrollContent() {
                     header: '',
                     render: (l) => (
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Link href={`/dashboard/admin/financial/payroll/payslip/${l.id}`} target="_blank" aria-label="فیش حقوقی" title="فیش حقوقی">
+                        <Link href={`/admin/financial/payroll/payslip/${l.id}`} target="_blank" aria-label="فیش حقوقی" title="فیش حقوقی">
                           <Button variant="outline" size="sm" className="!px-2 border-none text-sky-600" tabIndex={-1}>
                             <IconFileText className="size-4" />
                           </Button>

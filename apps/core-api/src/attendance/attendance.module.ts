@@ -2,14 +2,20 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { NotificationModule } from '../notification/notification.module';
 import { EmployeeController } from './controllers/employee.controller';
-import { HolidayController } from './controllers/holiday.controller';
+import {
+  AdminHolidayController,
+  HolidayController,
+} from './controllers/holiday.controller';
 import { JobGroupController } from './controllers/job-group.controller';
 import { MaintenanceController } from './controllers/maintenance.controller';
 import { MeController } from './controllers/me.controller';
 import { ReportController } from './controllers/report.controller';
 import { RequestAttachmentController } from './controllers/request-attachment.controller';
 import { RequestController } from './controllers/request.controller';
-import { ShiftController } from './controllers/shift.controller';
+import {
+  AdminShiftController,
+  ShiftController,
+} from './controllers/shift.controller';
 import { TeamController } from './controllers/team.controller';
 import { WorkPolicyController } from './controllers/work-policy.controller';
 import { WorkplaceController } from './controllers/workplace.controller';
@@ -108,6 +114,8 @@ import { WorkplaceService } from './services/workplace.service';
   controllers: [
     WorkplaceController,
     ShiftController,
+    AdminShiftController,
+    AdminHolidayController,
     JobGroupController,
     WorkPolicyController,
     EmployeeController,

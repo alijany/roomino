@@ -4,7 +4,10 @@ import { NotificationModule } from '../notification/notification.module';
 import { RolesModule } from '../roles/roles.module';
 import { S3StorageModule } from '../storage/s3-storage.module';
 import { ApprovalRuleController } from './controllers/approval-rule.controller';
-import { ExpenseCategoryController } from './controllers/expense-category.controller';
+import {
+  AdminExpenseCategoryController,
+  ExpenseCategoryController,
+} from './controllers/expense-category.controller';
 import { FinanceReportController } from './controllers/finance-report.controller';
 import { PayrollController } from './controllers/payroll.controller';
 import { PayrollSettingController } from './controllers/payroll-setting.controller';
@@ -12,7 +15,10 @@ import { SalaryChangeController } from './controllers/salary-change.controller';
 import { PaymentRequestController } from './controllers/payment-request.controller';
 import { PaymentSourceController } from './controllers/payment-source.controller';
 import { RecurringExpenseController } from './controllers/recurring-expense.controller';
-import { VendorController } from './controllers/vendor.controller';
+import {
+  AdminVendorController,
+  VendorController,
+} from './controllers/vendor.controller';
 import { FinalSettlementController } from './controllers/final-settlement.controller';
 import { FinalSettlementEntity } from './entities/final-settlement.entity';
 import { FinalSettlementService } from './services/final-settlement.service';
@@ -102,6 +108,8 @@ import { VendorService } from './services/vendor.service';
   controllers: [
     PaymentRequestController,
     ExpenseCategoryController,
+    AdminExpenseCategoryController,
+    AdminVendorController,
     ApprovalRuleController,
     PaymentSourceController,
     VendorController,

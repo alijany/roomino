@@ -9,17 +9,17 @@ import { DataView, Pagination } from '@/ui/molecules';
 import { Tabs } from '@/ui/molecules/tabs';
 import { IconCashBanknote, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
-import { usePaymentRequests } from '../finance.api';
-import { RequestForm } from '../finance.component.request-form';
-import { RequestTable } from '../finance.component.request-table';
+import { usePaymentRequests } from '@/app/dashboard/finance/finance.api';
+import { RequestForm } from '@/app/dashboard/finance/finance.component.request-form';
+import { RequestTable } from '@/app/dashboard/finance/finance.component.request-table';
 import {
   Currency,
   PaymentRequestStatus,
   RequestFilterDto,
   RequestOrigin,
   RequestScope,
-} from '../finance.types';
-import { isOverdue } from '../finance.util';
+} from '@/app/dashboard/finance/finance.types';
+import { isOverdue } from '@/app/dashboard/finance/finance.util';
 
 const TABS = [
   { id: 'payable', label: 'آماده پرداخت' },

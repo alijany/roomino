@@ -14,7 +14,7 @@ import {
 
 export function useSalaryChanges(filters: SalaryFilters) {
   return useSwrHelper(
-    useSWR<{ items: SalaryChange[] }>(withQuery('/finance/salary-changes', { ...filters }), fetcher),
+    useSWR<{ items: SalaryChange[] }>(withQuery('/admin/finance/salary-changes', { ...filters }), fetcher),
   );
 }
 
@@ -22,7 +22,7 @@ export function useSalaryChanges(filters: SalaryFilters) {
 export function useSalaryOverview(period: number | null) {
   return useSwrHelper(
     useSWR<{ items: SalaryOverviewRow[] }>(
-      period ? `/finance/salary-changes/overview?period=${period}` : null,
+      period ? `/admin/finance/salary-changes/overview?period=${period}` : null,
       fetcher,
     ),
   );
@@ -30,22 +30,22 @@ export function useSalaryOverview(period: number | null) {
 
 export function useRecordSalaryChange() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/salary-changes', postFetcher<RecordSalaryDto, { ok: boolean }>),
+    useSWRMutation('/admin/finance/salary-changes', postFetcher<RecordSalaryDto, { ok: boolean }>),
   );
 }
 
 export function useBulkSalaryRaise() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/salary-changes/bulk', postFetcher<BulkRaiseDto, { created: number }>),
+    useSWRMutation('/admin/finance/salary-changes/bulk', postFetcher<BulkRaiseDto, { created: number }>),
   );
 }
 
 export function useDeleteSalaryChange() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/salary-changes/delete',
+      '/admin/finance/salary-changes/delete',
       (_key: string, { arg }: { arg: number }) =>
-        deleteFetcher<{ success: boolean }>(`/finance/salary-changes/${arg}`),
+        deleteFetcher<{ success: boolean }>(`/admin/finance/salary-changes/${arg}`),
     ),
   );
 }
@@ -53,9 +53,9 @@ export function useDeleteSalaryChange() {
 export function useUpdateSalaryProposal() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/salary-changes/update',
+      '/admin/finance/salary-changes/update',
       (_key: string, { arg }: { arg: { id: number; data: UpdateProposalDto } }) =>
-        patchFetcher<UpdateProposalDto, { ok: boolean }>(`/finance/salary-changes/${arg.id}`, { arg: arg.data }),
+        patchFetcher<UpdateProposalDto, { ok: boolean }>(`/admin/finance/salary-changes/${arg.id}`, { arg: arg.data }),
     ),
   );
 }
@@ -63,6 +63,6 @@ export function useUpdateSalaryProposal() {
 /** Turns proposals into confirmed changes, all or nothing. */
 export function useConfirmSalaryChanges() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/salary-changes/confirm', postFetcher<{ ids: number[] }, { confirmed: number }>),
+    useSWRMutation('/admin/finance/salary-changes/confirm', postFetcher<{ ids: number[] }, { confirmed: number }>),
   );
 }

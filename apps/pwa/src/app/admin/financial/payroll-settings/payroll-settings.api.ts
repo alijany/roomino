@@ -5,12 +5,12 @@ import useSWRMutation from 'swr/mutation';
 import { PayrollYear, UpdatePayrollYearDto } from './payroll-settings.types';
 
 export function usePayrollYears() {
-  return useSwrHelper(useSWR<{ years: number[] }>('/finance/payroll-settings', fetcher));
+  return useSwrHelper(useSWR<{ years: number[] }>('/admin/finance/payroll-settings', fetcher));
 }
 
 export function usePayrollYear(year: number | null) {
   return useSwrHelper(
-    useSWR<PayrollYear>(year ? `/finance/payroll-settings/${year}` : null, fetcher),
+    useSWR<PayrollYear>(year ? `/admin/finance/payroll-settings/${year}` : null, fetcher),
   );
 }
 
@@ -18,9 +18,9 @@ export function usePayrollYear(year: number | null) {
 export function useStartPayrollYear() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll-settings/start',
+      '/admin/finance/payroll-settings/start',
       (_key: string, { arg }: { arg: { year: number; copyFrom?: number } }) =>
-        postFetcher<{ copyFrom?: number }, PayrollYear>(`/finance/payroll-settings/${arg.year}`, {
+        postFetcher<{ copyFrom?: number }, PayrollYear>(`/admin/finance/payroll-settings/${arg.year}`, {
           arg: { copyFrom: arg.copyFrom },
         }),
     ),
@@ -30,9 +30,9 @@ export function useStartPayrollYear() {
 export function useSavePayrollYear() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll-settings/save',
+      '/admin/finance/payroll-settings/save',
       (_key: string, { arg }: { arg: { year: number; data: UpdatePayrollYearDto } }) =>
-        putFetcher<UpdatePayrollYearDto, PayrollYear>(`/finance/payroll-settings/${arg.year}`, {
+        putFetcher<UpdatePayrollYearDto, PayrollYear>(`/admin/finance/payroll-settings/${arg.year}`, {
           arg: arg.data,
         }),
     ),

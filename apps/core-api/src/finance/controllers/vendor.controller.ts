@@ -15,6 +15,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import {
@@ -35,7 +36,7 @@ import { toPayeeAccountView, toVendorView } from '../utils/finance-view.util';
  * account details in full.
  */
 @Controller('finance/vendors')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class VendorController {
   constructor(private readonly vendors: VendorService) {}
@@ -51,6 +52,22 @@ export class VendorController {
     const vendor = await this.vendors.getOrFail(id);
     return toVendorView(vendor);
   }
+
+  // --- payee accounts -------------------------------------------------------
+
+  @Get(':id/accounts')
+  async listAccounts(@Param('id', ParseIntPipe) id: number) {
+    const accounts = await this.vendors.listAccounts(id);
+    return { items: accounts.map(toPayeeAccountView) };
+  }
+}
+
+/** The management half: changing what the page above only reads. */
+@Controller('admin/finance/vendors')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AdminVendorController {
+  constructor(private readonly vendors: VendorService) {}
 
   @Post()
   @Roles(Role.FINANCE, Role.ADMIN)
@@ -74,14 +91,6 @@ export class VendorController {
     // The caller needs to know which happened — "deleted" and "hidden from new
     // requests but kept for history" are different outcomes to report.
     return { success: true, deactivated };
-  }
-
-  // --- payee accounts -------------------------------------------------------
-
-  @Get(':id/accounts')
-  async listAccounts(@Param('id', ParseIntPipe) id: number) {
-    const accounts = await this.vendors.listAccounts(id);
-    return { items: accounts.map(toPayeeAccountView) };
   }
 
   @Post(':id/accounts')

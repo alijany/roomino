@@ -27,7 +27,7 @@ function SlipContent() {
       <style>{`@media print { @page { size: A4; margin: 8mm; } html, body { background: #fff !important; } .settlement-slip { break-inside: avoid; page-break-inside: avoid; zoom: 0.9; } }`}</style>
 
       <div className="mx-auto mb-4 flex w-full max-w-[820px] items-center justify-between gap-2 print:hidden">
-        <BackButton href={`/dashboard/admin/financial/final-settlement/${id}`} label="بازگشت به تسویه" />
+        <BackButton href={`/admin/financial/final-settlement/${id}`} label="بازگشت به تسویه" />
         <Button className="gap-1" disabled={!data} onClick={() => window.print()}>
           <IconPrinter className="size-4" />
           چاپ / ذخیره‌ی PDF

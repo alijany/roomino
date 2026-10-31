@@ -8,12 +8,12 @@ import { DataView, Pagination } from '@/ui/molecules';
 import { IconChecklist } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useAdvanceRequests } from '../advance-request.api';
-import { DateFilterControls } from '../advance-request.component.date-filter';
-import { RequestTable } from '../advance-request.component.request-table';
-import { ADVANCE_REQUEST_ROUTES, STATUS_META } from '../advance-request.constants';
-import { useDateFilter } from '../advance-request.hook.use-date-filter';
-import { AdvanceRequestFilterDto, AdvanceRequestScope, AdvanceRequestStatus } from '../advance-request.types';
+import { useAdvanceRequests } from '@/app/dashboard/advance-request/advance-request.api';
+import { DateFilterControls } from '@/app/dashboard/advance-request/advance-request.component.date-filter';
+import { RequestTable } from '@/app/dashboard/advance-request/advance-request.component.request-table';
+import { ADVANCE_REQUEST_ROUTES, STATUS_META } from '@/app/dashboard/advance-request/advance-request.constants';
+import { useDateFilter } from '@/app/dashboard/advance-request/advance-request.hook.use-date-filter';
+import { AdvanceRequestFilterDto, AdvanceRequestScope, AdvanceRequestStatus } from '@/app/dashboard/advance-request/advance-request.types';
 
 const STATUS_OPTIONS = Object.values(AdvanceRequestStatus).map((value) => ({
   label: STATUS_META[value].label,

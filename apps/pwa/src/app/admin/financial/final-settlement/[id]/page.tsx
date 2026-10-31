@@ -124,7 +124,7 @@ function SettlementEditor({ s, refresh }: { s: FinalSettlement; refresh: () => v
       } else if (confirm === 'delete') {
         await remove.submit(s.id);
         toast.success('تسویه حذف شد');
-        router.push('/dashboard/admin/financial/final-settlement');
+        router.push('/admin/financial/final-settlement');
       }
     } catch (e) {
       toast.error((e as Error)?.message ?? 'انجام نشد');
@@ -143,7 +143,7 @@ function SettlementEditor({ s, refresh }: { s: FinalSettlement; refresh: () => v
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <BackButton href="/dashboard/admin/financial/final-settlement" label="بازگشت به تسویه‌ها" />
+          <BackButton href="/admin/financial/final-settlement" label="بازگشت به تسویه‌ها" />
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-bold text-slate-800">{s.user.name ?? 'پرسنل'}</h1>
@@ -155,7 +155,7 @@ function SettlementEditor({ s, refresh }: { s: FinalSettlement; refresh: () => v
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="gap-1" disabled={s.status !== 'final'} onClick={() => router.push(`/dashboard/admin/financial/final-settlement/${s.id}/slip`)}>
+          <Button variant="outline" className="gap-1" disabled={s.status !== 'final'} onClick={() => router.push(`/admin/financial/final-settlement/${s.id}/slip`)}>
             <IconPrinter className="size-4" />
             فیش و رضایت‌نامه
           </Button>

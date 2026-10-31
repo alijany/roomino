@@ -106,6 +106,6 @@ export function performanceHref(query: PerformanceQuery, employeeId?: number, vi
   if (view?.filter && view.filter !== 'all') search.set('view', view.filter);
   if (view?.sort && view.sort !== 'attention') search.set('sort', view.sort);
   if (view?.detailed) search.set('detailed', '1');
-  const base = '/dashboard/attendance/performance';
+  const base = '/admin/attendance/performance';
   return `${base}${employeeId === undefined ? '' : `/${employeeId}`}${search.size ? `?${search}` : ''}`;
 }

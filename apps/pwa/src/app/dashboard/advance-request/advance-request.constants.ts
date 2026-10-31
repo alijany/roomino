@@ -35,5 +35,5 @@ export const STATUS_META: Record<
 export const ADVANCE_REQUEST_ROUTES = {
   home: '/dashboard/advance-request',
   // Nested under /review — see the detail page's own comment for why.
-  request: (id: number) => `/dashboard/advance-request/review/${id}`,
+  request: (id: number) => `/admin/advance-request/review/${id}`,
 };

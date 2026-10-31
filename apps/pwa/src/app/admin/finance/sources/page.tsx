@@ -14,9 +14,9 @@ import {
   useCreatePaymentSource,
   useDeletePaymentSource,
   usePaymentSources,
-} from '../finance.api';
-import { CURRENCY_LABELS, PAYMENT_SOURCE_TYPE_LABELS } from '../finance.constants';
-import { Currency, PaymentSourceType } from '../finance.types';
+} from '@/app/dashboard/finance/finance.api';
+import { CURRENCY_LABELS, PAYMENT_SOURCE_TYPE_LABELS } from '@/app/dashboard/finance/finance.constants';
+import { Currency, PaymentSourceType } from '@/app/dashboard/finance/finance.types';
 
 /**
  * The company's own accounts. Finance-only, and enforced on the server too —

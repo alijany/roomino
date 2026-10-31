@@ -16,6 +16,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
@@ -33,8 +34,8 @@ import { toRecurringView } from '../utils/finance-view.util';
  * Finance and admin only: these schedules commit the company to future spend,
  * and the amounts on them are the run-rate.
  */
-@Controller('finance/recurring')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/finance/recurring')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class RecurringExpenseController {
   constructor(private readonly recurring: RecurringExpenseService) {}

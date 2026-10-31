@@ -19,13 +19,13 @@ import {
   useShifts,
   useWorkPolicies,
   useWorkplaces,
-} from '../attendance.api';
-import { AttendanceModeBadge, Field, FormModal, PageHeader, Panel } from '../attendance.component.layout';
-import { AttendanceModePicker } from '../attendance.component.mode-picker';
-import { WeekdayPicker } from '../attendance.component.weekday-picker';
-import { WEEKDAY_LABELS } from '../attendance.constants';
-import { AttendanceMode, Employee, EmployeeFilterDto, EmployeeInput, UserBrief } from '../attendance.types';
-import { errorMessage, fa, fromCivilDate, tehranToday, toCivilDate } from '../attendance.util';
+} from '@/app/dashboard/attendance/attendance.api';
+import { AttendanceModeBadge, Field, FormModal, PageHeader, Panel } from '@/app/dashboard/attendance/attendance.component.layout';
+import { AttendanceModePicker } from '@/app/dashboard/attendance/attendance.component.mode-picker';
+import { WeekdayPicker } from '@/app/dashboard/attendance/attendance.component.weekday-picker';
+import { WEEKDAY_LABELS } from '@/app/dashboard/attendance/attendance.constants';
+import { AttendanceMode, Employee, EmployeeFilterDto, EmployeeInput, UserBrief } from '@/app/dashboard/attendance/attendance.types';
+import { errorMessage, fa, fromCivilDate, tehranToday, toCivilDate } from '@/app/dashboard/attendance/attendance.util';
 
 /**
  * پرسنل — attendance profiles. A profile is added to an existing Roomino
@@ -123,7 +123,7 @@ export default function EmployeesPage() {
                           <Button variant="outline" size="sm" className="!px-2" onClick={() => setEditing(e)} aria-label="ویرایش">
                             <IconPencil className="size-4" />
                           </Button>
-                          <Link href={`/dashboard/attendance/performance/${e.id}`}>
+                          <Link href={`/admin/attendance/performance/${e.id}`}>
                             <Button variant="outline" size="sm" className="!px-2" aria-label="گزارش کارکرد">
                               <IconReportSearch className="size-4" />
                             </Button>

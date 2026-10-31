@@ -6,7 +6,7 @@ import { IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { fromCivilDate, tehranToday, toCivilDate } from '../attendance/attendance.util';
-import { periodLabel } from '../admin/financial/financial.util';
+import { periodLabel } from '@/app/admin/financial/financial.util';
 import { useRemoveSettlement, useSettleAdvance } from './advance-request.api';
 import { AdvanceSettlement, AdvanceSettlementPiece } from './advance-request.types';
 import { formatJalali } from './advance-request.util';

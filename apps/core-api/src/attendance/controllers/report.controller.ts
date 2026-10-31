@@ -17,6 +17,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
@@ -43,8 +44,8 @@ import { sendCsv } from '../utils/attendance-csv.util';
 import { resolveMode } from '../utils/attendance-mode.util';
 
 /** Company-wide boards and reports, plus admin/HR corrections and grants. */
-@Controller('attendance/reports')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/attendance/reports')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class ReportController {
   constructor(

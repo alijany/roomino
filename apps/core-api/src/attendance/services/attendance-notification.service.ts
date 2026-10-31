@@ -76,7 +76,7 @@ export class AttendanceNotificationService {
 
       await Promise.all(
         reviewers.map((id) =>
-          this.safeSend(id, message, '/dashboard/attendance/requests'),
+          this.safeSend(id, message, '/admin/attendance/requests'),
         ),
       );
     } catch (error) {

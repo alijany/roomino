@@ -10,6 +10,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { ReplaceApprovalRulesDto } from '../dtos/finance-settings.dto';
@@ -22,8 +23,8 @@ import { readBigint } from '../utils/money.util';
  *
  * PUT replaces the whole matrix — partial edits invite overlapping bands.
  */
-@Controller('finance/approval-rules')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/finance/approval-rules')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class ApprovalRuleController {
   constructor(private readonly rules: ApprovalRuleService) {}

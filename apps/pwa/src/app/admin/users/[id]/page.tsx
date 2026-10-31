@@ -6,7 +6,7 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Avatar, Button, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { BackButton, DataView, DatePickerField } from '@/ui/molecules';
-import { fromCivilDate, jalaliLabel, tehranToday, toCivilDate } from '../../attendance/attendance.util';
+import { fromCivilDate, jalaliLabel, tehranToday, toCivilDate } from '@/app/dashboard/attendance/attendance.util';
 import { IconCash, IconId, IconShieldLock, IconUser, IconX } from '@tabler/icons-react';
 import { useParams } from 'next/navigation';
 import { ReactNode, useState } from 'react';
@@ -82,7 +82,7 @@ function UserHero({ user }: { user: User }) {
     return (
         <section className="ui-surface overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-3 lg:p-4">
-                <BackButton href="/dashboard/users" label="بازگشت به کاربران" />
+                <BackButton href="/admin/users" label="بازگشت به کاربران" />
                 <div className="min-w-0 flex-1 basis-56 space-y-1">
                     <h1 className="truncate text-base font-bold text-slate-900 lg:text-lg">{user.name ?? 'بدون نام'}</h1>
                     <p className="text-sm text-slate-500">{user.jobTitle ?? 'عنوان شغلی ثبت نشده'}</p>

@@ -14,6 +14,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { PageQueryDto } from '../dtos/common.dto';
@@ -32,8 +33,8 @@ import {
 } from '../utils/attendance-view.util';
 
 /** پرسنل — attendance profiles of Roomino users. Admin and HR. */
-@Controller('attendance/employees')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/attendance/employees')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class EmployeeController {
   constructor(

@@ -15,18 +15,18 @@ import {
   useSpendByVendor,
   useSpendTrend,
   useUpcomingCommitments,
-} from './finance.api';
+} from '@/app/dashboard/finance/finance.api';
 import {
   ChartCard,
   RankedBarChart,
   SpendTrendChart,
   TotalsTable,
   TrendTable,
-} from './finance.component.charts';
-import { StatTile } from './finance.component.stat-tile';
-import { FINANCE_ROUTES } from './finance.constants';
-import { Currency } from './finance.types';
-import { formatJalali } from './finance.util';
+} from '@/app/dashboard/finance/finance.component.charts';
+import { StatTile } from '@/app/dashboard/finance/finance.component.stat-tile';
+import { FINANCE_ROUTES } from '@/app/dashboard/finance/finance.constants';
+import { Currency } from '@/app/dashboard/finance/finance.types';
+import { formatJalali } from '@/app/dashboard/finance/finance.util';
 
 /**
  * پیشخوان مالی — eight numbers and four charts.

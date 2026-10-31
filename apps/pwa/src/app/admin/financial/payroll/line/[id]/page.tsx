@@ -71,7 +71,7 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
 
   const set = <K extends keyof LineFormState>(key: K, value: LineFormState[K]) => setForm((f) => ({ ...f, [key]: value }));
   const busy = update.isLoading || finalize.isLoading;
-  const back = `/dashboard/admin/financial/payroll?period=${slip.period}`;
+  const back = `/admin/financial/payroll?period=${slip.period}`;
   const flat = slip.agreement === 'flat';
   const hybrid = slip.agreement === 'hybrid' || slip.extras > 0;
 
@@ -131,7 +131,7 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`/dashboard/admin/financial/payroll/payslip/${slip.id}`} target="_blank">
+          <Link href={`/admin/financial/payroll/payslip/${slip.id}`} target="_blank">
             <Button variant="outline" className="gap-1" tabIndex={-1}>
               <IconFileText className="size-4" />
               فیش حقوقی

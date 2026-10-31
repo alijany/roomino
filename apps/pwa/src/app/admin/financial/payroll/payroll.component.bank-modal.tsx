@@ -54,7 +54,7 @@ export function BankModal({ period, onClose }: { period: number; onClose: () => 
     try {
       // Every row chosen is the whole file; otherwise only what is ticked.
       const query = chosen.length === (data?.rows.length ?? 0) ? '' : `?rows=${chosen.map(keyOf).join(',')}`;
-      await downloadFile(`/finance/payroll/${period}/bank/xlsx${query}`, `payroll-${period}-bank.xlsx`);
+      await downloadFile(`/admin/finance/payroll/${period}/bank/xlsx${query}`, `payroll-${period}-bank.xlsx`);
     } catch (e) {
       toast.error((e as Error)?.message ?? 'دریافت فایل ناموفق بود');
     } finally {

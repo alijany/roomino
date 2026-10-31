@@ -36,7 +36,7 @@ export function DeleteUserCard({ user }: { user: User }) {
         try {
             await deleteUser.submit(user.id);
             toast.success('کاربر حذف شد');
-            router.push('/dashboard/users');
+            router.push('/admin/users');
         } catch (e) {
             setError((e as Error)?.message || 'حذف انجام نشد');
         }

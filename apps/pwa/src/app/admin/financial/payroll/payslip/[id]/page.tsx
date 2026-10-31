@@ -50,7 +50,7 @@ function PayslipContent() {
 
       <div className="mx-auto mb-4 flex w-full max-w-[820px] items-center justify-between gap-2 print:hidden">
         <BackButton
-          href={data ? `/dashboard/admin/financial/payroll?period=${data.period}` : '/dashboard/admin/financial/payroll'}
+          href={data ? `/admin/financial/payroll?period=${data.period}` : '/admin/financial/payroll'}
           label="بازگشت به حقوق"
         />
         <div className="flex gap-2">

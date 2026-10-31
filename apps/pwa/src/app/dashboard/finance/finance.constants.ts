@@ -137,13 +137,13 @@ export const BILLING_CALENDAR_LABELS: Record<BillingCalendar, string> = {
 
 export const FINANCE_ROUTES = {
   myRequests: '/dashboard/finance/my-requests',
-  approvals: '/dashboard/finance/approvals',
-  queue: '/dashboard/finance/queue',
-  sources: '/dashboard/finance/sources',
-  settings: '/dashboard/finance/settings',
-  vendors: '/dashboard/finance/vendors',
-  recurring: '/dashboard/finance/recurring',
-  dashboard: '/dashboard/finance',
-  reports: '/dashboard/finance/reports',
+  approvals: '/admin/finance/approvals',
+  queue: '/admin/finance/queue',
+  sources: '/admin/finance/sources',
+  settings: '/admin/finance/settings',
+  vendors: '/admin/finance/vendors',
+  recurring: '/admin/finance/recurring',
+  dashboard: '/admin/finance',
+  reports: '/admin/finance/reports',
   request: (id: number) => `/dashboard/finance/requests/${id}`,
 };

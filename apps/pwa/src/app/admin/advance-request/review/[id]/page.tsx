@@ -17,14 +17,14 @@ import {
   useApproveAdvanceRequest,
   useCancelAdvanceRequest,
   useRejectAdvanceRequest,
-} from '../../advance-request.api';
-import { DecisionKind, DecisionModal } from '../../advance-request.component.decision-modal';
-import { SettlementDetails } from '../../advance-request.component.settlement';
-import { StatusBadge } from '../../advance-request.component.status-badge';
-import { StepBadge } from '../../advance-request.component.step-badge';
-import { STATUS_META } from '../../advance-request.constants';
-import { AdvanceRequestStatus } from '../../advance-request.types';
-import { formatJalali, formatJalaliDateTime } from '../../advance-request.util';
+} from '@/app/dashboard/advance-request/advance-request.api';
+import { DecisionKind, DecisionModal } from '@/app/dashboard/advance-request/advance-request.component.decision-modal';
+import { SettlementDetails } from '@/app/dashboard/advance-request/advance-request.component.settlement';
+import { StatusBadge } from '@/app/dashboard/advance-request/advance-request.component.status-badge';
+import { StepBadge } from '@/app/dashboard/advance-request/advance-request.component.step-badge';
+import { STATUS_META } from '@/app/dashboard/advance-request/advance-request.constants';
+import { AdvanceRequestStatus } from '@/app/dashboard/advance-request/advance-request.types';
+import { formatJalali, formatJalaliDateTime } from '@/app/dashboard/advance-request/advance-request.util';
 
 /**
  * مساعده detail + decide/cancel actions — reached only from the management

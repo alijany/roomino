@@ -10,13 +10,13 @@ import { Tabs } from '@/ui/molecules/tabs';
 import { IconClipboardList, IconSearch, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useDeleteRequest, useRequests } from '../attendance.api';
-import { PageHeader, Panel } from '../attendance.component.layout';
-import { RequestTable } from '../attendance.component.request-table';
-import { RequestDetailModal, ReviewActions } from '../attendance.component.review';
-import { CATEGORY_LABELS } from '../attendance.constants';
-import { AttendanceRequest, RequestCategory, RequestFilterDto, RequestStatus } from '../attendance.types';
-import { errorMessage } from '../attendance.util';
+import { useDeleteRequest, useRequests } from '@/app/dashboard/attendance/attendance.api';
+import { PageHeader, Panel } from '@/app/dashboard/attendance/attendance.component.layout';
+import { RequestTable } from '@/app/dashboard/attendance/attendance.component.request-table';
+import { RequestDetailModal, ReviewActions } from '@/app/dashboard/attendance/attendance.component.review';
+import { CATEGORY_LABELS } from '@/app/dashboard/attendance/attendance.constants';
+import { AttendanceRequest, RequestCategory, RequestFilterDto, RequestStatus } from '@/app/dashboard/attendance/attendance.types';
+import { errorMessage } from '@/app/dashboard/attendance/attendance.util';
 
 /**
  * بررسی درخواست‌ها — every request, for admin and HR. Team approvers decide
@@ -103,7 +103,7 @@ export default function RequestQueuePage() {
                   requests={data?.items ?? []}
                   showEmployee
                   onOpen={setViewing}
-                  actions={(r) => <ReviewActions request={r} base="/attendance/requests" onDone={done} />}
+                  actions={(r) => <ReviewActions request={r} base="/admin/attendance/requests" onDone={done} />}
                 />
                 {data?.meta && data.meta.pageCount > 1 && (
                   <div className="pt-6">
@@ -129,7 +129,7 @@ export default function RequestQueuePage() {
           actions={
             viewing && (
               <>
-                <ReviewActions request={viewing} base="/attendance/requests" onDone={done} size="md" />
+                <ReviewActions request={viewing} base="/admin/attendance/requests" onDone={done} size="md" />
                 <Button
                   variant="outline"
                   className="mr-auto gap-1 text-rose-500"

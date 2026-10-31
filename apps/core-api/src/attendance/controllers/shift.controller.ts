@@ -14,6 +14,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { CreateShiftDto, UpdateShiftDto } from '../dtos/setup.dto';
@@ -25,7 +26,7 @@ import { toShiftView } from '../utils/attendance-view.util';
  * shift for their members — but only admin and HR change them.
  */
 @Controller('attendance/shifts')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class ShiftController {
   constructor(private readonly shifts: ShiftService) {}
@@ -39,6 +40,14 @@ export class ShiftController {
   async detail(@Param('id', ParseIntPipe) id: number) {
     return toShiftView(await this.shifts.getOrFail(id));
   }
+}
+
+/** The management half: changing what the page above only reads. */
+@Controller('admin/attendance/shifts')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AdminShiftController {
+  constructor(private readonly shifts: ShiftService) {}
 
   @Post()
   @Roles(Role.ADMIN, Role.HR)

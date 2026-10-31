@@ -10,18 +10,18 @@ import { IconArrowRight } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { useEmployee, useEmployeeReport } from '../../attendance.api';
-import { AttendanceModeBadge, PageHeader } from '../../attendance.component.layout';
-import { MemberReport } from '../../attendance.component.member-report';
-import { LEAVE_TYPE_LABELS, WEEKDAY_LABELS } from '../../attendance.constants';
-import { PeriodQuery } from '../../attendance.types';
-import { fa, hm, jalaliLabel } from '../../attendance.util';
+import { useEmployee, useEmployeeReport } from '@/app/dashboard/attendance/attendance.api';
+import { AttendanceModeBadge, PageHeader } from '@/app/dashboard/attendance/attendance.component.layout';
+import { MemberReport } from '@/app/dashboard/attendance/attendance.component.member-report';
+import { LEAVE_TYPE_LABELS, WEEKDAY_LABELS } from '@/app/dashboard/attendance/attendance.constants';
+import { PeriodQuery } from '@/app/dashboard/attendance/attendance.types';
+import { fa, hm, jalaliLabel } from '@/app/dashboard/attendance/attendance.util';
 import {
   performanceHref,
   performanceQueryFromSearch,
   performanceViewFromSearch,
   reportPeriodFromSearch,
-} from '../../attendance.util.performance';
+} from '@/app/dashboard/attendance/attendance.util.performance';
 import { Avatar } from '@/ui/atoms';
 
 /** One employee for admin/HR: profile, leave balances and the full report. */
@@ -152,9 +152,9 @@ function EmployeeReportContent() {
               period={period}
               onPeriodChange={setPeriod}
               report={{ ...report, refresh }}
-              reviewBase="/attendance/requests"
-              correctionBase="/attendance/reports/employees"
-              exportPath={`/attendance/reports/employees/${e.id}/export`}
+              reviewBase="/admin/attendance/requests"
+              correctionBase="/admin/attendance/reports/employees"
+              exportPath={`/admin/attendance/reports/employees/${e.id}/export`}
               canGrant={!isSelf}
               canReview={!isSelf}
               managementView

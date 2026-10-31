@@ -195,7 +195,7 @@ export function useExpenseCategories(activeOnly = true) {
 export function usePaymentSources(activeOnly = true) {
   return useSwrHelper(
     useSWR<{ items: PaymentSource[] }>(
-      withQuery('/finance/payment-sources', { activeOnly }),
+      withQuery('/admin/finance/payment-sources', { activeOnly }),
       fetcher
     )
   );
@@ -204,7 +204,7 @@ export function usePaymentSources(activeOnly = true) {
 export function useCreatePaymentSource() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payment-sources',
+      '/admin/finance/payment-sources',
       postFetcher<CreatePaymentSourceDto, PaymentSource>
     )
   );
@@ -213,13 +213,13 @@ export function useCreatePaymentSource() {
 export function useUpdatePaymentSource() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payment-sources',
+      '/admin/finance/payment-sources',
       (
         _key: string,
         { arg }: { arg: { id: number; data: Partial<CreatePaymentSourceDto> } }
       ) =>
         patchFetcher<Partial<CreatePaymentSourceDto>, PaymentSource>(
-          `/finance/payment-sources/${arg.id}`,
+          `/admin/finance/payment-sources/${arg.id}`,
           { arg: arg.data }
         )
     )
@@ -229,9 +229,9 @@ export function useUpdatePaymentSource() {
 export function useDeletePaymentSource() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payment-sources',
+      '/admin/finance/payment-sources',
       (_key: string, { arg }: { arg: number }) =>
-        deleteFetcher<{ success: boolean }>(`/finance/payment-sources/${arg}`)
+        deleteFetcher<{ success: boolean }>(`/admin/finance/payment-sources/${arg}`)
     )
   );
 }
@@ -255,17 +255,17 @@ export function useVendor(id?: number) {
 
 export function useCreateVendor() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/vendors', postFetcher<CreateVendorDto, Vendor>)
+    useSWRMutation('/admin/finance/vendors', postFetcher<CreateVendorDto, Vendor>)
   );
 }
 
 export function useUpdateVendor() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/vendors',
+      '/admin/finance/vendors',
       (_key: string, { arg }: { arg: { id: number; data: Partial<CreateVendorDto> } }) =>
         patchFetcher<Partial<CreateVendorDto>, Vendor>(
-          `/finance/vendors/${arg.id}`,
+          `/admin/finance/vendors/${arg.id}`,
           { arg: arg.data }
         )
     )
@@ -274,9 +274,9 @@ export function useUpdateVendor() {
 
 export function useDeleteVendor() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/vendors', (_key: string, { arg }: { arg: number }) =>
+    useSWRMutation('/admin/finance/vendors', (_key: string, { arg }: { arg: number }) =>
       deleteFetcher<{ success: boolean; deactivated: boolean }>(
-        `/finance/vendors/${arg}`
+        `/admin/finance/vendors/${arg}`
       )
     )
   );
@@ -285,13 +285,13 @@ export function useDeleteVendor() {
 export function useAddPayeeAccount() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/vendors/accounts',
+      '/admin/finance/vendors/accounts',
       (
         _key: string,
         { arg }: { arg: { vendorId: number; data: CreatePayeeAccountDto } }
       ) =>
         postFetcher<CreatePayeeAccountDto, PayeeAccount>(
-          `/finance/vendors/${arg.vendorId}/accounts`,
+          `/admin/finance/vendors/${arg.vendorId}/accounts`,
           { arg: arg.data }
         )
     )
@@ -301,9 +301,9 @@ export function useAddPayeeAccount() {
 export function useDeletePayeeAccount() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/vendors/accounts',
+      '/admin/finance/vendors/accounts',
       (_key: string, { arg }: { arg: number }) =>
-        deleteFetcher<{ success: boolean }>(`/finance/vendors/accounts/${arg}`)
+        deleteFetcher<{ success: boolean }>(`/admin/finance/vendors/accounts/${arg}`)
     )
   );
 }
@@ -313,7 +313,7 @@ export function useDeletePayeeAccount() {
 export function useRecurringExpenses(filters?: RecurringFilterDto) {
   return useSwrHelper(
     useSWR<{ items: RecurringExpense[]; meta: PaginationMeta }>(
-      withQuery('/finance/recurring', filters as Record<string, never>),
+      withQuery('/admin/finance/recurring', filters as Record<string, never>),
       fetcher
     )
   );
@@ -322,7 +322,7 @@ export function useRecurringExpenses(filters?: RecurringFilterDto) {
 export function useCreateRecurring() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/recurring',
+      '/admin/finance/recurring',
       postFetcher<CreateRecurringDto, RecurringExpense>
     )
   );
@@ -331,13 +331,13 @@ export function useCreateRecurring() {
 export function useUpdateRecurring() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/recurring',
+      '/admin/finance/recurring',
       (
         _key: string,
         { arg }: { arg: { id: number; data: Partial<CreateRecurringDto> } }
       ) =>
         patchFetcher<Partial<CreateRecurringDto>, RecurringExpense>(
-          `/finance/recurring/${arg.id}`,
+          `/admin/finance/recurring/${arg.id}`,
           { arg: arg.data }
         )
     )
@@ -346,9 +346,9 @@ export function useUpdateRecurring() {
 
 export function useDeleteRecurring() {
   return useSwrMutationHelper(
-    useSWRMutation('/finance/recurring', (_key: string, { arg }: { arg: number }) =>
+    useSWRMutation('/admin/finance/recurring', (_key: string, { arg }: { arg: number }) =>
       deleteFetcher<{ success: boolean; deactivated: boolean }>(
-        `/finance/recurring/${arg}`
+        `/admin/finance/recurring/${arg}`
       )
     )
   );
@@ -359,7 +359,7 @@ export function useDeleteRecurring() {
 export function useFinanceDashboard(range?: { from?: string; to?: string }) {
   return useSwrHelper(
     useSWR<FinanceDashboard>(
-      withQuery('/finance/dashboard', range as Record<string, never>),
+      withQuery('/admin/finance/dashboard', range as Record<string, never>),
       fetcher
     )
   );
@@ -368,7 +368,7 @@ export function useFinanceDashboard(range?: { from?: string; to?: string }) {
 export function useSpendByCategory(range?: { from?: string; to?: string }) {
   return useSwrHelper(
     useSWR<{ items: NamedTotal[] }>(
-      withQuery('/finance/reports/by-category', range as Record<string, never>),
+      withQuery('/admin/finance/reports/by-category', range as Record<string, never>),
       fetcher
     )
   );
@@ -377,7 +377,7 @@ export function useSpendByCategory(range?: { from?: string; to?: string }) {
 export function useSpendByVendor(range?: { from?: string; to?: string }) {
   return useSwrHelper(
     useSWR<{ items: NamedTotal[] }>(
-      withQuery('/finance/reports/by-vendor', range as Record<string, never>),
+      withQuery('/admin/finance/reports/by-vendor', range as Record<string, never>),
       fetcher
     )
   );
@@ -386,7 +386,7 @@ export function useSpendByVendor(range?: { from?: string; to?: string }) {
 export function useSpendTrend(months = 12) {
   return useSwrHelper(
     useSWR<{ items: TrendPoint[] }>(
-      withQuery('/finance/reports/trend', { months }),
+      withQuery('/admin/finance/reports/trend', { months }),
       fetcher
     )
   );
@@ -395,7 +395,7 @@ export function useSpendTrend(months = 12) {
 export function useUpcomingCommitments(days = 30) {
   return useSwrHelper(
     useSWR<UpcomingCommitments>(
-      withQuery('/finance/reports/upcoming', { days }),
+      withQuery('/admin/finance/reports/upcoming', { days }),
       fetcher
     )
   );
@@ -405,7 +405,7 @@ export function useMonthlyReport(year?: number, month?: number) {
   return useSwrHelper(
     useSWR<MonthlyReport>(
       year && month
-        ? withQuery('/finance/reports/monthly', { year, month })
+        ? withQuery('/admin/finance/reports/monthly', { year, month })
         : null,
       fetcher
     )
@@ -414,14 +414,14 @@ export function useMonthlyReport(year?: number, month?: number) {
 
 export function useApprovalRules() {
   return useSwrHelper(
-    useSWR<{ items: ApprovalRule[] }>('/finance/approval-rules', fetcher)
+    useSWR<{ items: ApprovalRule[] }>('/admin/finance/approval-rules', fetcher)
   );
 }
 
 export function useReplaceApprovalRules() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/approval-rules',
+      '/admin/finance/approval-rules',
       putFetcher<{ rules: ApprovalRuleInput[] }, { items: ApprovalRule[] }>
     )
   );

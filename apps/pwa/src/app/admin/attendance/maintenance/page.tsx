@@ -10,10 +10,10 @@ import { IconAlertTriangle, IconEraser, IconMapPinOff, IconTool } from '@tabler/
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { mutate } from 'swr';
-import { useMaintenanceSummary, useResetAttendance, useUpdateScheduleMode, useUpdateSelfDeclared } from '../attendance.api';
-import { FormModal, PageHeader, Panel } from '../attendance.component.layout';
-import { AttendanceTable, MaintenanceSummary, ResetScope, ScheduleMode, SelfDeclared } from '../attendance.types';
-import { errorMessage, fa, jalaliDateTime, tehranToday } from '../attendance.util';
+import { useMaintenanceSummary, useResetAttendance, useUpdateScheduleMode, useUpdateSelfDeclared } from '@/app/dashboard/attendance/attendance.api';
+import { FormModal, PageHeader, Panel } from '@/app/dashboard/attendance/attendance.component.layout';
+import { AttendanceTable, MaintenanceSummary, ResetScope, ScheduleMode, SelfDeclared } from '@/app/dashboard/attendance/attendance.types';
+import { errorMessage, fa, jalaliDateTime, tehranToday } from '@/app/dashboard/attendance/attendance.util';
 
 /** Shown per table; rows that only exist inside these (shift days, policy rules, shift history) go with them. */
 const RECORD_LABELS: Partial<Record<AttendanceTable, string>> = {

@@ -15,14 +15,15 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { Role } from '../../roles/roles.constants';
 import { CreateRoomDto } from '../dtos/create-room.dto';
 import { ListQueryDto } from '../dtos/list-query.dto';
 import { UpdateRoomDto } from '../dtos/update-room.dto';
 import { MeetingRoomService } from '../services/meeting-room.service';
 
-@Controller('rooms')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/rooms')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class RoomController {
   constructor(private readonly roomService: MeetingRoomService) {}

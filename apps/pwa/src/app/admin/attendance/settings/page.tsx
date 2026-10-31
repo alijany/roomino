@@ -6,12 +6,12 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Tabs } from '@/ui/molecules/tabs';
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react';
 import { useState } from 'react';
-import { PageHeader, Panel } from '../attendance.component.layout';
-import { HolidaysSettings } from '../attendance.component.settings-holidays';
-import { JobGroupsSettings } from '../attendance.component.settings-job-groups';
-import { PoliciesSettings } from '../attendance.component.settings-policies';
-import { ShiftsSettings } from '../attendance.component.settings-shifts';
-import { WorkplacesSettings } from '../attendance.component.settings-workplaces';
+import { PageHeader, Panel } from '@/app/dashboard/attendance/attendance.component.layout';
+import { HolidaysSettings } from '@/app/dashboard/attendance/attendance.component.settings-holidays';
+import { JobGroupsSettings } from '@/app/dashboard/attendance/attendance.component.settings-job-groups';
+import { PoliciesSettings } from '@/app/dashboard/attendance/attendance.component.settings-policies';
+import { ShiftsSettings } from '@/app/dashboard/attendance/attendance.component.settings-shifts';
+import { WorkplacesSettings } from '@/app/dashboard/attendance/attendance.component.settings-workplaces';
 
 const TABS = [
   { id: 'workplaces', label: 'محل‌های کار' },

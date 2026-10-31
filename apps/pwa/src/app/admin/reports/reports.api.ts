@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import {
   RoomUsageHeatmapFilterDto,
   RoomUsageHeatmapResponse,
-} from './reports.types';
+} from '@/app/admin/reports/reports.types';
 
 export function useRoomUsageHeatmap(filters: RoomUsageHeatmapFilterDto) {
   const query = new URLSearchParams(
@@ -20,7 +20,7 @@ export function useRoomUsageHeatmap(filters: RoomUsageHeatmapFilterDto) {
   ).toString();
 
   const swr = useSWR<RoomUsageHeatmapResponse>(
-    filters.from && filters.to ? `/reports/room-usage-heatmap?${query}` : null,
+    filters.from && filters.to ? `/admin/reports/room-usage-heatmap?${query}` : null,
     fetcher,
   );
   return useSwrHelper(swr);

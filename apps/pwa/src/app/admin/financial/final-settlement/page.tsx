@@ -66,7 +66,7 @@ function SettlementsContent() {
           <Table
             rows={data?.items ?? []}
             rowKey={(s) => s.id}
-            onRowClick={(s) => router.push(`/dashboard/admin/financial/final-settlement/${s.id}`)}
+            onRowClick={(s) => router.push(`/admin/financial/final-settlement/${s.id}`)}
             columns={[
               {
                 key: 'user',
@@ -110,7 +110,7 @@ function SettlementsContent() {
         </DataView>
       </div>
 
-      {creating && <CreateSettlement onClose={() => setCreating(false)} onCreated={(id) => router.push(`/dashboard/admin/financial/final-settlement/${id}`)} />}
+      {creating && <CreateSettlement onClose={() => setCreating(false)} onCreated={(id) => router.push(`/admin/financial/final-settlement/${id}`)} />}
     </div>
   );
 }

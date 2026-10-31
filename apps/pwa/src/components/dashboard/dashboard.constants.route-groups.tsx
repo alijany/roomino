@@ -52,25 +52,25 @@ export interface RouteGroup {
 
 export const RouteItems = {
   rooms: {
-    href: "/dashboard/rooms",
+    href: "/admin/rooms",
     label: "مدیریت اتاق‌ها",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconDoor className="size-5" />
   },
   siteSettings: {
-    href: "/dashboard/admin/settings",
+    href: "/admin/settings",
     label: "تنظیمات سایت",
     roles: [Role.ADMIN, Role.CEO],
     icon: <IconSettings className="size-5" />
   },
   users: {
-    href: "/dashboard/users",
+    href: "/admin/users",
     label: "کاربران",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconUsers className="size-5" />
   },
   reports: {
-    href: "/dashboard/reports",
+    href: "/admin/reports",
     label: "گزارش‌ها",
     roles: [Role.ADMIN],
     icon: <IconReportAnalytics className="size-5" />
@@ -94,7 +94,7 @@ export const RouteItems = {
     icon: <IconDashboard className="size-5" />
   },
   management: {
-    href: "/dashboard/management",
+    href: "/admin/dashboard",
     label: "مرکز مدیریت",
     roles: [Role.ADMIN, Role.HR, Role.FINANCE],
     icon: <IconSettings className="size-5" />
@@ -102,7 +102,7 @@ export const RouteItems = {
 
   // --- Finance & External Payments -----------------------------------------
   financeDashboard: {
-    href: "/dashboard/finance",
+    href: "/admin/finance",
     label: "پیشخوان مالی",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconChartPie className="size-5" />
@@ -114,37 +114,37 @@ export const RouteItems = {
     icon: <IconReceipt className="size-5" />
   },
   financeApprovals: {
-    href: "/dashboard/finance/approvals",
+    href: "/admin/finance/approvals",
     label: "در انتظار تأیید من",
     roles: [Role.APPROVER, Role.ADMIN],
     icon: <IconChecklist className="size-5" />
   },
   financeQueue: {
-    href: "/dashboard/finance/queue",
+    href: "/admin/finance/queue",
     label: "صف پرداخت",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconCashBanknote className="size-5" />
   },
   financeVendors: {
-    href: "/dashboard/finance/vendors",
+    href: "/admin/finance/vendors",
     label: "طرف‌حساب‌ها",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconBuildingStore className="size-5" />
   },
   financeRecurring: {
-    href: "/dashboard/finance/recurring",
+    href: "/admin/finance/recurring",
     label: "هزینه‌های دوره‌ای",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconRepeat className="size-5" />
   },
   financeReports: {
-    href: "/dashboard/finance/reports",
+    href: "/admin/finance/reports",
     label: "گزارش‌های مالی",
     roles: [Role.FINANCE, Role.ADMIN],
     icon: <IconReportMoney className="size-5" />
   },
   financeSources: {
-    href: "/dashboard/finance/sources",
+    href: "/admin/finance/sources",
     // Holds the company's own banking details — Finance only, enforced server-side too.
     label: "منابع پرداخت",
     roles: [Role.FINANCE],
@@ -162,7 +162,7 @@ export const RouteItems = {
   // Management: the CEO/finance-manager review queue where approve/reject
   // actually happens.
   advanceRequestReview: {
-    href: "/dashboard/advance-request/review",
+    href: "/admin/advance-request/review",
     label: "مساعده‌ها",
     roles: [Role.CEO, Role.FINANCE_MANAGER, Role.ADMIN],
     icon: <IconChecklist className="size-5" />
@@ -196,38 +196,38 @@ export const RouteItems = {
     icon: <IconUsersGroup className="size-5" />
   },
   attendanceBoard: {
-    href: "/dashboard/attendance/board",
+    href: "/admin/attendance/board",
     label: "وضعیت امروز پرسنل",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconLayoutDashboard className="size-5" />
   },
   attendanceRequests: {
-    href: "/dashboard/attendance/requests",
+    href: "/admin/attendance/requests",
     label: "بررسی درخواست‌ها",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconClipboardList className="size-5" />
   },
   attendancePerformance: {
-    href: "/dashboard/attendance/performance",
+    href: "/admin/attendance/performance",
     label: "گزارش کارکرد پرسنل",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconReportSearch className="size-5" />
   },
   attendanceEmployees: {
-    href: "/dashboard/attendance/employees",
+    href: "/admin/attendance/employees",
     label: "پرسنل",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconId className="size-5" />
   },
   attendanceSettings: {
-    href: "/dashboard/attendance/settings",
+    href: "/admin/attendance/settings",
     label: "تنظیمات حضور و غیاب",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconAdjustmentsHorizontal className="size-5" />
   },
 
   attendanceMaintenance: {
-    href: "/dashboard/attendance/maintenance",
+    href: "/admin/attendance/maintenance",
     // Schedule mode, self-declared check-in and data reset change attendance
     // for everyone (and a reset is irreversible) — admin only, not HR;
     // enforced server-side too.
@@ -237,35 +237,35 @@ export const RouteItems = {
   },
 
   financeSettings: {
-    href: "/dashboard/finance/settings",
+    href: "/admin/finance/settings",
     label: "تنظیمات مالی",
     roles: [Role.ADMIN],
     icon: <IconSettings className="size-5" />
   },
 
   payroll: {
-    href: "/dashboard/admin/financial/payroll",
+    href: "/admin/financial/payroll",
     label: "حقوق و دستمزد",
     roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconReportMoney className="size-5" />
   },
 
   finalSettlement: {
-    href: "/dashboard/admin/financial/final-settlement",
+    href: "/admin/financial/final-settlement",
     label: "تسویه حساب نهایی",
     roles: [Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO],
     icon: <IconCalendarOff className="size-5" />
   },
 
   salaryHistory: {
-    href: "/dashboard/admin/financial/salary-history",
+    href: "/admin/financial/salary-history",
     label: "تاریخچه‌ی حقوق",
     roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconTrendingUp className="size-5" />
   },
 
   payrollSettings: {
-    href: "/dashboard/admin/financial/payroll-settings",
+    href: "/admin/financial/payroll-settings",
     label: "تنظیمات حقوق و دستمزد",
     roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
     icon: <IconReceiptTax className="size-5" />

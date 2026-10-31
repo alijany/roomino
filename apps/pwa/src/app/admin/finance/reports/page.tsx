@@ -13,9 +13,9 @@ import { format as formatJalaliDate } from 'date-fns-jalali';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { API_URL } from '../../../../../constants';
-import { useMonthlyReport } from '../finance.api';
-import { TotalsTable } from '../finance.component.charts';
-import { Currency } from '../finance.types';
+import { useMonthlyReport } from '@/app/dashboard/finance/finance.api';
+import { TotalsTable } from '@/app/dashboard/finance/finance.component.charts';
+import { Currency } from '@/app/dashboard/finance/finance.types';
 
 /** The last 12 Jalali months, newest first, as {label, gregorian year+month}. */
 function useMonthOptions() {

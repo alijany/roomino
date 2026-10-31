@@ -30,7 +30,7 @@ const DEFAULT_CATEGORIES: Array<{
 /**
  * Starting approval matrix. Deliberately conservative — these are placeholders
  * to make the module work on first boot, not researched limits. Admins change
- * them from /dashboard/finance/settings without a deploy.
+ * them from /admin/finance/settings without a deploy.
  */
 const DEFAULT_APPROVAL_RULES: Array<{
   minAmountRial: number;

@@ -6,9 +6,9 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { DataView, Pagination } from '@/ui/molecules';
 import { IconChecklist } from '@tabler/icons-react';
 import { useState } from 'react';
-import { usePaymentRequests } from '../finance.api';
-import { RequestTable } from '../finance.component.request-table';
-import { RequestFilterDto, RequestScope } from '../finance.types';
+import { usePaymentRequests } from '@/app/dashboard/finance/finance.api';
+import { RequestTable } from '@/app/dashboard/finance/finance.component.request-table';
+import { RequestFilterDto, RequestScope } from '@/app/dashboard/finance/finance.types';
 
 /**
  * The approver's inbox — only what is waiting on them right now.

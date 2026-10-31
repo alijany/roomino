@@ -9,7 +9,7 @@ import { IconCheck, IconPencil } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { jalaliLabel, tehranToday } from '../attendance/attendance.util';
+import { jalaliLabel, tehranToday } from '@/app/dashboard/attendance/attendance.util';
 import { useApproveUser } from './users.api';
 import { User } from './users.types';
 
@@ -40,7 +40,7 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
         <Table
             rows={users}
             rowKey={(user) => user.id}
-            onRowClick={canManageRoles ? (user) => router.push(`/dashboard/users/${user.id}`) : undefined}
+            onRowClick={canManageRoles ? (user) => router.push(`/admin/users/${user.id}`) : undefined}
             columns={[
                 {
                     key: 'user',
@@ -116,7 +116,7 @@ function ActionsCell({ user, onChanged, canManage }: { user: User; onChanged: ()
                     </Button>
                 )}
                 {canManage && (
-                    <Link href={`/dashboard/users/${user.id}`} aria-label={`ویرایش ${user.name ?? user.phone}`}>
+                    <Link href={`/admin/users/${user.id}`} aria-label={`ویرایش ${user.name ?? user.phone}`}>
                         <Button variant="outline" size="sm" className="!px-2" tabIndex={-1}>
                             <IconPencil className="size-4" />
                         </Button>

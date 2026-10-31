@@ -221,7 +221,7 @@ export class FinanceNotificationService {
       daysRemaining <= 7 ? 'high' : 'normal',
       {
         recurringExpenseId: schedule.id,
-        link: '/dashboard/finance/recurring',
+        link: '/admin/finance/recurring',
       },
     );
   }
@@ -243,7 +243,7 @@ export class FinanceNotificationService {
     await Promise.all(
       financeUsers.map((id) =>
         this.safeSend(id, message, 'high', {
-          link: '/dashboard/finance/queue',
+          link: '/admin/finance/queue',
         }),
       ),
     );
@@ -269,7 +269,7 @@ export class FinanceNotificationService {
       await Promise.all(
         targets.map((id) =>
           this.safeSend(id, message, 'normal', {
-            link: '/dashboard/finance/approvals',
+            link: '/admin/finance/approvals',
           }),
         ),
       );
@@ -284,7 +284,7 @@ export class FinanceNotificationService {
                 'fa-IR',
               )} درخواست پرداخت بیش از سه روز بدون تأیید مانده است.`,
               'normal',
-              { link: '/dashboard/finance/approvals' },
+              { link: '/admin/finance/approvals' },
             ),
           ),
         );
@@ -299,7 +299,7 @@ export class FinanceNotificationService {
         if (await this.isMuted(id)) return;
 
         await this.safeSend(id, `گزارش مالی ${label} آماده است.`, 'low', {
-          link: '/dashboard/finance/reports',
+          link: '/admin/finance/reports',
         });
       }),
     );

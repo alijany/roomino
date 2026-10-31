@@ -13,6 +13,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import { RESET_CONFIRMATION } from '../attendance.constants';
@@ -34,8 +35,8 @@ import {
  * data. Admin only — not HR, who run attendance day to day: these change it
  * for everyone, and a reset can't be undone.
  */
-@Controller('attendance/maintenance')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/attendance/maintenance')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class MaintenanceController {
   constructor(

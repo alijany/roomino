@@ -22,19 +22,19 @@ import {
   useDeletePayeeAccount,
   useDeleteVendor,
   useVendors,
-} from '../finance.api';
+} from '@/app/dashboard/finance/finance.api';
 import {
   CURRENCY_LABELS,
   PAYEE_ACCOUNT_TYPE_LABELS,
   VENDOR_KIND_LABELS,
-} from '../finance.constants';
+} from '@/app/dashboard/finance/finance.constants';
 import {
   Currency,
   PayeeAccountType,
   Vendor,
   VendorFilterDto,
   VendorKind,
-} from '../finance.types';
+} from '@/app/dashboard/finance/finance.types';
 
 /**
  * The طرف‌حساب directory. Saved bank details here pre-fill the request form,

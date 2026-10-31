@@ -9,12 +9,12 @@ import { IconDownload, IconReportSearch, IconSearch, IconX } from '@tabler/icons
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useJobGroups, usePerformance, useWorkplaces } from '../attendance.api';
-import { PageHeader, Panel, StatTile } from '../attendance.component.layout';
-import { PerformanceTable } from '../attendance.component.performance-table';
-import { PeriodPicker } from '../attendance.component.period-picker';
-import { PerformanceQuery, PeriodQuery } from '../attendance.types';
-import { downloadCsv, fa, hm, latin } from '../attendance.util';
+import { useJobGroups, usePerformance, useWorkplaces } from '@/app/dashboard/attendance/attendance.api';
+import { PageHeader, Panel, StatTile } from '@/app/dashboard/attendance/attendance.component.layout';
+import { PerformanceTable } from '@/app/dashboard/attendance/attendance.component.performance-table';
+import { PeriodPicker } from '@/app/dashboard/attendance/attendance.component.period-picker';
+import { PerformanceQuery, PeriodQuery } from '@/app/dashboard/attendance/attendance.types';
+import { downloadCsv, fa, hm, latin } from '@/app/dashboard/attendance/attendance.util';
 import {
   filterPerformanceRows,
   PERFORMANCE_FILTERS,
@@ -24,7 +24,7 @@ import {
   performanceViewFromSearch,
   performanceTotals,
   sortPerformanceRows,
-} from '../attendance.util.performance';
+} from '@/app/dashboard/attendance/attendance.util.performance';
 
 export default function PerformancePage() {
   return (

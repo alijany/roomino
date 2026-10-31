@@ -34,7 +34,7 @@ export class AdvanceRequestNotificationService {
 
   /** For CEO/finance-manager — the management review queue's detail page. */
   private reviewLink(request: AdvanceRequestEntity): string {
-    return `/dashboard/advance-request/review/${request.id}`;
+    return `/admin/advance-request/review/${request.id}`;
   }
 
   private async safeSend(

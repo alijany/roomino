@@ -15,18 +15,18 @@ const query = new URLSearchParams(
       }), {})
   ).toString();
 
-  const swr = useSWR<GetUsersResponse>(`/users?${query}`, fetcher);
+  const swr = useSWR<GetUsersResponse>(`/admin/users?${query}`, fetcher);
   return useSwrHelper(swr);
 }
 
 export function useUser(id: number) {
-  const swr = useSWR<User>(Number.isFinite(id) ? `/users/${id}` : null, fetcher);
+  const swr = useSWR<User>(Number.isFinite(id) ? `/admin/users/${id}` : null, fetcher);
   return useSwrHelper(swr);
 }
 
 export function useAddUser() {
   const swrMutation = useSWRMutation(
-    '/users',
+    '/admin/users',
     postFetcher<AddUserDto, User>
   );
   return useSwrMutationHelper(swrMutation);
@@ -34,36 +34,36 @@ export function useAddUser() {
 
 export function useApproveUser() {
   const swrMutation = useSWRMutation(
-    '/users/approve',
+    '/admin/users/approve',
     (_key: string, { arg }: { arg: number }) =>
-      patchFetcher<Record<string, never>, User>(`/users/${arg}/approve`, { arg: {} })
+      patchFetcher<Record<string, never>, User>(`/admin/users/${arg}/approve`, { arg: {} })
   );
   return useSwrMutationHelper(swrMutation);
 }
 
 export function useAddUserRole() {
   const swrMutation = useSWRMutation(
-    '/users/roles',
+    '/admin/users/roles',
     (_key: string, { arg }: { arg: { id: number; data: AddUserRoleDto } }) =>
-      postFetcher<AddUserRoleDto, UserRole>(`/users/${arg.id}/roles`, { arg: arg.data })
+      postFetcher<AddUserRoleDto, UserRole>(`/admin/users/${arg.id}/roles`, { arg: arg.data })
   );
   return useSwrMutationHelper(swrMutation);
 }
 
 export function useRemoveUserRole() {
   const swrMutation = useSWRMutation(
-    '/users/roles',
+    '/admin/users/roles',
     (_key: string, { arg }: { arg: { id: number; roleId: number } }) =>
-      deleteFetcher<{ success: boolean }>(`/users/${arg.id}/roles/${arg.roleId}`)
+      deleteFetcher<{ success: boolean }>(`/admin/users/${arg.id}/roles/${arg.roleId}`)
   );
   return useSwrMutationHelper(swrMutation);
 }
 
 export function useDeleteUser() {
   const swrMutation = useSWRMutation(
-    '/users',
+    '/admin/users',
     (_key: string, { arg }: { arg: number }) =>
-      deleteFetcher<{ success: boolean }>(`/users/${arg}`)
+      deleteFetcher<{ success: boolean }>(`/admin/users/${arg}`)
   );
   return useSwrMutationHelper(swrMutation);
 }
@@ -72,7 +72,7 @@ export function useUpdateUserName() {
   const swrMutation = useSWRMutation(
     '/users/name',
     (_key: string, { arg }: { arg: { id: number; data: UpdateUserNameDto } }) =>
-      patchFetcher<UpdateUserNameDto, Pick<User, 'id' | 'name' | 'firstName' | 'lastName' | 'phone' | 'nationalId' | 'personnelCode' | 'jobTitle' | 'hireDate' | 'endDate' | 'insuranceNumber' | 'sheba' | 'email'>>(`/users/${arg.id}`, { arg: arg.data })
+      patchFetcher<UpdateUserNameDto, Pick<User, 'id' | 'name' | 'firstName' | 'lastName' | 'phone' | 'nationalId' | 'personnelCode' | 'jobTitle' | 'hireDate' | 'endDate' | 'insuranceNumber' | 'sheba' | 'email'>>(`/admin/users/${arg.id}`, { arg: arg.data })
   );
   return useSwrMutationHelper(swrMutation);
 }

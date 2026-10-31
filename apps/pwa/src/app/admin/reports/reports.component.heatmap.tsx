@@ -4,7 +4,7 @@ import { IconTable, IconGrid3x3 } from '@tabler/icons-react';
 import { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
-import { HeatmapCell, RoomUsageHeatmapResponse } from './reports.types';
+import { HeatmapCell, RoomUsageHeatmapResponse } from '@/app/admin/reports/reports.types';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 

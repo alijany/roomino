@@ -15,6 +15,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { PageQueryDto } from '../dtos/common.dto';
@@ -23,8 +24,8 @@ import { WorkplaceService } from '../services/workplace.service';
 import { toWorkplaceView } from '../utils/attendance-view.util';
 
 /** محل‌های کار — admin and HR. */
-@Controller('attendance/workplaces')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/attendance/workplaces')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class WorkplaceController {
   constructor(private readonly workplaces: WorkplaceService) {}

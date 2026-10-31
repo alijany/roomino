@@ -15,8 +15,8 @@ import {
   useApprovalRules,
   useExpenseCategories,
   useReplaceApprovalRules,
-} from '../finance.api';
-import { ApprovalRuleInput } from '../finance.types';
+} from '@/app/dashboard/finance/finance.api';
+import { ApprovalRuleInput } from '@/app/dashboard/finance/finance.types';
 
 /** Only these roles may sit in a chain — Finance pays, it does not approve. */
 const APPROVER_ROLES: Role[] = [Role.APPROVER, Role.ADMIN];

@@ -18,19 +18,19 @@ import {
   useExpenseCategories,
   useRecurringExpenses,
   useVendors,
-} from '../finance.api';
+} from '@/app/dashboard/finance/finance.api';
 import {
   BILLING_CALENDAR_LABELS,
   CURRENCY_LABELS,
   RECURRENCE_CYCLE_LABELS,
-} from '../finance.constants';
+} from '@/app/dashboard/finance/finance.constants';
 import {
   BillingCalendar,
   Currency,
   RecurrenceCycle,
   RecurringExpense,
-} from '../finance.types';
-import { describeDueDate, formatJalali } from '../finance.util';
+} from '@/app/dashboard/finance/finance.types';
+import { describeDueDate, formatJalali } from '@/app/dashboard/finance/finance.util';
 
 /**
  * هزینه‌های دوره‌ای — the schedules behind renewals.

@@ -14,13 +14,14 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { Role } from '../../roles/roles.constants';
 import { CreateRecurringDto } from '../dtos/create-recurring.dto';
 import { ListQueryDto } from '../dtos/list-query.dto';
 import { RecurringReservationService } from '../services/recurring-reservation.service';
 
-@Controller('recurring-reservations')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/recurring-reservations')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class RecurringReservationController {
   constructor(private readonly recurringService: RecurringReservationService) {}

@@ -18,6 +18,7 @@ import type { Response } from 'express';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
@@ -38,8 +39,8 @@ const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
  * `recalculate` follows changes elsewhere, and `finalize` freezes the month
  * (or `lines/:id/finalize` just one person's line).
  */
-@Controller('finance/payroll')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/finance/payroll')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class PayrollController {
   constructor(private readonly payroll: PayrollService) {}

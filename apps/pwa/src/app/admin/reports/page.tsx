@@ -11,10 +11,10 @@ import { TZDate } from '@date-fns/tz';
 import { IconReportAnalytics } from '@tabler/icons-react';
 import { subDays } from 'date-fns-jalali';
 import { useMemo, useState } from 'react';
-import { useRooms } from '../rooms/rooms.api';
-import { useRoomUsageHeatmap } from './reports.api';
+import { useRooms } from '@/app/admin/rooms/rooms.api';
+import { useRoomUsageHeatmap } from '@/app/admin/reports/reports.api';
 import { DateRangePicker } from '@/ui/molecules';
-import { RoomUsageHeatmap } from './reports.component.heatmap';
+import { RoomUsageHeatmap } from '@/app/admin/reports/reports.component.heatmap';
 
 const TEHRAN_TZ = 'Asia/Tehran';
 

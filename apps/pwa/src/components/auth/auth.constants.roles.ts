@@ -1,4 +1,4 @@
-import { User } from "@/app/dashboard/users/users.types";
+import { User } from "@/app/admin/users/users.types";
 
 export enum Role {
   ADMIN = 'admin',

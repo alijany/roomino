@@ -15,6 +15,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { Role } from '../../roles/roles.constants';
 import {
   CreateExpenseCategoryDto,
@@ -27,7 +28,7 @@ import { ExpenseCategoryService } from '../services/expense-category.service';
  * needs them — but only admins may change the taxonomy.
  */
 @Controller('finance/categories')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class ExpenseCategoryController {
   constructor(private readonly categories: ExpenseCategoryService) {}
@@ -47,6 +48,14 @@ export class ExpenseCategoryController {
       })),
     };
   }
+}
+
+/** The management half: changing what the page above only reads. */
+@Controller('admin/finance/categories')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AdminExpenseCategoryController {
+  constructor(private readonly categories: ExpenseCategoryService) {}
 
   @Post()
   @Roles(Role.ADMIN)

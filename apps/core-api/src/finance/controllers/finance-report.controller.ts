@@ -10,6 +10,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { Role } from '../../roles/roles.constants';
 import {
   ExportQueryDto,
@@ -23,8 +24,8 @@ import { toCsv } from '../../libs/utils/csv.util';
  * Reporting. Finance and admin only — these endpoints aggregate every payment
  * the company has made.
  */
-@Controller('finance')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/finance')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class FinanceReportController {
   constructor(private readonly reports: FinanceReportService) {}

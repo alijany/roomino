@@ -21,6 +21,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { StaffGuard } from 'src/auth/guards/staff.guard';
 import { Role } from 'src/roles/roles.constants';
 import { S3StorageService } from 'src/storage/s3-storage.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -68,10 +69,10 @@ function toUserListItem(user: UserEntity) {
   };
 }
 
-@Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/users')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
-export class UserController {
+export class AdminUserController {
   constructor(
     private readonly userService: UserService,
     private readonly s3StorageService: S3StorageService,
@@ -201,74 +202,6 @@ export class UserController {
     return { success: true };
   }
 
-  @Patch('profile')
-  async updateProfile(
-    @CurrentUser() user: UserEntity,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ) {
-    const updatedUser = await this.userService.updateProfile(
-      user.id,
-      updateProfileDto,
-    );
-    return updatedUser;
-  }
-
-  @Post('profile/picture')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadProfilePicture(
-    @CurrentUser() user: UserEntity,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException('فایلی آپلود نشده است');
-    }
-
-    // Validate file type
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/jpg',
-    ];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'فرمت فایل نامعتبر است. فقط تصاویر مجاز هستند',
-      );
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      throw new BadRequestException('حجم فایل بیش از 5 مگابایت است');
-    }
-
-    // Generate unique filename
-    const fileExtension = file.originalname.split('.').pop();
-    const filename = `${uuidv4()}.${fileExtension}`;
-
-    // Upload to S3
-    const fileUrl = await this.s3StorageService.uploadBuffer(
-      file.buffer,
-      filename,
-      file.mimetype,
-      'profile-pictures',
-    );
-
-    const { user: updatedUser, previous } =
-      await this.userService.updateProfilePicture(user.id, fileUrl);
-
-    // The old picture is no longer referenced anywhere; don't leave it in the
-    // bucket. Best effort — a failed delete mustn't fail the upload.
-    const previousKey = previous && this.s3StorageService.keyOf(previous);
-    if (previousKey?.startsWith('profile-pictures/')) {
-      await this.s3StorageService.deleteObject(previousKey).catch(() => {
-        /* logged by the storage service */
-      });
-    }
-
-    return { profilePicture: updatedUser.profilePicture };
-  }
-
   /**
    * An admin editing a user: name, personnel code and job title. Declared after the `profile` routes: Express
    * matches in order, and `:id` would otherwise catch `PATCH /users/profile`.
@@ -341,5 +274,84 @@ export class UserController {
       agreementType: user.agreementType,
       salaryMode: user.salaryMode,
     };
+  }
+}
+
+/** What a signed-in person does with their own account. */
+@Controller('users')
+@UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ transform: true }))
+export class UserController {
+  constructor(
+    private readonly userService: UserService,
+    private readonly s3StorageService: S3StorageService,
+  ) {}
+
+  @Patch('profile')
+  async updateProfile(
+    @CurrentUser() user: UserEntity,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    const updatedUser = await this.userService.updateProfile(
+      user.id,
+      updateProfileDto,
+    );
+    return updatedUser;
+  }
+
+  @Post('profile/picture')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfilePicture(
+    @CurrentUser() user: UserEntity,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('فایلی آپلود نشده است');
+    }
+
+    // Validate file type
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/jpg',
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'فرمت فایل نامعتبر است. فقط تصاویر مجاز هستند',
+      );
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('حجم فایل بیش از 5 مگابایت است');
+    }
+
+    // Generate unique filename
+    const fileExtension = file.originalname.split('.').pop();
+    const filename = `${uuidv4()}.${fileExtension}`;
+
+    // Upload to S3
+    const fileUrl = await this.s3StorageService.uploadBuffer(
+      file.buffer,
+      filename,
+      file.mimetype,
+      'profile-pictures',
+    );
+
+    const { user: updatedUser, previous } =
+      await this.userService.updateProfilePicture(user.id, fileUrl);
+
+    // The old picture is no longer referenced anywhere; don't leave it in the
+    // bucket. Best effort — a failed delete mustn't fail the upload.
+    const previousKey = previous && this.s3StorageService.keyOf(previous);
+    if (previousKey?.startsWith('profile-pictures/')) {
+      await this.s3StorageService.deleteObject(previousKey).catch(() => {
+        /* logged by the storage service */
+      });
+    }
+
+    return { profilePicture: updatedUser.profilePicture };
   }
 }

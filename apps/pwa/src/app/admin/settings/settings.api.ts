@@ -9,11 +9,11 @@ export interface SiteSettings {
   registrationClosed: boolean;
 }
 
-export const useSiteSettings = () => useSwrHelper(useSWR<SiteSettings>('/settings', fetcher));
+export const useSiteSettings = () => useSwrHelper(useSWR<SiteSettings>('/admin/settings', fetcher));
 
 export const useUpdateSiteSettings = () =>
   useSwrMutationHelper(
-    useSWRMutation('/settings/update', (_k: string, { arg }: { arg: Partial<SiteSettings> }) =>
-      patchFetcher<Partial<SiteSettings>, SiteSettings>('/settings', { arg }),
+    useSWRMutation('/admin/settings/update', (_k: string, { arg }: { arg: Partial<SiteSettings> }) =>
+      patchFetcher<Partial<SiteSettings>, SiteSettings>('/admin/settings', { arg }),
     ),
   );

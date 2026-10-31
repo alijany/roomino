@@ -162,14 +162,14 @@ export function useDeleteRequestAttachment() {
 // --- review (admin / HR) ------------------------------------------------------------------
 
 export function useRequests(filters: RequestFilterDto) {
-  return useSwrHelper(useSWR<RequestListResponse>(q('/attendance/requests', filters), fetcher));
+  return useSwrHelper(useSWR<RequestListResponse>(q('/admin/attendance/requests', filters), fetcher));
 }
 
 /**
  * Approve/reject through the admin queue or a team approver's route — the
  * backend checks a different rule for each, so the caller picks the base.
  */
-export type ReviewBase = '/attendance/requests' | '/attendance/team/requests';
+export type ReviewBase = '/admin/attendance/requests' | '/attendance/team/requests';
 
 export function useApproveRequest(base: ReviewBase) {
   return useDynamicMutation(`${base}/approve`, (id: number) =>
@@ -195,21 +195,21 @@ export function useRejectRequest(base: ReviewBase) {
 }
 
 export function useDeleteRequest() {
-  return useDynamicMutation('/attendance/requests/delete', (id: number) =>
-    deleteFetcher<{ success: boolean }>(`/attendance/requests/${id}`),
+  return useDynamicMutation('/admin/attendance/requests/delete', (id: number) =>
+    deleteFetcher<{ success: boolean }>(`/admin/attendance/requests/${id}`),
   );
 }
 
 // --- reports ------------------------------------------------------------------------------
 
 export function useBoard() {
-  return useSwrHelper(useSWR<Board>('/attendance/reports/board', fetcher, { refreshInterval: 60000 }));
+  return useSwrHelper(useSWR<Board>('/admin/attendance/reports/board', fetcher, { refreshInterval: 60000 }));
 }
 
 export function usePerformance(query: PerformanceQuery) {
   return useSwrHelper(
     useSWR<{ period: Period; items: PerformanceRow[] }>(
-      q('/attendance/reports/performance', query),
+      q('/admin/attendance/reports/performance', query),
       fetcher,
     ),
   );
@@ -217,12 +217,12 @@ export function usePerformance(query: PerformanceQuery) {
 
 export function useEmployeeReport(id: number | undefined, period: PeriodQuery) {
   return useSwrHelper(
-    useSWR<Report>(id ? q(`/attendance/reports/employees/${id}`, period) : null, fetcher),
+    useSWR<Report>(id ? q(`/admin/attendance/reports/employees/${id}`, period) : null, fetcher),
   );
 }
 
 /** Corrections go through the admin route or the team route. */
-export type CorrectionBase = '/attendance/reports/employees' | '/attendance/team/members';
+export type CorrectionBase = '/admin/attendance/reports/employees' | '/attendance/team/members';
 
 export function useCorrectAttendance(base: CorrectionBase) {
   return useDynamicMutation(
@@ -254,9 +254,9 @@ export function useRevokePresence(base: CorrectionBase) {
 
 export function useGrant() {
   return useDynamicMutation(
-    '/attendance/reports/employees/grants',
+    '/admin/attendance/reports/employees/grants',
     ({ id, data }: { id: number; data: RequestInput }) =>
-      postFetcher<RequestInput, AttendanceRequest>(`/attendance/reports/employees/${id}/grants`, {
+      postFetcher<RequestInput, AttendanceRequest>(`/admin/attendance/reports/employees/${id}/grants`, {
         arg: data,
       }),
   );
@@ -298,18 +298,18 @@ export function useUpdateTeamMember() {
 
 export function useEmployees(filters: EmployeeFilterDto) {
   return useSwrHelper(
-    useSWR<{ items: Employee[]; meta: PaginationMeta }>(q('/attendance/employees', filters), fetcher),
+    useSWR<{ items: Employee[]; meta: PaginationMeta }>(q('/admin/attendance/employees', filters), fetcher),
   );
 }
 
 export function useEmployee(id?: number) {
-  return useSwrHelper(useSWR<EmployeeDetail>(id ? `/attendance/employees/${id}` : null, fetcher));
+  return useSwrHelper(useSWR<EmployeeDetail>(id ? `/admin/attendance/employees/${id}` : null, fetcher));
 }
 
 export function useEmployeeCandidates(text: string, enabled: boolean, limit?: number) {
   return useSwrHelper(
     useSWR<{ items: Array<UserBrief & { nationalId: string | null }> }>(
-      enabled ? q('/attendance/employees/candidates', { text: text || undefined, limit }) : null,
+      enabled ? q('/admin/attendance/employees/candidates', { text: text || undefined, limit }) : null,
       fetcher,
     ),
   );
@@ -317,39 +317,39 @@ export function useEmployeeCandidates(text: string, enabled: boolean, limit?: nu
 
 export function useSaveEmployee() {
   return useDynamicMutation(
-    '/attendance/employees/save',
+    '/admin/attendance/employees/save',
     ({ id, data }: { id?: number; data: EmployeeInput }) =>
       id
-        ? patchFetcher<EmployeeInput, Employee>(`/attendance/employees/${id}`, { arg: data })
-        : postFetcher<EmployeeInput, Employee>('/attendance/employees', { arg: data }),
+        ? patchFetcher<EmployeeInput, Employee>(`/admin/attendance/employees/${id}`, { arg: data })
+        : postFetcher<EmployeeInput, Employee>('/admin/attendance/employees', { arg: data }),
   );
 }
 
 export function useBatchCreateEmployees() {
-  return useDynamicMutation('/attendance/employees/batch', (data: EmployeeBatchInput) =>
-    postFetcher<EmployeeBatchInput, { created: number; ids: number[] }>('/attendance/employees/batch', { arg: data }),
+  return useDynamicMutation('/admin/attendance/employees/batch', (data: EmployeeBatchInput) =>
+    postFetcher<EmployeeBatchInput, { created: number; ids: number[] }>('/admin/attendance/employees/batch', { arg: data }),
   );
 }
 
 // --- setup data ------------------------------------------------------------------------------
 
 export function useWorkplaces() {
-  return useSwrHelper(useSWR<{ items: Workplace[] }>('/attendance/workplaces', fetcher));
+  return useSwrHelper(useSWR<{ items: Workplace[] }>('/admin/attendance/workplaces', fetcher));
 }
 
 export function useSaveWorkplace() {
   return useDynamicMutation(
-    '/attendance/workplaces/save',
+    '/admin/attendance/workplaces/save',
     ({ id, data }: { id?: number; data: Partial<WorkplaceInput> }) =>
       id
-        ? patchFetcher<Partial<WorkplaceInput>, Workplace>(`/attendance/workplaces/${id}`, { arg: data })
-        : postFetcher<Partial<WorkplaceInput>, Workplace>('/attendance/workplaces', { arg: data }),
+        ? patchFetcher<Partial<WorkplaceInput>, Workplace>(`/admin/attendance/workplaces/${id}`, { arg: data })
+        : postFetcher<Partial<WorkplaceInput>, Workplace>('/admin/attendance/workplaces', { arg: data }),
   );
 }
 
 export function useDeleteWorkplace() {
-  return useDynamicMutation('/attendance/workplaces/delete', (id: number) =>
-    deleteFetcher<{ success: boolean; deactivated: boolean }>(`/attendance/workplaces/${id}`),
+  return useDynamicMutation('/admin/attendance/workplaces/delete', (id: number) =>
+    deleteFetcher<{ success: boolean; deactivated: boolean }>(`/admin/attendance/workplaces/${id}`),
   );
 }
 
@@ -358,27 +358,27 @@ export function useShifts() {
 }
 
 export function useSaveShift() {
-  return useDynamicMutation('/attendance/shifts/save', ({ id, data }: { id?: number; data: ShiftInput }) =>
+  return useDynamicMutation('/admin/attendance/shifts/save', ({ id, data }: { id?: number; data: ShiftInput }) =>
     id
-      ? patchFetcher<ShiftInput, Shift>(`/attendance/shifts/${id}`, { arg: data })
-      : postFetcher<ShiftInput, Shift>('/attendance/shifts', { arg: data }),
+      ? patchFetcher<ShiftInput, Shift>(`/admin/attendance/shifts/${id}`, { arg: data })
+      : postFetcher<ShiftInput, Shift>('/admin/attendance/shifts', { arg: data }),
   );
 }
 
 export function useDeleteShift() {
-  return useDynamicMutation('/attendance/shifts/delete', (id: number) =>
-    deleteFetcher<{ success: boolean }>(`/attendance/shifts/${id}`),
+  return useDynamicMutation('/admin/attendance/shifts/delete', (id: number) =>
+    deleteFetcher<{ success: boolean }>(`/admin/attendance/shifts/${id}`),
   );
 }
 
 export function useJobGroups() {
-  return useSwrHelper(useSWR<{ items: JobGroup[] }>('/attendance/job-groups', fetcher));
+  return useSwrHelper(useSWR<{ items: JobGroup[] }>('/admin/attendance/job-groups', fetcher));
 }
 
 export function useApproverCandidates(text: string, enabled: boolean) {
   return useSwrHelper(
     useSWR<{ items: UserBrief[] }>(
-      enabled ? q('/attendance/job-groups/approver-candidates', { text: text || undefined }) : null,
+      enabled ? q('/admin/attendance/job-groups/approver-candidates', { text: text || undefined }) : null,
       fetcher,
     ),
   );
@@ -386,37 +386,37 @@ export function useApproverCandidates(text: string, enabled: boolean) {
 
 export function useSaveJobGroup() {
   return useDynamicMutation(
-    '/attendance/job-groups/save',
+    '/admin/attendance/job-groups/save',
     ({ id, data }: { id?: number; data: JobGroupInput }) =>
       id
-        ? patchFetcher<JobGroupInput, JobGroup>(`/attendance/job-groups/${id}`, { arg: data })
-        : postFetcher<JobGroupInput, JobGroup>('/attendance/job-groups', { arg: data }),
+        ? patchFetcher<JobGroupInput, JobGroup>(`/admin/attendance/job-groups/${id}`, { arg: data })
+        : postFetcher<JobGroupInput, JobGroup>('/admin/attendance/job-groups', { arg: data }),
   );
 }
 
 export function useDeleteJobGroup() {
-  return useDynamicMutation('/attendance/job-groups/delete', (id: number) =>
-    deleteFetcher<{ success: boolean }>(`/attendance/job-groups/${id}`),
+  return useDynamicMutation('/admin/attendance/job-groups/delete', (id: number) =>
+    deleteFetcher<{ success: boolean }>(`/admin/attendance/job-groups/${id}`),
   );
 }
 
 export function useWorkPolicies() {
-  return useSwrHelper(useSWR<{ items: WorkPolicy[] }>('/attendance/work-policies', fetcher));
+  return useSwrHelper(useSWR<{ items: WorkPolicy[] }>('/admin/attendance/work-policies', fetcher));
 }
 
 export function useSaveWorkPolicy() {
   return useDynamicMutation(
-    '/attendance/work-policies/save',
+    '/admin/attendance/work-policies/save',
     ({ id, data }: { id?: number; data: WorkPolicyInput }) =>
       id
-        ? patchFetcher<WorkPolicyInput, WorkPolicy>(`/attendance/work-policies/${id}`, { arg: data })
-        : postFetcher<WorkPolicyInput, WorkPolicy>('/attendance/work-policies', { arg: data }),
+        ? patchFetcher<WorkPolicyInput, WorkPolicy>(`/admin/attendance/work-policies/${id}`, { arg: data })
+        : postFetcher<WorkPolicyInput, WorkPolicy>('/admin/attendance/work-policies', { arg: data }),
   );
 }
 
 export function useDeleteWorkPolicy() {
-  return useDynamicMutation('/attendance/work-policies/delete', (id: number) =>
-    deleteFetcher<{ success: boolean }>(`/attendance/work-policies/${id}`),
+  return useDynamicMutation('/admin/attendance/work-policies/delete', (id: number) =>
+    deleteFetcher<{ success: boolean }>(`/admin/attendance/work-policies/${id}`),
   );
 }
 
@@ -428,42 +428,42 @@ export function useHolidays(filters: { year?: number; month?: number; source?: H
 
 export function useSaveHoliday() {
   return useDynamicMutation(
-    '/attendance/holidays/save',
+    '/admin/attendance/holidays/save',
     ({ id, data }: { id?: number; data: { title: string; date: string; active?: boolean } }) =>
       id
-        ? patchFetcher<typeof data, Holiday>(`/attendance/holidays/${id}`, { arg: data })
-        : postFetcher<typeof data, Holiday>('/attendance/holidays', { arg: data }),
+        ? patchFetcher<typeof data, Holiday>(`/admin/attendance/holidays/${id}`, { arg: data })
+        : postFetcher<typeof data, Holiday>('/admin/attendance/holidays', { arg: data }),
   );
 }
 
 export function useToggleHoliday() {
-  return useDynamicMutation('/attendance/holidays/toggle', (id: number) =>
-    postFetcher<Record<string, never>, Holiday>(`/attendance/holidays/${id}/toggle`, { arg: {} }),
+  return useDynamicMutation('/admin/attendance/holidays/toggle', (id: number) =>
+    postFetcher<Record<string, never>, Holiday>(`/admin/attendance/holidays/${id}/toggle`, { arg: {} }),
   );
 }
 
 export function useDeleteHoliday() {
-  return useDynamicMutation('/attendance/holidays/delete', (id: number) =>
-    deleteFetcher<{ success: boolean }>(`/attendance/holidays/${id}`),
+  return useDynamicMutation('/admin/attendance/holidays/delete', (id: number) =>
+    deleteFetcher<{ success: boolean }>(`/admin/attendance/holidays/${id}`),
   );
 }
 
 export function useSyncHolidays() {
   return useSwrMutationHelper(
-    useSWRMutation('/attendance/holidays/sync', postFetcher<{ year: number }, HolidaySyncResult>),
+    useSWRMutation('/admin/attendance/holidays/sync', postFetcher<{ year: number }, HolidaySyncResult>),
   );
 }
 
 // --- maintenance (admin) -----------------------------------------------------------------
 
 export function useMaintenanceSummary() {
-  return useSwrHelper(useSWR<MaintenanceSummary>('/attendance/maintenance', fetcher));
+  return useSwrHelper(useSWR<MaintenanceSummary>('/admin/attendance/maintenance', fetcher));
 }
 
 export function useUpdateScheduleMode() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/attendance/maintenance/schedule-mode',
+      '/admin/attendance/maintenance/schedule-mode',
       patchFetcher<{ enabled: boolean; note?: string }, ScheduleMode>,
     ),
   );
@@ -472,7 +472,7 @@ export function useUpdateScheduleMode() {
 export function useUpdateSelfDeclared() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/attendance/maintenance/self-declared',
+      '/admin/attendance/maintenance/self-declared',
       patchFetcher<{ enabled: boolean }, SelfDeclared>,
     ),
   );
@@ -481,7 +481,7 @@ export function useUpdateSelfDeclared() {
 export function useResetAttendance() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/attendance/maintenance/reset',
+      '/admin/attendance/maintenance/reset',
       postFetcher<{ scope: ResetScope; confirm: string }, ResetResult>,
     ),
   );

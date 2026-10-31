@@ -14,6 +14,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import { SaveWorkPolicyDto } from '../dtos/setup.dto';
@@ -21,8 +22,8 @@ import { WorkPolicyService } from '../services/work-policy.service';
 import { toWorkPolicyView } from '../utils/attendance-view.util';
 
 /** سیاست‌های کاری — admin and HR. */
-@Controller('attendance/work-policies')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('admin/attendance/work-policies')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class WorkPolicyController {
   constructor(private readonly policies: WorkPolicyService) {}

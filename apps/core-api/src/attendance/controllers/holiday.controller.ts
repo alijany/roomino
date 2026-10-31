@@ -16,6 +16,7 @@ import {
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { StaffGuard } from '../../auth/guards/staff.guard';
 import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import {
@@ -28,7 +29,7 @@ import { toHolidayView } from '../utils/attendance-view.util';
 
 /** Holidays: anyone signed in reads them; admin and HR maintain them. */
 @Controller('attendance/holidays')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class HolidayController {
   constructor(private readonly holidays: HolidayService) {}
@@ -37,6 +38,14 @@ export class HolidayController {
   async list(@Query() query: ListHolidaysDto) {
     return { items: (await this.holidays.list(query)).map(toHolidayView) };
   }
+}
+
+/** The management half: changing what the page above only reads. */
+@Controller('admin/attendance/holidays')
+@UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AdminHolidayController {
+  constructor(private readonly holidays: HolidayService) {}
 
   @Post()
   @Roles(Role.ADMIN, Role.HR)

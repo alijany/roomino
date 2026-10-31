@@ -385,7 +385,7 @@ export function FactsCard({ slip }: { slip: Payslip }) {
     <Card
       title="مشخصات مؤثر بر حقوق"
       action={
-        <Link href={`/dashboard/users/${slip.user.id}`} className="text-xs text-sky-600">
+        <Link href={`/admin/users/${slip.user.id}`} className="text-xs text-sky-600">
           ویرایش در صفحه‌ی کاربر
         </Link>
       }

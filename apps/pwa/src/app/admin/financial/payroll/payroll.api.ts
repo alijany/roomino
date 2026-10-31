@@ -5,15 +5,15 @@ import useSWRMutation from 'swr/mutation';
 import { BankMonth, LineAdvances, Payslip, PayrollLine, PayrollMonth, UpdatePayrollLineDto } from './payroll.types';
 
 export function usePayrollMonth(period: number | null) {
-  return useSwrHelper(useSWR<PayrollMonth>(period ? `/finance/payroll/${period}` : null, fetcher));
+  return useSwrHelper(useSWR<PayrollMonth>(period ? `/admin/finance/payroll/${period}` : null, fetcher));
 }
 
 /** A month-level action: generate, recalculate or finalize. */
 function useMonthAction<T>(action: 'generate' | 'recalculate' | 'finalize') {
   return useSwrMutationHelper(
     useSWRMutation(
-      `/finance/payroll/${action}`,
-      (_key: string, { arg }: { arg: number }) => postFetcher<Record<string, never>, T>(`/finance/payroll/${arg}/${action}`, { arg: {} }),
+      `/admin/finance/payroll/${action}`,
+      (_key: string, { arg }: { arg: number }) => postFetcher<Record<string, never>, T>(`/admin/finance/payroll/${arg}/${action}`, { arg: {} }),
     ),
   );
 }
@@ -25,9 +25,9 @@ export const useFinalizePayroll = () => useMonthAction<{ finalized: number }>('f
 export function useUpdatePayrollLine() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/update',
+      '/admin/finance/payroll/lines/update',
       (_key: string, { arg }: { arg: { id: number; data: UpdatePayrollLineDto } }) =>
-        patchFetcher<UpdatePayrollLineDto, PayrollLine>(`/finance/payroll/lines/${arg.id}`, { arg: arg.data }),
+        patchFetcher<UpdatePayrollLineDto, PayrollLine>(`/admin/finance/payroll/lines/${arg.id}`, { arg: arg.data }),
     ),
   );
 }
@@ -35,8 +35,8 @@ export function useUpdatePayrollLine() {
 export function useDeletePayrollLine() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/delete',
-      (_key: string, { arg }: { arg: number }) => deleteFetcher<{ success: boolean }>(`/finance/payroll/lines/${arg}`),
+      '/admin/finance/payroll/lines/delete',
+      (_key: string, { arg }: { arg: number }) => deleteFetcher<{ success: boolean }>(`/admin/finance/payroll/lines/${arg}`),
     ),
   );
 }
@@ -45,24 +45,24 @@ export function useDeletePayrollLine() {
 export function useFinalizePayrollLine() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/finalize',
+      '/admin/finance/payroll/lines/finalize',
       (_key: string, { arg }: { arg: number }) =>
-        postFetcher<Record<string, never>, PayrollLine>(`/finance/payroll/lines/${arg}/finalize`, { arg: {} }),
+        postFetcher<Record<string, never>, PayrollLine>(`/admin/finance/payroll/lines/${arg}/finalize`, { arg: {} }),
     ),
   );
 }
 
 export function usePayslip(id: number | null) {
-  return useSwrHelper(useSWR<Payslip>(id ? `/finance/payroll/lines/${id}` : null, fetcher));
+  return useSwrHelper(useSWR<Payslip>(id ? `/admin/finance/payroll/lines/${id}` : null, fetcher));
 }
 
 /** Opens a final line again, with the reason kept on it. */
 export function useReopenPayrollLine() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/reopen',
+      '/admin/finance/payroll/lines/reopen',
       (_key: string, { arg }: { arg: { id: number; reason: string } }) =>
-        postFetcher<{ reason: string }, PayrollLine>(`/finance/payroll/lines/${arg.id}/reopen`, { arg: { reason: arg.reason } }),
+        postFetcher<{ reason: string }, PayrollLine>(`/admin/finance/payroll/lines/${arg.id}/reopen`, { arg: { reason: arg.reason } }),
     ),
   );
 }
@@ -71,31 +71,31 @@ export function useReopenPayrollLine() {
 export function useReopenPayrollMonth() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/reopen',
+      '/admin/finance/payroll/reopen',
       (_key: string, { arg }: { arg: { period: number; reason: string } }) =>
-        postFetcher<{ reason: string }, { reopened: number }>(`/finance/payroll/${arg.period}/reopen`, { arg: { reason: arg.reason } }),
+        postFetcher<{ reason: string }, { reopened: number }>(`/admin/finance/payroll/${arg.period}/reopen`, { arg: { reason: arg.reason } }),
     ),
   );
 }
 
 /** The month's bank transfers; fetched only while the dialog is open. */
 export function useBankMonth(period: number | null) {
-  return useSwrHelper(useSWR<BankMonth>(period ? `/finance/payroll/${period}/bank` : null, fetcher));
+  return useSwrHelper(useSWR<BankMonth>(period ? `/admin/finance/payroll/${period}/bank` : null, fetcher));
 }
 
 /** A person's approved advances to take off one line. */
 export function useLineAdvances(id: number | null) {
-  return useSwrHelper(useSWR<LineAdvances>(id ? `/finance/payroll/lines/${id}/advances` : null, fetcher));
+  return useSwrHelper(useSWR<LineAdvances>(id ? `/admin/finance/payroll/lines/${id}/advances` : null, fetcher));
 }
 
 /** Takes an approved advance (all that is left, or `amount` of it) off a line. */
 export function useApplyAdvance() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/advances/apply',
+      '/admin/finance/payroll/lines/advances/apply',
       (_key: string, { arg }: { arg: { lineId: number; requestId: number; amount?: number } }) =>
         postFetcher<{ amount?: number }, PayrollLine>(
-          `/finance/payroll/lines/${arg.lineId}/advances/${arg.requestId}/apply`,
+          `/admin/finance/payroll/lines/${arg.lineId}/advances/${arg.requestId}/apply`,
           { arg: arg.amount ? { amount: arg.amount } : {} },
         ),
     ),
@@ -106,10 +106,10 @@ export function useApplyAdvance() {
 export function useUnapplyAdvance() {
   return useSwrMutationHelper(
     useSWRMutation(
-      '/finance/payroll/lines/advances/unapply',
+      '/admin/finance/payroll/lines/advances/unapply',
       (_key: string, { arg }: { arg: { lineId: number; requestId: number } }) =>
         postFetcher<Record<string, never>, PayrollLine>(
-          `/finance/payroll/lines/${arg.lineId}/advances/${arg.requestId}/unapply`,
+          `/admin/finance/payroll/lines/${arg.lineId}/advances/${arg.requestId}/unapply`,
           { arg: {} },
         ),
     ),
