@@ -80,7 +80,7 @@ function SalaryHistoryContent() {
     onlyLatest: 'boolean',
   });
   // The CEO and the finance manager look; the admin changes.
-  const canEdit = useAuth().hasRole(Role.ADMIN);
+  const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER]);
   const [form, setForm] = useState<'change' | 'bulk' | null>(null);
   const [removing, setRemoving] = useState<SalaryChange | null>(null);
   const [editing, setEditing] = useState<SalaryChange | null>(null);

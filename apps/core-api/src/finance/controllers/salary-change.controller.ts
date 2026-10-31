@@ -29,7 +29,7 @@ import { SalaryChangeStatus, SalaryChangeType } from '../finance.constants';
 import { SalaryChangeService } from '../services/salary-change.service';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const VIEWERS = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
 
 /** Salary history of everyone. Admin-only: this is the most sensitive data in the system. */
 @Controller('finance/salary-changes')
@@ -39,7 +39,7 @@ export class SalaryChangeController {
   constructor(private readonly salaries: SalaryChangeService) {}
 
   @Get()
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   async list(
     @Query('userId') userId?: string,
     @Query('text') text?: string,
@@ -64,13 +64,13 @@ export class SalaryChangeController {
   }
 
   @Get('overview')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   async overview(@Query('period', ParseIntPipe) period: number) {
     return { items: await this.salaries.overview(period) };
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   create(
     @Body(NormalizeNumbersPipe) dto: CreateSalaryChangeDto,
     @CurrentUser() admin: UserEntity,
@@ -79,7 +79,7 @@ export class SalaryChangeController {
   }
 
   @Post('bulk')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   bulk(
     @Body(NormalizeNumbersPipe) dto: BulkSalaryRaiseDto,
     @CurrentUser() admin: UserEntity,
@@ -89,7 +89,7 @@ export class SalaryChangeController {
 
   /** Edit an open proposal. */
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: UpdateSalaryProposalDto,
@@ -99,13 +99,13 @@ export class SalaryChangeController {
 
   /** Confirm proposals, all or nothing. */
   @Post('confirm')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   confirm(@Body() dto: ConfirmSalaryChangesDto) {
     return this.salaries.confirm(dto.ids);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.salaries.removeChange(id);
   }

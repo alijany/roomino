@@ -22,7 +22,7 @@ import {
 import { PayrollSettingService } from '../services/payroll-setting.service';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const VIEWERS = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
 
 /**
  * The legal payroll parameters, one set per Jalali year. Admin-only: these
@@ -35,19 +35,19 @@ export class PayrollSettingController {
   constructor(private readonly settings: PayrollSettingService) {}
 
   @Get()
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   async years() {
     return { years: await this.settings.years() };
   }
 
   @Get(':year')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   view(@Param('year', ParseIntPipe) year: number) {
     return this.settings.view(year);
   }
 
   @Post(':year')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   create(
     @Param('year', ParseIntPipe) year: number,
     @Body(NormalizeNumbersPipe) dto: CreatePayrollSettingDto,
@@ -56,7 +56,7 @@ export class PayrollSettingController {
   }
 
   @Put(':year')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   update(
     @Param('year', ParseIntPipe) year: number,
     @Body(NormalizeNumbersPipe) dto: UpdatePayrollSettingDto,

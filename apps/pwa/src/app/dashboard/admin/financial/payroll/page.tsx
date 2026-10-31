@@ -94,7 +94,7 @@ function PayrollContent() {
 
   const { data, error, isLoading, refresh } = usePayrollMonth(period);
   // The CEO and the finance manager look; the admin changes.
-  const canEdit = useAuth().hasRole(Role.ADMIN);
+  const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER]);
   const generate = useGeneratePayroll();
   const recalculate = useRecalculatePayroll();
   const finalize = useFinalizePayroll();

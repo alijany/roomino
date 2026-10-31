@@ -30,7 +30,7 @@ import { PayrollService } from '../services/payroll.service';
 import { bankWorkbook } from '../utils/payroll-bank.util';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const VIEWERS = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
 
 /**
  * Monthly payroll. Admin-only. A month is its lines: `generate` adds a draft
@@ -45,14 +45,14 @@ export class PayrollController {
   constructor(private readonly payroll: PayrollService) {}
 
   @Get(':period')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   view(@Param('period', ParseIntPipe) period: number) {
     return this.payroll.view(period);
   }
 
   /** The month's bank transfers, as rows. */
   @Get(':period/bank')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   bank(
     @Param('period', ParseIntPipe) period: number,
     @Query('lineId') lineId?: string,
@@ -62,7 +62,7 @@ export class PayrollController {
 
   /** The same, as an Excel file; `rows` limits it to chosen transfers (`lineId:kind`, comma-separated). */
   @Get(':period/bank/xlsx')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   async bankXlsx(
     @Param('period', ParseIntPipe) period: number,
     @Res() res: Response,
@@ -90,26 +90,26 @@ export class PayrollController {
   }
 
   @Post(':period/generate')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   generate(@Param('period', ParseIntPipe) period: number) {
     return this.payroll.generate(period);
   }
 
   @Post(':period/recalculate')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   recalculate(@Param('period', ParseIntPipe) period: number) {
     return this.payroll.recalculate(period);
   }
 
   @Post(':period/finalize')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   finalize(@Param('period', ParseIntPipe) period: number) {
     return this.payroll.finalize(period);
   }
 
   /** Open every final line of the month again, with a reason. */
   @Post(':period/reopen')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   reopenMonth(
     @Param('period', ParseIntPipe) period: number,
     @Body() dto: ReopenPayrollDto,
@@ -120,7 +120,7 @@ export class PayrollController {
 
   /** Open one final line again, with a reason. */
   @Post('lines/:id/reopen')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   reopenLine(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReopenPayrollDto,
@@ -130,7 +130,7 @@ export class PayrollController {
   }
 
   @Patch('lines/:id')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: UpdatePayrollLineDto,
@@ -140,27 +140,27 @@ export class PayrollController {
 
   /** One line with the person's identity, for the payslip. */
   @Get('lines/:id')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   payslip(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.payslip(id);
   }
 
   /** Finalise one person's line only. */
   @Post('lines/:id/finalize')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   finalizeLine(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.finalizeLine(id);
   }
 
   /** A person's approved advances: still owed, and those already taken off this line. */
   @Get('lines/:id/advances')
-  @Roles(...VIEWERS)
+  @Roles(...PAYROLL_ROLES)
   advances(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.advances(id);
   }
 
   @Post('lines/:id/advances/:requestId/apply')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   applyAdvance(
     @Param('id', ParseIntPipe) id: number,
     @Param('requestId', ParseIntPipe) requestId: number,
@@ -170,7 +170,7 @@ export class PayrollController {
   }
 
   @Post('lines/:id/advances/:requestId/unapply')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   unapplyAdvance(
     @Param('id', ParseIntPipe) id: number,
     @Param('requestId', ParseIntPipe) requestId: number,
@@ -179,7 +179,7 @@ export class PayrollController {
   }
 
   @Delete('lines/:id')
-  @Roles(Role.ADMIN)
+  @Roles(...PAYROLL_ROLES)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.payroll.removeLine(id);
   }

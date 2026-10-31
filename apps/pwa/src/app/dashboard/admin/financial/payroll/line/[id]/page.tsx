@@ -58,7 +58,7 @@ function LineContent() {
 
 function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
   // The CEO and the finance manager look; the admin changes.
-  const canEdit = useAuth().hasRole(Role.ADMIN);
+  const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER]);
   const locked = slip.status === 'final';
   const frozen = locked || !canEdit;
   const [form, setForm] = useState<LineFormState>(() => formOf(slip));
