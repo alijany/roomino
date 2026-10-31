@@ -23,7 +23,7 @@ const phoneFormSchema = z.object({
 const otpFormSchema = z.object({
     otp: z
         .string()
-        .min(4, { message: 'کد تایید باید حداقل ۴ رقم باشد' })
+        .min(6, { message: 'کد تایید ۶ رقم است' })
         .regex(/^[۰-۹\d]+$/, { message: 'کد تایید باید عدد باشد' }),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
@@ -156,7 +156,13 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
 
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                     {step === 'phone' ? (
-                        <div className='lg:p-6 rounded-2xl lg:bg-white space-y-4'>
+                        <form
+                            className='lg:p-6 rounded-2xl lg:bg-white space-y-4'
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                void handlePhoneSubmit(onPhoneSubmit)();
+                            }}
+                        >
                             <div className='font-semibold text-lg text-slate-700'>شماره موبایل خود را وارد کنید</div>
                             <div className='text-sm text-slate-500'>
                                 برای استفاده از امکانات هم‌اوا، لطفاً شمارهٔ موبایل خود را وارد کنید. کد تأیید به این شماره پیامک خواهد شد.
@@ -178,6 +184,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                             <div className='flex items-center gap-2.5'>
                                 <Button
                                     variant='secondary'
+                                    type='button'
                                     onClick={() => {
                                         if (props.onClose) {
                                             props.onClose();
@@ -190,18 +197,23 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 </Button>
                                 <Button
                                     variant='primary'
-                                    type='button'
+                                    type='submit'
                                     className='grow'
-                                    onClick={handlePhoneSubmit(onPhoneSubmit)}
                                     disabled={authLoading}
                                 >
                                     {authLoading ? 'در حال بررسی...' : 'ارسال کد تایید'}
                                 </Button>
                             </div>
                             <br />
-                        </div>
+                        </form>
                     ) : (
-                        <div className='lg:p-6 rounded-2xl lg:bg-white space-y-4'>
+                        <form
+                            className='lg:p-6 rounded-2xl lg:bg-white space-y-4'
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                void handleOtpSubmit(onOtpSubmit)();
+                            }}
+                        >
                             <div className='font-semibold text-lg text-slate-700'>کد تأیید را وارد کنید</div>
                             <div className='text-sm text-slate-500'>
                                 کد پیامک‌شده به شمارۀ «{phoneNumber}» را وارد کنید.
@@ -218,7 +230,9 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 </div>
                             )}
                             <Input
-                                placeholder='کد تایید 4 رقمی'
+                                placeholder='کد تایید ۶ رقمی'
+                                inputMode='numeric'
+                                autoComplete='one-time-code'
                                 className='text-left'
                                 dir='ltr'
                                 {...registerOtp('otp')}
@@ -243,6 +257,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                             <div className='flex items-center gap-2.5'>
                                 <Button
                                     variant='ghost'
+                                    type='button'
                                     onClick={handleBackToPhone}
                                     disabled={authLoading}
                                 >
@@ -250,8 +265,8 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                 </Button>
                                 <Button
                                     variant='secondary'
+                                    type='submit'
                                     className='grow'
-                                    onClick={handleOtpSubmit(onOtpSubmit)}
                                     disabled={authLoading}
                                 >
                                     {authLoading ? 'در حال بررسی...' : 'ورود'}
@@ -268,7 +283,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                                     ارسال مجدد
                                 </div>
                             </div>
-                        </div>
+                        </form>
                     )}
                     <div className='lg:flex items-center hidden'>
                         <img src="/images/Login.png" className='w-full h-auto max-h-72 object-contain' alt="Login" />

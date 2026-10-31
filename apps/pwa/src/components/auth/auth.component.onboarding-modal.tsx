@@ -131,7 +131,13 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
                 <div className='text-xs text-slate-400 mt-2'>عکس پروفایل (اختیاری)</div>
             </div>
 
-            <div className='space-y-4'>
+            <form
+                className='space-y-4'
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleSubmit(onSubmit)();
+                }}
+            >
                 <Input
                     placeholder='نام'
                     {...register('firstName')}
@@ -144,16 +150,15 @@ export default function OnboardingModal({ isOpen }: { isOpen: boolean }) {
                     error={errors.lastName?.message}
                     disabled={isBusy}
                 />
-            </div>
-
-            <Button
-                variant='primary'
-                type='button'
-                onClick={handleSubmit(onSubmit)}
-                disabled={isBusy}
-            >
-                {isBusy ? 'در حال ذخیره...' : 'ذخیره و ادامه'}
-            </Button>
+                <Button
+                    variant='primary'
+                    type='submit'
+                    className='w-full'
+                    disabled={isBusy}
+                >
+                    {isBusy ? 'در حال ذخیره...' : 'ذخیره و ادامه'}
+                </Button>
+            </form>
         </Modal>
     );
 }

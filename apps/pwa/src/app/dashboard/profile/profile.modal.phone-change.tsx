@@ -90,7 +90,14 @@ export function PhoneChangeModal({
         </div>
 
         {/* Form */}
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (step === 'phone') void handleSendOtp();
+            else void handleVerifyOtp();
+          }}
+        >
           {step === 'phone' ? (
             <>
               <div>
@@ -113,7 +120,7 @@ export function PhoneChangeModal({
               )}
 
               <Button
-                onClick={handleSendOtp}
+                type="submit"
                 disabled={!phoneNumber || isLoading}
                 className="w-full"
                 size="lg"
@@ -146,13 +153,14 @@ export function PhoneChangeModal({
               <div className="flex gap-3">
                 <Button
                   variant="outline"
+                  type="button"
                   onClick={() => setStep('phone')}
                   className="flex-1"
                 >
                   بازگشت
                 </Button>
                 <Button
-                  onClick={handleVerifyOtp}
+                  type="submit"
                   disabled={!otp || isLoading}
                   className="flex-1"
                   size="lg"
@@ -162,7 +170,7 @@ export function PhoneChangeModal({
               </div>
             </>
           )}
-        </div>
+        </form>
       </div>
     </Modal>
   );
