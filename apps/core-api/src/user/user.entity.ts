@@ -72,6 +72,20 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   insuranceNumber?: string;
 
+  /** First day covered by social insurance, civil date. */
+  @Property({ type: 'date', nullable: true })
+  insuranceStartDate?: string;
+
+  /** Sixteen digits. */
+  @Property({ nullable: true })
+  bankCardNumber?: string;
+
+  @Property({ nullable: true })
+  bankAccountNumber?: string;
+
+  @Property({ type: 'text', nullable: true })
+  address?: string;
+
   /** `IR` and 24 digits. */
   @Property({ nullable: true })
   sheba?: string;

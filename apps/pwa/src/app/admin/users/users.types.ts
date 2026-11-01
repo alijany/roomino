@@ -26,6 +26,10 @@ export interface User {
   /** Last day of a trial period; kept after it passes. */
   probationEndDate?: string | null;
   insuranceNumber?: string | null;
+  insuranceStartDate?: string | null;
+  bankCardNumber?: string | null;
+  bankAccountNumber?: string | null;
+  address?: string | null;
   sheba?: string | null;
   email?: string | null;
   married?: boolean;
@@ -90,6 +94,11 @@ export interface UpdateUserNameDto {
   /** Empty clears it (no trial). */
   probationEndDate?: string;
   insuranceNumber?: string;
+  /** Civil date; empty clears it. */
+  insuranceStartDate?: string;
+  bankCardNumber?: string;
+  bankAccountNumber?: string;
+  address?: string;
   sheba?: string;
   email?: string;
   married?: boolean;

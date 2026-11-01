@@ -150,6 +150,10 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [endDate, setEndDate] = useState(user.endDate ?? '');
     const [probationEndDate, setProbationEndDate] = useState(user.probationEndDate ?? '');
     const [insuranceNumber, setInsuranceNumber] = useState(user.insuranceNumber ?? '');
+    const [insuranceStartDate, setInsuranceStartDate] = useState(user.insuranceStartDate ?? '');
+    const [bankCardNumber, setBankCardNumber] = useState(user.bankCardNumber ?? '');
+    const [bankAccountNumber, setBankAccountNumber] = useState(user.bankAccountNumber ?? '');
+    const [address, setAddress] = useState(user.address ?? '');
     const [sheba, setSheba] = useState(user.sheba ?? '');
     const [email, setEmail] = useState(user.email ?? '');
     const [married, setMarried] = useState(Boolean(user.married));
@@ -175,6 +179,10 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         endDate === (user.endDate ?? '') &&
         probationEndDate === (user.probationEndDate ?? '') &&
         insuranceNumber.trim() === (user.insuranceNumber ?? '') &&
+        insuranceStartDate === (user.insuranceStartDate ?? '') &&
+        bankCardNumber.trim() === (user.bankCardNumber ?? '') &&
+        bankAccountNumber.trim() === (user.bankAccountNumber ?? '') &&
+        address.trim() === (user.address ?? '') &&
         sheba.trim() === (user.sheba ?? '') &&
         email.trim() === (user.email ?? '') &&
         married === Boolean(user.married) &&
@@ -211,6 +219,10 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     endDate,
                     probationEndDate,
                     insuranceNumber: insuranceNumber.trim(),
+                    insuranceStartDate,
+                    bankCardNumber: bankCardNumber.trim(),
+                    bankAccountNumber: bankAccountNumber.trim(),
+                    address: address.trim(),
                     sheba: sheba.trim(),
                     email: email.trim(),
                     married,
@@ -254,6 +266,14 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
             </aside>
             <div className="min-w-0 space-y-3">
         <form id="user-edit-form" onSubmit={handleSubmit} className="space-y-3">
+            {error && (
+                <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600" role="alert">
+                    {(error.message || 'ذخیره انجام نشد').split(',').map((m: string) => (
+                        <span key={m} className="block">{m}</span>
+                    ))}
+                </p>
+            )}
+
             <SectionCard id="sec-basic" icon={IconUser} title="اطلاعات پایه" hint="نام، موبایل، کد ملی و عنوان شغلی">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
                 <Input
@@ -323,6 +343,18 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     maxLength={100}
                     required
                 />
+                <Input
+                    id="edit-email"
+                    containerClassName="lg:col-span-3"
+                    packageId="edit-email"
+                    label="ایمیل"
+                    dir="ltr"
+                    className="text-left"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={100}
+                />
             </div>
 
             </SectionCard>
@@ -343,9 +375,10 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     onChange={(e) => setInsuranceNumber(e.target.value)}
                     maxLength={20}
                 />
+                <div className="lg:col-span-6"><OptionalDate label="تاریخ شروع بیمه" value={insuranceStartDate} onChange={setInsuranceStartDate} /></div>
                 <Input
                     id="edit-sheba"
-                    containerClassName="lg:col-span-6"
+                    containerClassName="lg:col-span-4"
                     packageId="edit-sheba"
                     label="شماره شبا"
                     dir="ltr"
@@ -356,16 +389,40 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     maxLength={26}
                 />
                 <Input
-                    id="edit-email"
-                    containerClassName="lg:col-span-12"
-                    packageId="edit-email"
-                    label="ایمیل"
+                    id="edit-bank-card"
+                    containerClassName="lg:col-span-4"
+                    packageId="edit-bank-card"
+                    label="شماره کارت بانکی"
                     dir="ltr"
                     className="text-left"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    maxLength={100}
+                    inputMode="numeric"
+                    placeholder="۱۶ رقم"
+                    value={bankCardNumber}
+                    onChange={(e) => setBankCardNumber(e.target.value)}
+                    maxLength={19}
+                />
+                <Input
+                    id="edit-bank-account"
+                    containerClassName="lg:col-span-4"
+                    packageId="edit-bank-account"
+                    label="شماره حساب بانکی"
+                    dir="ltr"
+                    className="text-left"
+                    inputMode="numeric"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    maxLength={30}
+                />
+                <Input
+                    id="edit-address"
+                    containerClassName="lg:col-span-12"
+                    packageId="edit-address"
+                    label="آدرس محل سکونت"
+                    textarea
+                    rows={3}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    maxLength={500}
                 />
             </div>
 
@@ -438,12 +495,6 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
             </div>
 
             </SectionCard>
-
-            {error && (
-                <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600" role="alert">
-                    {error.message || 'ذخیره انجام نشد'}
-                </p>
-            )}
 
             <div className="flex gap-3 lg:hidden">
                 <Button type="submit" disabled={isLoading || unchanged || missing.length > 0}>

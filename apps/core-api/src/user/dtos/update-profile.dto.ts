@@ -112,6 +112,38 @@ export class UpdateUserNameDto {
   @Matches(/^\d{1,20}$/, { message: 'شماره بیمه فقط عدد است' })
   insuranceNumber?: string;
 
+  /** Civil date `YYYY-MM-DD`; empty clears it. */
+  @IsOptional()
+  @code()
+  @ValidateIf((_, v) => v !== '')
+  @Matches(DATE, { message: 'تاریخ شروع بیمه نامعتبر است' })
+  insuranceStartDate?: string;
+
+  /** Sixteen digits, spaces and dashes allowed as typed; empty clears it. */
+  @IsOptional()
+  @code()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/[\s-]/g, '') : value,
+  )
+  @ValidateIf((_, v) => v !== '')
+  @Matches(/^\d{16}$/, { message: 'شماره کارت باید ۱۶ رقم باشد' })
+  bankCardNumber?: string;
+
+  @IsOptional()
+  @code()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/[\s-]/g, '') : value,
+  )
+  @ValidateIf((_, v) => v !== '')
+  @Matches(/^\d{5,30}$/, { message: 'شماره حساب فقط عدد است' })
+  bankAccountNumber?: string;
+
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(500, { message: 'آدرس حداکثر ۵۰۰ نویسه است' })
+  address?: string;
+
   /** `IR` + 24 digits; empty clears it. */
   @IsOptional()
   @code()
