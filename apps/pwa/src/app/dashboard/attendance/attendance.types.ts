@@ -17,6 +17,8 @@ export enum RequestType {
   REMOTE_HOURLY = 'remote_hourly',
   OVERTIME = 'overtime',
   MANUAL_ATTENDANCE = 'manual_attendance',
+  /** «بدون ثبت»: past days nobody declared. */
+  PRESENCE = 'presence',
   OTHER = 'other',
 }
 
@@ -496,6 +498,8 @@ export interface MyToday {
   presence?: { declared: boolean; declaredAt: string | null; workMode: 'office' | 'remote' | null };
   /** Overtime from today's check-out. */
   overtimeSuggestion?: OvertimeSuggestion | null;
+  /** «بدون ثبت»: past days this month nobody declared. */
+  undeclaredDays?: string[];
   /** A recent day with a check-in and no check-out, to put right. */
   missingCheckOut?: { date: string; checkIn: string | null; shiftEnd: string | null } | null;
   /** Self-declared check-in: don't ask for a position — the server checks none. */

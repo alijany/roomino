@@ -29,7 +29,7 @@ export function isDaily(type: RequestType): boolean {
 }
 
 export function shapeOf(type: RequestType): RequestShape {
-  if (isDaily(type)) return 'range';
+  if (isDaily(type) || type === RequestType.PRESENCE) return 'range';
   if (isHourly(type) || type === RequestType.OVERTIME) return 'timed';
   if (type === RequestType.MANUAL_ATTENDANCE) return 'manual';
   return 'free';

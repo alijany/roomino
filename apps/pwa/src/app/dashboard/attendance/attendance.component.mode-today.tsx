@@ -115,6 +115,50 @@ export function MissingCheckOutNotice({
 }
 
 /**
+ * «N روز اعلام‌نشده»: for someone in «بدون ثبت», the past days of this month
+ * nobody declared — a small line with the way to ask for them: the request
+ * form for «اعلام حضور روزهای گذشته», already filled with the first and last.
+ */
+export function UndeclaredDaysNotice({
+  today,
+  onChange,
+  className,
+}: {
+  today: MyToday;
+  onChange: () => void;
+  className?: string;
+}) {
+  const days = today.undeclaredDays ?? [];
+  const [prefill, setPrefill] = useState<RequestPrefill | null>(null);
+
+  if (today.attendanceMode !== AttendanceMode.UNTRACKED || !days.length) return null;
+
+  return (
+    <div className={cn('flex items-center justify-between gap-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800', className)} role="status">
+      <span className="flex items-center gap-2">
+        <IconAlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+        <span>
+          <span className="tabular-nums">{fa(days.length)}</span> روز اعلام‌نشده در این ماه
+        </span>
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        className="shrink-0 bg-white"
+        onClick={() =>
+          setPrefill({ type: RequestType.PRESENCE, dateFrom: days[0], dateTo: days[days.length - 1] })
+        }
+      >
+        درخواست حضور
+      </Button>
+      {prefill && (
+        <RequestForm isOpen prefill={prefill} onClose={() => setPrefill(null)} onSuccess={onChange} />
+      )}
+    </div>
+  );
+}
+
+/**
  * Today for someone in «بدون ثبت»: no check-in, just «امروز هستم» — being at
  * work, said the way a check-in is (from the workplace; or as remote work,
  * which files the remote day) with no time recorded — or «امروز نیستم», which

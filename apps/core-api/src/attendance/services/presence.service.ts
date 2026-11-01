@@ -26,6 +26,7 @@ import { PresenceDeclarationEntity } from '../entities/presence-declaration.enti
 import { categoryOf, isHourly } from '../utils/attendance-request.util';
 import { scheduleFor } from '../utils/attendance-shift.util';
 import {
+  addDays,
   distanceMeters,
   formatJalaliDate,
   tehranToday,
@@ -345,6 +346,45 @@ export class PresenceService {
       dateTo: today,
       description: { $like: `${AUTO_REMOTE_NOTE}%` },
     });
+  }
+
+  /** Days in the range a person in «بدون ثبت» could still declare: past, scheduled, not yet declared. */
+  async declarableDays(
+    profile: EmployeeProfileEntity,
+    from: string,
+    to: string,
+  ): Promise<string[]> {
+    const today = tehranToday();
+    const days: string[] = [];
+    for (
+      let d = from;
+      d <= to && days.length <= MAX_CONFIRM_DAYS;
+      d = addDays(d, 1)
+    ) {
+      if (d >= today) break;
+      if (await this.on(profile.id, d)) continue;
+      if (!(await this.whyNot(profile, d, today))) days.push(d);
+    }
+    return days;
+  }
+
+  /**
+   * An approved «اعلام حضور» request: the days it covers that can be
+   * declared become declarations by the reviewer; the rest (holidays, leave,
+   * already declared) are skipped.
+   */
+  async confirmRange(
+    profile: EmployeeProfileEntity,
+    from: string,
+    to: string,
+    by: UserEntity,
+    note?: string,
+  ) {
+    const days = await this.declarableDays(profile, from, to);
+    for (const date of days) {
+      await this.persist(profile, date, by, note);
+    }
+    return { confirmed: days.length };
   }
 
   /**

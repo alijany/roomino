@@ -63,6 +63,8 @@ export enum RequestType {
   REMOTE_HOURLY = 'remote_hourly',
   OVERTIME = 'overtime',
   MANUAL_ATTENDANCE = 'manual_attendance',
+  /** «بدون ثبت»: past days they did not declare, to be confirmed by a reviewer. */
+  PRESENCE = 'presence',
   OTHER = 'other',
 }
 
@@ -79,6 +81,7 @@ export const RequestTypeLabels: Record<RequestType, string> = {
   [RequestType.REMOTE_HOURLY]: 'دورکاری ساعتی',
   [RequestType.OVERTIME]: 'اضافه کار',
   [RequestType.MANUAL_ATTENDANCE]: 'تردد دستی',
+  [RequestType.PRESENCE]: 'اعلام حضور روزهای گذشته',
   [RequestType.OTHER]: 'سایر',
 };
 

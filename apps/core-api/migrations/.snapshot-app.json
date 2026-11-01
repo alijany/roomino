@@ -2158,6 +2158,7 @@
             "remote_hourly",
             "overtime",
             "manual_attendance",
+            "presence",
             "other"
           ],
           "mappedType": "enum"

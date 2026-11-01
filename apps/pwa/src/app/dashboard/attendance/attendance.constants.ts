@@ -36,6 +36,7 @@ export const REQUEST_TYPE_LABELS: Record<RequestType, string> = {
   [RequestType.REMOTE_HOURLY]: 'دورکاری ساعتی',
   [RequestType.OVERTIME]: 'اضافه کار',
   [RequestType.MANUAL_ATTENDANCE]: 'تردد دستی',
+  [RequestType.PRESENCE]: 'اعلام حضور روزهای گذشته',
   [RequestType.OTHER]: 'سایر',
 };
 

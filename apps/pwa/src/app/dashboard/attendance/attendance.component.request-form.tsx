@@ -2,7 +2,7 @@
 
 import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DatePickerField } from '@/ui/molecules';
-import { IconBeach, IconClockHour4, IconHome, IconStethoscope } from '@tabler/icons-react';
+import { IconBeach, IconCalendarCheck, IconClockHour4, IconHome, IconStethoscope } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useGrant, useMyToday, useSubmitRequest, useUploadRequestAttachment } from './attendance.api';
@@ -11,9 +11,11 @@ import { Field, FormModal, TimeField } from './attendance.component.layout';
 import { ATTACHMENT_TYPES, GRANT_TYPES, REQUEST_TYPE_LABELS } from './attendance.constants';
 import { AttendanceMode, RequestInput, RequestType } from './attendance.types';
 import {
+  clockMinutes,
   errorMessage,
   fromCivilDate,
   shapeOf,
+  tehranClockNow,
   tehranToday,
   toCivilDate,
 } from './attendance.util';
@@ -24,11 +26,37 @@ const QUICK_TYPES: Array<{ type: RequestType; label: string; icon: typeof IconBe
   { type: RequestType.LEAVE_SICK_DAILY, label: 'مرخصی استعلاجی', icon: IconStethoscope },
   { type: RequestType.REMOTE_DAILY, label: 'دورکاری', icon: IconHome },
   { type: RequestType.LEAVE_ENTITLED_HOURLY, label: 'مرخصی ساعتی', icon: IconClockHour4 },
+  // Only offered to «بدون ثبت» (the list filter drops it for everyone else).
+  { type: RequestType.PRESENCE, label: 'اعلام حضور روز گذشته', icon: IconCalendarCheck },
 ];
+
+type PresencePreset = 'yesterday' | 'twoDaysAgo' | 'undeclared' | 'custom';
+
+/**
+ * The start an hourly request opens with: now, rounded down to the quarter
+ * hour — as long as that falls in the picker's 08:00–17:00 and before the
+ * default end; otherwise empty, for the person to choose.
+ */
+const nowAsStart = (end: string) => {
+  const minutes = clockMinutes(tehranClockNow());
+  const rounded = minutes - (minutes % 15);
+  if (rounded < 8 * 60 || rounded >= clockMinutes(end)) return '';
+  return `${String(Math.floor(rounded / 60)).padStart(2, '0')}:${String(rounded % 60).padStart(2, '0')}`;
+};
+
+/** A civil date `n` days before another, both `YYYY-MM-DD`. */
+const daysBefore = (civil: string, n: number) => {
+  const d = new Date(`${civil}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+};
 
 export interface RequestPrefill {
   type?: RequestType;
   date?: string;
+  /** A range type: the first and last day. */
+  dateFrom?: string;
+  dateTo?: string;
   direction?: 'in' | 'out';
   /** Manual attendance: `"HH:mm"`. */
   time?: string;
@@ -59,12 +87,15 @@ export function RequestForm({
   const start = prefill?.date ?? tehranToday();
 
   const [type, setType] = useState<RequestType | ''>(prefill?.type ?? '');
-  const [dateFrom, setDateFrom] = useState(start);
-  const [dateTo, setDateTo] = useState(start);
+  const yesterday = daysBefore(tehranToday(), 1);
+  const presenceNoDates = prefill?.type === RequestType.PRESENCE && !prefill?.dateFrom;
+  const [dateFrom, setDateFrom] = useState(prefill?.dateFrom ?? (presenceNoDates ? yesterday : start));
+  const [dateTo, setDateTo] = useState(prefill?.dateTo ?? prefill?.dateFrom ?? (presenceNoDates ? yesterday : start));
   const [date, setDate] = useState(start);
-  const [timeFrom, setTimeFrom] = useState('');
+  const [preset, setPreset] = useState<PresencePreset>(prefill?.dateFrom ? 'undeclared' : 'yesterday');
   // Our working day ends at 17:00, which is when hourly requests usually stop.
   const [timeTo, setTimeTo] = useState('17:00');
+  const [timeFrom, setTimeFrom] = useState(() => (shapeOf(prefill?.type ?? '') === 'timed' ? nowAsStart('17:00') : ''));
   const [manualTime, setManualTime] = useState(prefill?.time ?? '');
   const [direction, setDirection] = useState<'in' | 'out'>(prefill?.direction ?? 'in');
   const [description, setDescription] = useState('');
@@ -80,8 +111,10 @@ export function RequestForm({
     ? GRANT_TYPES
     : Object.values(RequestType).filter(
         (value) =>
-          !untracked ||
-          (value !== RequestType.REMOTE_HOURLY && value !== RequestType.MANUAL_ATTENDANCE),
+          // Declaring past days is for «بدون ثبت» only; they don't punch, so no manual punch or hourly remote work.
+          value === RequestType.PRESENCE
+            ? untracked
+            : !untracked || (value !== RequestType.REMOTE_HOURLY && value !== RequestType.MANUAL_ATTENDANCE),
       );
   const busy = submit.isLoading || grant.isLoading || uploadAttachment.isLoading;
 
@@ -92,6 +125,29 @@ export function RequestForm({
     (shape !== 'timed' || (timeFrom && timeTo)) &&
     (shape !== 'manual' || manualTime) &&
     (shape !== 'free' || description.trim());
+
+  const undeclared = me?.undeclaredDays ?? [];
+  const applyPreset = (next: PresencePreset) => {
+    setPreset(next);
+    if (next === 'yesterday') {
+      setDateFrom(yesterday);
+      setDateTo(yesterday);
+    } else if (next === 'twoDaysAgo') {
+      const day = daysBefore(tehranToday(), 2);
+      setDateFrom(day);
+      setDateTo(day);
+    } else if (next === 'undeclared' && undeclared.length) {
+      setDateFrom(undeclared[0]);
+      setDateTo(undeclared[undeclared.length - 1]);
+    }
+  };
+  const chooseType = (value: RequestType | '') => {
+    setType(value);
+    // An hourly request starts now unless the person already picked a time.
+    if (shapeOf(value) === 'timed' && !timeFrom) setTimeFrom(nowAsStart(timeTo));
+    // Declaring a past day starts from yesterday — what nearly everyone means.
+    if (value === RequestType.PRESENCE && !prefill?.dateFrom) applyPreset('yesterday');
+  };
 
   const handleSubmit = async () => {
     if (!type) return;
@@ -158,7 +214,7 @@ export function RequestForm({
                 key={value}
                 type="button"
                 aria-pressed={type === value}
-                onClick={() => setType(value)}
+                onClick={() => chooseType(value)}
                 className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                   type === value
                     ? 'border-brand-500 bg-brand-50 font-medium text-brand-700'
@@ -173,14 +229,46 @@ export function RequestForm({
           <Dropdown
             items={types.map((value) => ({ label: REQUEST_TYPE_LABELS[value], value }))}
             value={type || null}
-            onChange={(value) => setType((value as RequestType) ?? '')}
+            onChange={(value) => chooseType(((value as RequestType) ?? '') as RequestType | '')}
             placeholder="سایر موارد را از لیست انتخاب کنید"
             variant="outline"
           />
         </div>
       </Field>
 
-      {shape === 'range' && (
+      {type === RequestType.PRESENCE && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="روز یا روزهای اعلام حضور">
+            {(
+              [
+                ['yesterday', 'دیروز'],
+                ['twoDaysAgo', 'پریروز'],
+                ...(undeclared.length ? ([['undeclared', `همه‌ی روزهای اعلام‌نشده (${undeclared.length})`]] as const) : []),
+                ['custom', 'تاریخ دلخواه'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={preset === value}
+                onClick={() => applyPreset(value)}
+                className={`min-h-9 rounded-full border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                  preset === value
+                    ? 'border-brand-500 bg-brand-50 font-medium text-brand-700'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs leading-5 text-slate-500">
+            فقط روزهای گذشته. روزهای تعطیل، مرخصی و روزهایی که قبلاً اعلام شده‌اند خودکار کنار گذاشته می‌شوند؛ پس از تایید، حضور آن روزها ثبت می‌شود.
+          </p>
+        </div>
+      )}
+
+      {shape === 'range' && (type !== RequestType.PRESENCE || preset === 'custom') && (
         <div className="flex flex-wrap items-center gap-2">
           <DatePickerField
             label="از تاریخ"

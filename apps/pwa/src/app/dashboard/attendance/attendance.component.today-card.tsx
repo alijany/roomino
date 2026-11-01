@@ -22,6 +22,7 @@ import {
   awayLabel,
   FlexibleHint,
   MissingCheckOutNotice,
+UndeclaredDaysNotice,
   OvertimeNotice,
   UntrackedActions,
 } from './attendance.component.mode-today';
@@ -120,6 +121,7 @@ function CardBody({ today, onChange }: { today: MyToday; onChange: () => void })
 
       <div className="space-y-3 px-4 pb-4">
         <MissingCheckOutNotice today={today} onChange={onChange} />
+        <UndeclaredDaysNotice today={today} onChange={onChange} />
 
         {!untracked && (
         <dl className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/70 rounded-2xl bg-slate-50 py-3 text-center ring-1 ring-inset ring-slate-200/60">

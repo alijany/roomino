@@ -127,7 +127,7 @@ export type RequestShape = 'range' | 'timed' | 'manual' | 'free';
 
 export function shapeOf(type: RequestType | ''): RequestShape | null {
   if (!type) return null;
-  if (type.endsWith('_daily')) return 'range';
+  if (type.endsWith('_daily') || type === RequestType.PRESENCE) return 'range';
   if (type.endsWith('_hourly') || type === RequestType.OVERTIME) return 'timed';
   if (type === RequestType.MANUAL_ATTENDANCE) return 'manual';
   return 'free';

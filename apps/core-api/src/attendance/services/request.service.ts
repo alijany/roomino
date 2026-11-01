@@ -20,6 +20,7 @@ import {
   GRANT_TYPES,
   LeaveType,
   ManualDirection,
+  MAX_CONFIRM_DAYS,
   MINUTES_PER_WORKDAY,
   PolicyRequestType,
   RequestCategory,
@@ -54,9 +55,11 @@ import {
   daysInclusive,
   eachDate,
   jalaliMonthRange,
+  tehranToday,
 } from '../utils/attendance-time.util';
 import { periodLabel } from '../utils/attendance-view.util';
 import { AttendanceNotificationService } from './attendance-notification.service';
+import { PresenceService } from './presence.service';
 import { WorkPolicyService } from './work-policy.service';
 
 const REQUEST_POPULATE = ['employee.user', 'reviewedBy'] as const;
@@ -84,6 +87,7 @@ export class RequestService {
     private readonly em: EntityManager,
     private readonly policies: WorkPolicyService,
     private readonly notifications: AttendanceNotificationService,
+    private readonly presence: PresenceService,
   ) {}
 
   // --- shape & duration -----------------------------------------------------------
@@ -532,10 +536,38 @@ export class RequestService {
     await em.flush();
   }
 
+  /** «اعلام حضور»: only past days, and at least one of them has to be declarable. */
+  private async assertPresenceDays(
+    profile: EmployeeProfileEntity,
+    fields: Pick<RequestFields, 'dateFrom' | 'dateTo'>,
+  ) {
+    const from = fields.dateFrom!;
+    const to = fields.dateTo ?? from;
+    if (to >= tehranToday()) {
+      throw new BadRequestException(
+        'اعلام حضور فقط برای روزهای گذشته است؛ امروز را از «امروز هستم» اعلام کنید',
+      );
+    }
+    if (daysInclusive(from, to) > MAX_CONFIRM_DAYS) {
+      throw new BadRequestException(
+        `در هر درخواست حداکثر ${MAX_CONFIRM_DAYS} روز`,
+      );
+    }
+    const days = await this.presence.declarableDays(profile, from, to);
+    if (!days.length) {
+      throw new BadRequestException(
+        'در این بازه روزی برای اعلام حضور نیست (تعطیل، مرخصی، یا قبلاً اعلام شده)',
+      );
+    }
+  }
+
   /** A person's own request — validated, capped, then sent for review. */
   async submit(profile: EmployeeProfileEntity, dto: CreateRequestDto) {
     const fields = this.normalize(dto);
     const duration = this.durationOf(fields);
+    if (fields.type === RequestType.PRESENCE) {
+      await this.assertPresenceDays(profile, fields);
+    }
 
     const request = await this.em.transactional(async (em) => {
       await this.lockPerson(em, profile.id);
@@ -646,6 +678,9 @@ export class RequestService {
   async approve(id: number, reviewer: UserEntity) {
     const request = await this.getOrFail(id);
     this.assertReviewable(request, reviewer);
+    if (request.type === RequestType.PRESENCE) {
+      await this.assertPresenceDays(request.employee, request);
+    }
 
     await this.withRetry(async (em) => {
       await this.claim(em, id, {
@@ -667,6 +702,15 @@ export class RequestService {
     });
 
     const approved = await this.reload(id);
+    if (approved.type === RequestType.PRESENCE && approved.dateFrom) {
+      await this.presence.confirmRange(
+        approved.employee,
+        approved.dateFrom,
+        approved.dateTo ?? approved.dateFrom,
+        reviewer,
+        approved.description ?? undefined,
+      );
+    }
     await this.notifications.requestDecided(
       approved,
       approved.employee.user.id,

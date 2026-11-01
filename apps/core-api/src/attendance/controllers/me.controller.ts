@@ -157,6 +157,10 @@ export class MeController {
       },
       /** Overtime from today's check-out: recorded already, or awaiting approval. */
       overtimeSuggestion: suggestion,
+      /** «بدون ثبت»: past days this month nobody declared — to ask for them. */
+      undeclaredDays: report.days
+        .filter((d) => d.undeclared)
+        .map((d) => d.date),
       /** A recent day with a check-in and no check-out, to put right. */
       missingCheckOut: forgotten,
       /** Self-declared check-in: don't ask for a position — none is checked. */

@@ -22,6 +22,7 @@ import { LocationIssueNotice } from './attendance.component.location-issue';
 import {
   FlexibleHint,
   MissingCheckOutNotice,
+UndeclaredDaysNotice,
   OvertimeNotice,
   SelfDeclaredHint,
   UntrackedActions,
@@ -110,6 +111,7 @@ function Today({ today, onChange }: { today: MyToday; onChange: () => void }) {
         </div>
 
         <MissingCheckOutNotice today={today} onChange={onChange} />
+        <UndeclaredDaysNotice today={today} onChange={onChange} />
 
         {scheduleMode ? (
           <ScheduleModeNotice note={today.scheduleModeNote} className="text-sm" />
