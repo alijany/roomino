@@ -7,6 +7,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AdvanceRequestModule } from './advance-request/advance-request.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
+import { ContractModule } from './contract/contract.module';
 import { FinanceModule } from './finance/finance.module';
 import { postgresModuleFactory } from './libs/orm/orm.provider.base';
 import { MeetingModule } from './meeting/meeting.module';
@@ -47,6 +48,7 @@ import { S3StorageModule } from './storage/s3-storage.module';
     FinanceModule,
     AdvanceRequestModule,
     AttendanceModule,
+    ContractModule,
     AuthModule,
     RolesModule,
     SettingsModule,

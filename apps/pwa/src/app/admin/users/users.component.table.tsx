@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { jalaliLabel, tehranToday } from '@/app/dashboard/attendance/attendance.util';
+import { useContractStatuses } from './contracts.api';
+import { ContractStatus } from './contracts.types';
 import { useApproveUser } from './users.api';
 import { User } from './users.types';
 
@@ -21,12 +23,29 @@ interface UsersTableProps {
 }
 
 /** Where a person stands today, in one badge. */
-function StatusBadge({ user }: { user: User }) {
+function StatusBadge({ user, contract, loaded }: { user: User; contract?: ContractStatus; loaded: boolean }) {
     const today = tehranToday();
     if (user.cooperationEnded || (user.endDate && user.endDate < today)) return <Badge tone="neutral">پایان همکاری</Badge>;
-    if (!user.isApproved) return <Badge tone="warning">در انتظار تایید</Badge>;
-    if (user.probationEndDate && user.probationEndDate >= today) return <Badge tone="warning">آزمایشی</Badge>;
-    return <Badge tone="success">فعال</Badge>;
+    const main = !user.isApproved ? (
+        <Badge tone="warning">در انتظار تایید</Badge>
+    ) : user.probationEndDate && user.probationEndDate >= today ? (
+        <Badge tone="warning">آزمایشی</Badge>
+    ) : (
+        <Badge tone="success">فعال</Badge>
+    );
+    // A tag for the last month of a term, and for no contract on record at all.
+    const note =
+        contract?.state === 'ending' ? (
+            <Badge tone="warning">قرارداد رو به پایان</Badge>
+        ) : loaded && !contract ? (
+            <Badge tone="neutral">بدون قرارداد</Badge>
+        ) : null;
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {main}
+            {note}
+        </div>
+    );
 }
 
 /**
@@ -36,6 +55,8 @@ function StatusBadge({ user }: { user: User }) {
  */
 export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps) {
     const router = useRouter();
+    const { data: statuses } = useContractStatuses();
+    const contracts = new Map((statuses?.items ?? []).map((c) => [c.userId, c]));
     return (
         <Table
             rows={users}
@@ -62,7 +83,7 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
                     hideOnMobile: true,
                     render: (user) => (user.hireDate ? jalaliLabel(user.hireDate) : '—'),
                 },
-                { key: 'status', header: 'وضعیت', render: (user) => <StatusBadge user={user} /> },
+                { key: 'status', header: 'وضعیت', render: (user) => <StatusBadge user={user} contract={contracts.get(user.id)} loaded={Boolean(statuses)} /> },
                 {
                     key: 'actions',
                     header: '',

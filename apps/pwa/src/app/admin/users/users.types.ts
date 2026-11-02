@@ -65,7 +65,7 @@ export interface AddUserDto {
   role?: Role;
 }
 
-export type UserStatusFilter = 'pending' | 'active' | 'probation' | 'ended';
+export type UserStatusFilter = 'pending' | 'active' | 'probation' | 'ended' | 'contract_ending' | 'no_contract';
 
 export interface UserFilterDto {
   page?: number;

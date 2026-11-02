@@ -22,6 +22,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { StaffGuard } from 'src/auth/guards/staff.guard';
+import { ContractService } from 'src/contract/contract.service';
 import { Role } from 'src/roles/roles.constants';
 import { S3StorageService } from 'src/storage/s3-storage.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -80,6 +81,7 @@ export class AdminUserController {
   constructor(
     private readonly userService: UserService,
     private readonly s3StorageService: S3StorageService,
+    private readonly contracts: ContractService,
   ) {}
 
   @Post()
@@ -112,8 +114,20 @@ export class AdminUserController {
       cooperationEnded: false,
       $or: [{ endDate: null }, { endDate: { $gte: today } }],
     };
+    // By contract: only the people still here, narrowed to the ones in question.
+    const byContract =
+      status === 'contract_ending' || status === 'no_contract'
+        ? {
+            cooperationEnded: false,
+            $or: [{ endDate: null }, { endDate: { $gte: today } }],
+            ...(await this.contracts.userFilter(
+              status === 'contract_ending' ? 'ending' : 'none',
+            )),
+          }
+        : null;
     const byStatus =
-      status === 'pending'
+      byContract ??
+      (status === 'pending'
         ? { isApproved: false }
         : status === 'active'
         ? here
@@ -126,7 +140,7 @@ export class AdminUserController {
             cooperationEnded: false,
             $or: [{ endDate: null }, { endDate: { $gte: today } }],
           }
-        : {};
+        : {});
     const like = text?.trim() ? { $ilike: `%${text.trim()}%` } : null;
 
     const [users, total] = await this.userService.findAll(

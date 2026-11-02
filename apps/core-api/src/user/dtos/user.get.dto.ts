@@ -47,11 +47,26 @@ export class UsersGetDto {
 
   /**
    * Where the person stands: `pending` (not approved yet), `active` (here now),
-   * `probation` (on a trial period) or `ended` (cooperation over).
+   * `probation` (on a trial period), `ended` (cooperation over),
+   * `contract_ending` (the last month of the current contract) or
+   * `no_contract` (none on record; both leave out people who have gone).
    */
   @IsOptional()
-  @IsIn(['pending', 'active', 'probation', 'ended'])
-  status?: 'pending' | 'active' | 'probation' | 'ended';
+  @IsIn([
+    'pending',
+    'active',
+    'probation',
+    'ended',
+    'contract_ending',
+    'no_contract',
+  ])
+  status?:
+    | 'pending'
+    | 'active'
+    | 'probation'
+    | 'ended'
+    | 'contract_ending'
+    | 'no_contract';
 
   /** For pickers: leave out people whose cooperation is over. */
   @IsOptional()

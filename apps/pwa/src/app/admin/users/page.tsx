@@ -20,6 +20,8 @@ const STATUS_ITEMS = [
     { value: 'active', label: 'فعال' },
     { value: 'probation', label: 'آزمایشی' },
     { value: 'pending', label: 'در انتظار تایید' },
+    { value: 'contract_ending', label: 'قرارداد رو به پایان' },
+    { value: 'no_contract', label: 'بدون قرارداد' },
     { value: 'ended', label: 'پایان همکاری' },
 ];
 
@@ -97,7 +99,7 @@ function UsersContent() {
                                     variant="outline"
                                 />
                             </div>
-                            <div className="w-40">
+                            <div className="w-44">
                                 <Dropdown
                                     items={STATUS_ITEMS}
                                     value={filters.status ?? 'all'}

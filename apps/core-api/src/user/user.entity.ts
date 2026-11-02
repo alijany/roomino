@@ -72,6 +72,13 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   insuranceNumber?: string;
 
+  /** The NDA is signed; it holds until cooperation ends. */
+  @Property({ default: false })
+  ndaSigned: boolean = false;
+
+  @Property({ type: 'date', nullable: true })
+  ndaSignedDate?: string;
+
   /** First day covered by social insurance, civil date. */
   @Property({ type: 'date', nullable: true })
   insuranceStartDate?: string;

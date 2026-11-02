@@ -7,11 +7,12 @@ import { Avatar, Button, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { BackButton, DataView, DatePickerField } from '@/ui/molecules';
 import { fromCivilDate, jalaliLabel, tehranToday, toCivilDate } from '@/app/dashboard/attendance/attendance.util';
-import { IconCash, IconId, IconShieldLock, IconUser, IconX } from '@tabler/icons-react';
+import { IconCash, IconFileText, IconId, IconShieldLock, IconUser, IconX } from '@tabler/icons-react';
 import { useParams } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useUpdateUserName, useUser } from '../users.api';
+import { ContractsCard } from '../contracts.component.card';
 import { DeleteUserCard } from '../users.component.delete-user';
 import { RolesEditor } from '../users.component.roles-editor';
 import { User } from '../users.types';
@@ -31,6 +32,7 @@ const SECTIONS = [
     { id: 'sec-basic', label: 'اطلاعات پایه', icon: IconUser },
     { id: 'sec-identity', label: 'هویتی و استخدامی', icon: IconId },
     { id: 'sec-payroll', label: 'اطلاعات حقوقی', icon: IconCash },
+    { id: 'sec-contract', label: 'قرارداد و NDA', icon: IconFileText },
     { id: 'sec-roles', label: 'نقش‌ها و دسترسی‌ها', icon: IconShieldLock },
 ] as const;
 
@@ -125,9 +127,14 @@ function EditUserContent() {
                         {/* Keyed by what the server holds, so a save starts the fields from it. */}
                         <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
                             below={
+                            <>
+                                <SectionCard id="sec-contract" icon={IconFileText} title="قرارداد و NDA" hint="سابقه‌ی قراردادها، تمدید و امضای NDA؛ هر تغییر همان لحظه ذخیره می‌شود">
+                                    <ContractsCard userId={user.id} />
+                                </SectionCard>
                             <SectionCard id="sec-roles" icon={IconShieldLock} title="نقش‌ها و دسترسی‌ها" hint="هر تغییر همان لحظه ذخیره می‌شود">
                                 <RolesEditor user={user} onChanged={refresh} />
                             </SectionCard>
+                            </>
                             }
                             danger={<DeleteUserCard user={user} />}
                         />
