@@ -386,6 +386,9 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       insured?: boolean;
       insuranceType?: string;
       taxExempt?: boolean;
+      supplementaryInsurance?: boolean;
+      supplementaryInsuranceStart?: string;
+      supplementaryInsuranceAmount?: number | null;
       cooperationEnded?: boolean;
       agreementType?: string;
       salaryMode?: string;
@@ -498,6 +501,17 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (details.insuranceType !== undefined)
       user.insuranceType = details.insuranceType;
     if (details.taxExempt !== undefined) user.taxExempt = details.taxExempt;
+    if (details.supplementaryInsurance !== undefined) {
+      user.supplementaryInsurance = details.supplementaryInsurance;
+    }
+    if (details.supplementaryInsuranceStart !== undefined) {
+      user.supplementaryInsuranceStart =
+        details.supplementaryInsuranceStart || undefined;
+    }
+    if (details.supplementaryInsuranceAmount !== undefined) {
+      user.supplementaryInsuranceAmount =
+        details.supplementaryInsuranceAmount ?? undefined;
+    }
     if (details.cooperationEnded !== undefined)
       user.cooperationEnded = details.cooperationEnded;
     if (details.agreementType !== undefined)

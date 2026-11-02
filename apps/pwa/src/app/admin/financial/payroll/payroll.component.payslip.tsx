@@ -51,6 +51,7 @@ export function PayslipView({ slip }: { slip: Payslip }) {
     ['مساعده', slip.advance],
     ['قسط وام', slip.loan],
     ['سایر کسورات', slip.otherDeductions],
+    ['بیمه تکمیلی', slip.supplementaryInsurance],
   ];
   const totalEarnings = slip.gross + slip.extras;
   const days = slip.days.toLocaleString('fa-IR');
@@ -86,11 +87,6 @@ export function PayslipView({ slip }: { slip: Payslip }) {
             <div className="text-2xl font-black tracking-tight print:text-xl">فیش حقوقی</div>
             <div className="mt-1 text-sm text-slate-200">{periodLabel(slip.period)}</div>
             <div className="mt-0.5 text-xs text-slate-300">تاریخ صدور: {jalaliLabel(tehranToday())}</div>
-            {slip.revised && (
-              <div className="mt-0.5 text-xs text-amber-200">
-                بازنگری‌شده در {jalaliLabel(slip.revisions.filter((r) => r.changed).slice(-1)[0].at.slice(0, 10))}
-              </div>
-            )}
           </div>
         </div>
         {draft && (

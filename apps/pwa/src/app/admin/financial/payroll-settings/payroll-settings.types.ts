@@ -27,6 +27,16 @@ export interface PayrollInclusion {
   taxable: boolean;
 }
 
+/** The year's supplementary-insurance policy: the months the premium is taken and its amount (rial). */
+export interface SupplementaryPolicy {
+  startMonth: number | null;
+  /** Empty runs to the year's end. */
+  endMonth: number | null;
+  amount: number;
+  /** Months and an amount are set, so the premium is being taken. */
+  active: boolean;
+}
+
 export interface PayrollYear {
   year: number;
   /** Saved for this organisation; otherwise the page shows the official figures read-only. */
@@ -35,9 +45,16 @@ export interface PayrollYear {
   groups: string[];
   items: PayrollItem[];
   inclusion: PayrollInclusion[];
+  supplementary: SupplementaryPolicy;
 }
 
 export interface UpdatePayrollYearDto {
   values?: Record<string, number>;
   inclusion?: Record<string, { insurable: boolean; taxable: boolean }>;
+}
+
+export interface SaveSupplementaryDto {
+  startMonth: number;
+  endMonth: number | null;
+  amount: number;
 }

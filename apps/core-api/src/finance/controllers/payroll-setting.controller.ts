@@ -18,8 +18,11 @@ import { NormalizeNumbersPipe } from '../../libs/utils/pipe.normalizeNumbers';
 import { Role } from '../../roles/roles.constants';
 import {
   CreatePayrollSettingDto,
+  SupplementaryEnabledDto,
+  SupplementaryPolicyDto,
   UpdatePayrollSettingDto,
 } from '../dtos/payroll-setting.dto';
+import { SiteSettingsService } from '../../settings/site-settings.service';
 import { PayrollSettingService } from '../services/payroll-setting.service';
 
 /** Who can look at payroll; changing it stays with the admin. */
@@ -33,12 +36,25 @@ const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
 @UseGuards(JwtAuthGuard, StaffGuard, RolesGuard)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class PayrollSettingController {
-  constructor(private readonly settings: PayrollSettingService) {}
+  constructor(
+    private readonly settings: PayrollSettingService,
+    private readonly siteSettings: SiteSettingsService,
+  ) {}
 
   @Get()
   @Roles(...PAYROLL_ROLES)
   async years() {
     return { years: await this.settings.years() };
+  }
+
+  /** The switch for the whole supplementary insurance, apart from any year. */
+  @Put('supplementary-insurance/enabled')
+  @Roles(...PAYROLL_ROLES)
+  async setSupplementaryEnabled(@Body() dto: SupplementaryEnabledDto) {
+    await this.siteSettings.update({
+      supplementaryInsuranceEnabled: dto.enabled,
+    });
+    return { enabled: dto.enabled };
   }
 
   @Get(':year')
@@ -54,6 +70,15 @@ export class PayrollSettingController {
     @Body(NormalizeNumbersPipe) dto: CreatePayrollSettingDto,
   ) {
     return this.settings.startYear(year, dto.copyFrom);
+  }
+
+  @Put(':year/supplementary')
+  @Roles(...PAYROLL_ROLES)
+  saveSupplementary(
+    @Param('year', ParseIntPipe) year: number,
+    @Body(NormalizeNumbersPipe) dto: SupplementaryPolicyDto,
+  ) {
+    return this.settings.saveSupplementary(year, dto);
   }
 
   @Put(':year')

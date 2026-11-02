@@ -259,6 +259,7 @@ const input = (over: Partial<PayrollInput> = {}): PayrollInput => ({
   advance: 0,
   loan: 0,
   otherDeductions: 0,
+  supplementaryInsurance: 0,
   payEidi: false,
   settle: false,
   yearFraction: 1,
@@ -523,6 +524,24 @@ describe('calculatePayroll — what the sheet had no data for', () => {
       }),
     );
     expect(plain.net - r.net).toBe(3_500_000);
+  });
+
+  it('takes the supplementary premium off the take-home only, not off the insurance or tax base', () => {
+    const plain = calculatePayroll(
+      settings,
+      inclusion,
+      input({ agreed: base }),
+    );
+    const r = calculatePayroll(
+      settings,
+      inclusion,
+      input({ agreed: base, supplementaryInsurance: 1_200_000 }),
+    );
+    expect(plain.net - r.net).toBe(1_200_000);
+    expect(r.totalDeductions - plain.totalDeductions).toBe(1_200_000);
+    expect(r.workerInsurance).toBe(plain.workerInsurance);
+    expect(r.tax).toBe(plain.tax);
+    expect(r.totalCost).toBe(plain.totalCost);
   });
 
   it('works backwards from a net agreement', () => {

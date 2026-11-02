@@ -7,7 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BaseRepositoryService } from '../../libs/orm/orm.repository.service.base';
-import { UpdatePayrollSettingDto } from '../dtos/payroll-setting.dto';
+import {
+  SupplementaryPolicyDto,
+  UpdatePayrollSettingDto,
+} from '../dtos/payroll-setting.dto';
 import {
   PayrollInclusion,
   PayrollSettingEntity,
@@ -81,6 +84,7 @@ export class PayrollSettingService extends BaseRepositoryService<PayrollSettingE
       year,
       exists: Boolean(row),
       hasOfficial: Boolean(official),
+      supplementary: this.policyOf(row),
       groups: PAYROLL_GROUPS,
       items,
       inclusion: PAYROLL_INCLUSION_ITEMS.map((i) => ({
@@ -162,12 +166,53 @@ export class PayrollSettingService extends BaseRepositoryService<PayrollSettingE
     return this.view(year);
   }
 
+  /** The year's supplementary-insurance policy: its months and the monthly premium. */
+  async saveSupplementary(year: number, dto: SupplementaryPolicyDto) {
+    this.assertYear(year);
+    const row = await this.repository.findOne({ year });
+    if (!row) {
+      throw new NotFoundException('ابتدا تنظیمات این سال را بسازید');
+    }
+    const end = dto.endMonth ?? undefined;
+    if (end !== undefined && end < dto.startMonth) {
+      throw new BadRequestException('ماه پایان نمی‌تواند قبل از ماه شروع باشد');
+    }
+    row.suppStartMonth = dto.startMonth;
+    row.suppEndMonth = end;
+    row.suppAmount = dto.amount;
+    await this.em.flush();
+    return this.view(year);
+  }
+
   /** A saved year's parameters, for computing pay; null if the year was never saved. */
   async forYear(year: number) {
     const row = await this.repository.findOne({ year });
     return row
-      ? { values: this.valuesOf(row), inclusion: row.inclusion }
+      ? {
+          values: this.valuesOf(row),
+          inclusion: row.inclusion,
+          supplementary: this.policyOf(row),
+        }
       : null;
+  }
+
+  /** The policy as the page and the payroll read it; null while the year has none. */
+  private policyOf(row: PayrollSettingEntity | null) {
+    const amount = row ? readBigint(row.suppAmount) : 0;
+    if (!row || !row.suppStartMonth || amount <= 0) {
+      return {
+        startMonth: row?.suppStartMonth ?? null,
+        endMonth: row?.suppEndMonth ?? null,
+        amount,
+        active: false,
+      };
+    }
+    return {
+      startMonth: row.suppStartMonth,
+      endMonth: row.suppEndMonth ?? null,
+      amount,
+      active: true,
+    };
   }
 
   // --- helpers ---------------------------------------------------------------

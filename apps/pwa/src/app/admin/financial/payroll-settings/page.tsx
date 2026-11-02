@@ -15,6 +15,8 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { usePayrollYear, usePayrollYears, useSavePayrollYear, useStartPayrollYear } from './payroll-settings.api';
 import { Draft, GroupPanel, InclusionPanel, YearSetup } from './payroll-settings.component.panels';
+import { useFeatures } from '../../settings/settings.api';
+import { SupplementaryPanel } from './payroll-settings.component.supplementary';
 import { PayrollInclusion } from './payroll-settings.types';
 
 const yearLabel = (year: number) => year.toLocaleString('fa-IR', { useGrouping: false });
@@ -56,6 +58,7 @@ function PayrollSettingsContent() {
     return list.includes(current) ? current : (list[0] ?? null);
   }, [picked, years.data]);
 
+  const features = useFeatures();
   const data = usePayrollYear(year);
   const start = useStartPayrollYear();
   const save = useSavePayrollYear();
@@ -205,6 +208,15 @@ function PayrollSettingsContent() {
               rows={Object.values(inclusion)}
               readOnly={!canEdit}
               onChange={(key, change) => setInclusion((prev) => ({ ...prev, [key]: { ...prev[key], ...change } }))}
+            />
+            <SupplementaryPanel
+              key={year}
+              year={year}
+              policy={data.data.supplementary}
+              enabled={Boolean(features.data?.supplementaryInsurance)}
+              readOnly={!canEdit}
+              onSaved={data.refresh}
+              onToggled={features.refresh}
             />
           </div>
         )}

@@ -303,6 +303,7 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
           <Row label="مساعده" value={slip.advance} negative />
           <Row label="قسط وام" value={slip.loan} negative />
           <Row label="سایر کسورات" value={slip.otherDeductions} negative />
+          <Row label="بیمه تکمیلی" value={slip.supplementaryInsurance} negative />
           <Row label="جمع کسورات" value={slip.totalDeductions} strong negative />
           <Row label="خالص پرداختی" value={slip.net} strong accent />
         </dl>
@@ -328,6 +329,7 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
         <Row label="مساعده" value={slip.advance} negative />
         <Row label="قسط وام" value={slip.loan} negative />
         <Row label="سایر کسورات" value={slip.otherDeductions} negative />
+        <Row label="بیمه تکمیلی" value={slip.supplementaryInsurance} negative />
         <Row label="جمع کسورات" value={slip.totalDeductions} strong negative />
         <Row label="اضافات هیبرید" value={slip.extras} />
         <Row label="خالص پرداختی" value={slip.net} strong accent />

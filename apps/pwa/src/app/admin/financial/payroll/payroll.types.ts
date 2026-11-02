@@ -39,6 +39,8 @@ export interface PayrollLine {
   advance: number;
   loan: number;
   otherDeductions: number;
+  /** The month's supplementary-insurance premium, worked out from the person and the year's policy. */
+  supplementaryInsurance: number;
 
   // results
   agreed: number;

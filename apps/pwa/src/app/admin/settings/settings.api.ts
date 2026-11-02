@@ -9,6 +9,9 @@ export interface SiteSettings {
   registrationClosed: boolean;
 }
 
+/** What is switched on, for pages that show or hide fields by it. */
+export const useFeatures = () => useSwrHelper(useSWR<{ supplementaryInsurance: boolean }>('/admin/settings/features', fetcher));
+
 export const useSiteSettings = () => useSwrHelper(useSWR<SiteSettings>('/admin/settings', fetcher));
 
 export const useUpdateSiteSettings = () =>

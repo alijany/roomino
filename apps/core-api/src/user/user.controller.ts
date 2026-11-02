@@ -59,6 +59,12 @@ function toUserListItem(user: UserEntity) {
     insured: user.insured,
     insuranceType: user.insuranceType,
     taxExempt: user.taxExempt,
+    supplementaryInsurance: user.supplementaryInsurance,
+    supplementaryInsuranceStart: user.supplementaryInsuranceStart ?? null,
+    supplementaryInsuranceAmount:
+      user.supplementaryInsuranceAmount == null
+        ? null
+        : Number(user.supplementaryInsuranceAmount),
     cooperationEnded: user.cooperationEnded,
     agreementType: user.agreementType,
     salaryMode: user.salaryMode,
@@ -268,6 +274,9 @@ export class AdminUserController {
       insured: dto.insured,
       insuranceType: dto.insuranceType,
       taxExempt: dto.taxExempt,
+      supplementaryInsurance: dto.supplementaryInsurance,
+      supplementaryInsuranceStart: dto.supplementaryInsuranceStart,
+      supplementaryInsuranceAmount: dto.supplementaryInsuranceAmount,
       cooperationEnded: dto.cooperationEnded,
       agreementType: dto.agreementType,
       salaryMode: dto.salaryMode,
@@ -296,6 +305,12 @@ export class AdminUserController {
       insured: user.insured,
       insuranceType: user.insuranceType,
       taxExempt: user.taxExempt,
+      supplementaryInsurance: user.supplementaryInsurance,
+      supplementaryInsuranceStart: user.supplementaryInsuranceStart ?? null,
+      supplementaryInsuranceAmount:
+        user.supplementaryInsuranceAmount == null
+          ? null
+          : Number(user.supplementaryInsuranceAmount),
       cooperationEnded: user.cooperationEnded,
       agreementType: user.agreementType,
       salaryMode: user.salaryMode,

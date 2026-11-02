@@ -37,6 +37,11 @@ export interface User {
   insured?: boolean;
   insuranceType?: 'worker' | 'board';
   taxExempt?: boolean;
+  /** Takes the supplementary insurance; its premium comes off the salary. */
+  supplementaryInsurance?: boolean;
+  supplementaryInsuranceStart?: string | null;
+  /** A premium for this person alone (rial); empty uses the year's. */
+  supplementaryInsuranceAmount?: number | null;
   cooperationEnded?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
@@ -106,6 +111,11 @@ export interface UpdateUserNameDto {
   insured?: boolean;
   insuranceType?: 'worker' | 'board';
   taxExempt?: boolean;
+  supplementaryInsurance?: boolean;
+  /** Civil date; an empty string clears it. */
+  supplementaryInsuranceStart?: string;
+  /** Rial; null clears it. */
+  supplementaryInsuranceAmount?: number | null;
   cooperationEnded?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';

@@ -134,6 +134,19 @@ export class PayrollSettingEntity extends BaseEntity {
   @Property()
   wageHours: number;
 
+  // --- supplementary insurance: the year's policy (not a legal parameter) ---
+
+  /** First and last Jalali month the premium is taken; an empty end runs to the year's end. */
+  @Property({ nullable: true })
+  suppStartMonth?: number;
+
+  @Property({ nullable: true })
+  suppEndMonth?: number;
+
+  /** The monthly premium (rial) for those who joined; `0` while the year has none. */
+  @Property({ type: types.bigint, default: 0 })
+  suppAmount: number = 0;
+
   /** Insurance and tax treatment per item, keyed as in the catalog. */
   @Property({ type: 'json' })
   inclusion: Record<string, PayrollInclusion> = {};

@@ -319,6 +319,8 @@ export class FinalSettlementService {
       deficitHours: 0,
       missionDays: 0,
       bonus: 0,
+      // The settlement is its own document: no month's premium rides on it.
+      supplementaryInsurance: 0,
     };
     // The full base wage (a net agreement is solved back to it), then a
     // settlement-only run: no month's pay, just eidi, severance and leave.

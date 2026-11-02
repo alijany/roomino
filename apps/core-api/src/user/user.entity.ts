@@ -72,6 +72,18 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   insuranceNumber?: string;
 
+  /** Takes the supplementary insurance, whose premium comes off the salary. */
+  @Property({ default: false })
+  supplementaryInsurance: boolean = false;
+
+  /** First day covered; the premium starts with that month. Empty means from the start of the year's policy. */
+  @Property({ type: 'date', nullable: true })
+  supplementaryInsuranceStart?: string;
+
+  /** A premium for this person alone (rial); empty uses the year's. */
+  @Property({ type: types.bigint, nullable: true })
+  supplementaryInsuranceAmount?: number;
+
   /** The NDA is signed; it holds until cooperation ends. */
   @Property({ default: false })
   ndaSigned: boolean = false;

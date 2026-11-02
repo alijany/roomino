@@ -6,6 +6,8 @@ import { SiteSettingEntity } from './site-setting.entity';
 export const SITE_SETTING_DEFAULTS = {
   /** New people cannot sign up; people who already have an account still log in. */
   registrationClosed: false,
+  /** The supplementary insurance is in use: its fields show and its premium comes off the salary. */
+  supplementaryInsuranceEnabled: false,
 };
 
 export type SiteSettings = typeof SITE_SETTING_DEFAULTS;

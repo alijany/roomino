@@ -2,7 +2,7 @@ import { useSwrHelper, useSwrMutationHelper } from '@/libs/api/api.hook.use-swr-
 import { fetcher, postFetcher, putFetcher } from '@/libs/api/api.util.fetcher';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
-import { PayrollYear, UpdatePayrollYearDto } from './payroll-settings.types';
+import { PayrollYear, SaveSupplementaryDto, UpdatePayrollYearDto } from './payroll-settings.types';
 
 export function usePayrollYears() {
   return useSwrHelper(useSWR<{ years: number[] }>('/admin/finance/payroll-settings', fetcher));
@@ -34,6 +34,32 @@ export function useSavePayrollYear() {
       (_key: string, { arg }: { arg: { year: number; data: UpdatePayrollYearDto } }) =>
         putFetcher<UpdatePayrollYearDto, PayrollYear>(`/admin/finance/payroll-settings/${arg.year}`, {
           arg: arg.data,
+        }),
+    ),
+  );
+}
+
+/** The year's supplementary-insurance policy. */
+export function useSaveSupplementary() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/finance/payroll-settings/supplementary',
+      (_key: string, { arg }: { arg: { year: number; data: SaveSupplementaryDto } }) =>
+        putFetcher<SaveSupplementaryDto, PayrollYear>(`/admin/finance/payroll-settings/${arg.year}/supplementary`, {
+          arg: arg.data,
+        }),
+    ),
+  );
+}
+
+/** The switch for the whole supplementary insurance. */
+export function useSetSupplementaryEnabled() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/finance/payroll-settings/supplementary-insurance/enabled',
+      (_key: string, { arg }: { arg: boolean }) =>
+        putFetcher<{ enabled: boolean }, { enabled: boolean }>('/admin/finance/payroll-settings/supplementary-insurance/enabled', {
+          arg: { enabled: arg },
         }),
     ),
   );

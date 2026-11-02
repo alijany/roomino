@@ -36,6 +36,8 @@ export interface PayrollInput {
   advance: number;
   loan: number;
   otherDeductions: number;
+  /** The monthly supplementary-insurance premium, taken off the take-home like the other deductions. */
+  supplementaryInsurance: number;
 
   /** Pay the year's eidi and severance this month. */
   payEidi: boolean;
@@ -249,7 +251,9 @@ function compute(
   const eidiTax = Math.max(eidi - eidiExempt, 0) * rate(s.taxRate1);
   const tax = x.taxExempt ? 0 : bracketTax(taxable, s) + overtimeTax + eidiTax;
 
-  const other = withExtras ? x.advance + x.loan + x.otherDeductions : 0;
+  const other = withExtras
+    ? x.advance + x.loan + x.otherDeductions + x.supplementaryInsurance
+    : 0;
   const totalDeductions = deficit + workerInsurance + tax + other;
   const net = gross - totalDeductions;
   const accrual = ((eidiFull + severanceFull) * f) / 12;

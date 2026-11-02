@@ -178,6 +178,24 @@ export class UpdateUserNameDto {
 
   @IsOptional() @IsBoolean() taxExempt?: boolean;
 
+  /** Takes the supplementary insurance; its premium comes off the salary. */
+  @IsOptional() @IsBoolean() supplementaryInsurance?: boolean;
+
+  /** Civil date the cover starts; empty clears it. */
+  @IsOptional()
+  @code()
+  @ValidateIf((_, v) => v !== '')
+  @Matches(DATE, { message: 'تاریخ شروع بیمه تکمیلی نامعتبر است' })
+  supplementaryInsuranceStart?: string;
+
+  /** A premium for this person alone, in rial; null uses the year's. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @Type(() => Number)
+  @IsInt({ message: 'مبلغ بیمه تکمیلی نامعتبر است' })
+  @Min(0, { message: 'مبلغ بیمه تکمیلی نامعتبر است' })
+  supplementaryInsuranceAmount?: number | null;
+
   /** Cooperation is over: no sign-in, and out of every list but the users list. */
   @IsOptional() @IsBoolean() cooperationEnded?: boolean;
 

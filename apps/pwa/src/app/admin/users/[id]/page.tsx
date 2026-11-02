@@ -3,7 +3,7 @@
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { Role, getRoleName } from '@/components/auth/auth.constants.roles';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Avatar, Button, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
+import { Avatar, Button, CurrencyInput, Dropdown, Input, ToggleSwitch } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { BackButton, DataView, DatePickerField } from '@/ui/molecules';
 import { fromCivilDate, jalaliLabel, tehranToday, toCivilDate } from '@/app/dashboard/attendance/attendance.util';
@@ -12,6 +12,7 @@ import { useParams } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useUpdateUserName, useUser } from '../users.api';
+import { useFeatures } from '../../settings/settings.api';
 import { ContractsCard } from '../contracts.component.card';
 import { DeleteUserCard } from '../users.component.delete-user';
 import { RolesEditor } from '../users.component.roles-editor';
@@ -168,12 +169,16 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [insured, setInsured] = useState(user.insured !== false);
     const [insuranceType, setInsuranceType] = useState<'worker' | 'board'>(user.insuranceType ?? 'worker');
     const [taxExempt, setTaxExempt] = useState(Boolean(user.taxExempt));
+    const [supp, setSupp] = useState(Boolean(user.supplementaryInsurance));
+    const [suppStart, setSuppStart] = useState(user.supplementaryInsuranceStart ?? '');
+    const [suppAmount, setSuppAmount] = useState<number | null>(user.supplementaryInsuranceAmount ?? null);
     const [cooperationEnded, setCooperationEnded] = useState(Boolean(user.cooperationEnded));
     const [agreementType, setAgreementType] = useState<'gross' | 'net'>(user.agreementType ?? 'gross');
     const [salaryMode, setSalaryMode] = useState<'regular' | 'hybrid' | 'flat'>(user.salaryMode ?? 'regular');
     // A flat salary has no legal basis, so these facts do not move it.
     const dim = salaryMode === 'flat' ? 'opacity-40' : '';
     const { submit, isLoading, error } = useUpdateUserName();
+    const features = useFeatures();
 
     const unchanged =
         firstName.trim() === (user.firstName ?? '') &&
@@ -197,6 +202,9 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         insured === (user.insured !== false) &&
         insuranceType === (user.insuranceType ?? 'worker') &&
         taxExempt === Boolean(user.taxExempt) &&
+        supp === Boolean(user.supplementaryInsurance) &&
+        suppStart === (user.supplementaryInsuranceStart ?? '') &&
+        suppAmount === (user.supplementaryInsuranceAmount ?? null) &&
         cooperationEnded === Boolean(user.cooperationEnded) &&
         agreementType === (user.agreementType ?? 'gross') &&
         salaryMode === (user.salaryMode ?? 'regular');
@@ -237,6 +245,9 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     insured,
                     insuranceType,
                     taxExempt,
+                    supplementaryInsurance: supp,
+                    supplementaryInsuranceStart: suppStart,
+                    supplementaryInsuranceAmount: suppAmount,
                     cooperationEnded,
                     agreementType,
                     salaryMode,
@@ -500,6 +511,29 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                 <PayrollToggle label="مشمول بیمه" checked={insured} onChange={setInsured} />
                 <PayrollToggle label="معاف از مالیات" checked={taxExempt} onChange={setTaxExempt} />
             </div>
+
+            {/* The premium comes off the take-home whatever the salary type, so it is not dimmed with the legal facts. */}
+            {features.data?.supplementaryInsurance && (
+            <div className="space-y-3 border-t border-slate-100 pt-3">
+                <PayrollToggle label="بیمه تکمیلی (کسر ماهانه از حقوق)" checked={supp} onChange={setSupp} />
+                {supp && (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+                        <div className="lg:col-span-6">
+                            <OptionalDate label="تاریخ شروع بیمه تکمیلی" value={suppStart} onChange={setSuppStart} />
+                        </div>
+                        <div className="lg:col-span-6">
+                            <CurrencyInput
+                                label="مبلغ ماهانه‌ی اختصاصی (ریال)"
+                                unit="rial"
+                                placeholder="خالی: مبلغ تنظیمات سال"
+                                value={suppAmount}
+                                onValueChange={setSuppAmount}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+            )}
 
             </SectionCard>
 

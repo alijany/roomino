@@ -95,6 +95,10 @@ export class PayrollLineEntity extends BaseEntity {
   @Property({ type: types.bigint, default: 0 })
   otherDeductions: number = 0;
 
+  /** The month's supplementary-insurance premium, worked out from the person and the year's policy. */
+  @Property({ type: types.bigint, default: 0 })
+  supplementaryInsurance: number = 0;
+
   /** Pay the year's eidi and severance in this month (Esfand). */
   @Property({ default: false })
   payEidi: boolean = false;

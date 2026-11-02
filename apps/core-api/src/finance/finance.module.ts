@@ -1,4 +1,5 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { SettingsModule } from '../settings/settings.module';
 import { Module } from '@nestjs/common';
 import { NotificationModule } from '../notification/notification.module';
 import { RolesModule } from '../roles/roles.module';
@@ -65,6 +66,7 @@ import { VendorService } from './services/vendor.service';
  */
 @Module({
   imports: [
+    SettingsModule,
     MikroOrmModule.forFeature([
       AdvanceDeductionEntity,
       FinalSettlementEntity,

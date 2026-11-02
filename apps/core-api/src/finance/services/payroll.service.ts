@@ -28,6 +28,7 @@ import {
 } from '../utils/payroll-calculator.util';
 import { readBigint } from '../utils/money.util';
 import { BankRow, periodName } from '../utils/payroll-bank.util';
+import { SiteSettingsService } from '../../settings/site-settings.service';
 import { PayrollSettingService } from './payroll-setting.service';
 
 const MONEY_FIELDS = [
@@ -57,6 +58,7 @@ const MONEY_FIELDS = [
   'advance',
   'loan',
   'otherDeductions',
+  'supplementaryInsurance',
 ] as const;
 const COUNT_FIELDS = [
   'days',
@@ -92,6 +94,13 @@ interface Context {
   year: number;
   values: PayrollValues;
   inclusion: Record<string, PayrollInclusion>;
+  /** The year's supplementary-insurance policy. */
+  supplementary: {
+    startMonth: number | null;
+    endMonth: number | null;
+    amount: number;
+    active: boolean;
+  };
   /** The latest confirmed salary at or before the period, per user. */
   salaries: Map<number, number>;
 }
@@ -102,6 +111,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     @InjectRepository(PayrollLineEntity)
     protected repository: EntityRepository<PayrollLineEntity>,
     private readonly settings: PayrollSettingService,
+    private readonly siteSettings: SiteSettingsService,
   ) {
     super(repository);
   }
@@ -623,6 +633,13 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       year,
       values: set.values,
       inclusion: set.inclusion,
+      // Switched off site-wide, nothing is taken, whoever is enrolled.
+      supplementary: {
+        ...set.supplementary,
+        active:
+          set.supplementary.active &&
+          (await this.siteSettings.get('supplementaryInsuranceEnabled')),
+      },
       salaries: await this.salariesAt(period),
     };
   }
@@ -636,6 +653,28 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     const latest = new Map<number, number>();
     changes.forEach((c) => latest.set(c.user.id, readBigint(c.salary)));
     return latest;
+  }
+
+  /**
+   * The month's supplementary-insurance premium: the whole of it, when the
+   * person takes it, the year's policy covers the month and their own start
+   * date has come. A premium of their own replaces the year's.
+   */
+  private supplementaryPremium(user: UserEntity, ctx: Context, period: number) {
+    const policy = ctx.supplementary;
+    if (!user.supplementaryInsurance || !policy.active) return 0;
+    const month = period % 100;
+    if (month < (policy.startMonth ?? 1)) return 0;
+    if (policy.endMonth !== null && month > policy.endMonth) return 0;
+    if (
+      user.supplementaryInsuranceStart &&
+      jalaliPeriod(user.supplementaryInsuranceStart) > period
+    ) {
+      return 0;
+    }
+    return user.supplementaryInsuranceAmount == null
+      ? policy.amount
+      : readBigint(user.supplementaryInsuranceAmount);
   }
 
   /** Hired by the period and not gone before it. */
@@ -676,7 +715,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     // and the bonus are paid as they are, with no insurance, tax, eidi or
     // severance. Advance, loan, other deductions and a work deficit come off.
     if (user.salaryMode === 'flat') {
-      this.computeFlat(line, agreed, ctx);
+      this.computeFlat(line, user, agreed, ctx);
       return;
     }
 
@@ -688,6 +727,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       user.salaryMode === 'hybrid' && (net || agreed > ctx.values.minMonthly);
 
     const num = (v: number | string) => Number(v) || 0;
+    const premium = this.supplementaryPremium(user, ctx, line.period);
     const result = calculatePayroll(ctx.values, ctx.inclusion, {
       agreed,
       hybrid,
@@ -710,6 +750,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       advance: readBigint(line.advance),
       loan: readBigint(line.loan),
       otherDeductions: readBigint(line.otherDeductions),
+      supplementaryInsurance: premium,
       payEidi: line.payEidi,
       settle: line.settle,
       yearFraction: Math.min(Math.max(monthsInYear, 0), 12) / 12,
@@ -757,21 +798,29 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       employerInsurance: result.employerInsurance,
       accrual: result.accrual,
       totalCost: result.totalCost,
+      supplementaryInsurance: premium,
     });
     line.warnings = warnings;
   }
 
   /** A flat salary's line: the agreed figure and the bonus, less the plain deductions. */
-  private computeFlat(line: PayrollLineEntity, agreed: number, ctx: Context) {
+  private computeFlat(
+    line: PayrollLineEntity,
+    user: UserEntity,
+    agreed: number,
+    ctx: Context,
+  ) {
     const num = (v: number | string) => Number(v) || 0;
     const base = Math.round((agreed * num(line.days)) / 30);
     const bonus = readBigint(line.bonus);
     const hourly = agreed / (ctx.values.wageHours || 220);
     const deficit = Math.round(hourly * num(line.deficitHours));
+    const premium = this.supplementaryPremium(user, ctx, line.period);
     const other =
       readBigint(line.advance) +
       readBigint(line.loan) +
-      readBigint(line.otherDeductions);
+      readBigint(line.otherDeductions) +
+      premium;
     const gross = base + bonus;
     const warnings: string[] = [];
     if (
@@ -812,6 +861,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       employerInsurance: 0,
       accrual: 0,
       totalCost: gross,
+      supplementaryInsurance: premium,
     });
     line.warnings = warnings;
   }
