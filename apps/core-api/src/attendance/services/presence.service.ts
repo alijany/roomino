@@ -107,6 +107,26 @@ export class PresenceService {
   }
 
   /**
+   * When each person said «امروز هستم» on a day, keyed by profile id. Only
+   * their own declarations count — a reviewer's confirmation has no moment.
+   * For display; nothing is computed from it.
+   */
+  async declaredTimesOn(
+    profileIds: number[],
+    date: string,
+  ): Promise<Map<number, Date>> {
+    const map = new Map<number, Date>();
+    if (!profileIds.length) return map;
+    const rows = await this.em.find(PresenceDeclarationEntity, {
+      employee: { $in: profileIds },
+      date,
+      declaredBy: null,
+    });
+    for (const row of rows) map.set(row.employee.id, row.declaredAt);
+    return map;
+  }
+
+  /**
    * Why a day can't be declared present, or null if it can: in the future,
    * not «بدون ثبت» that day, not a working day, or already given to leave or
    * a mission.

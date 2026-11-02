@@ -637,6 +637,7 @@ export class ReportService {
       modePeriods,
       declared,
       approved,
+      declaredTimes,
     ] = await Promise.all([
       ids.length
         ? this.em.find(AttendanceEntity, {
@@ -650,6 +651,7 @@ export class ReportService {
       this.modes.periodsFor(ids),
       this.presence.declarationsBetween(ids, today, today),
       this.requests.inRange(ids, today, today, [RequestStatus.APPROVED]),
+      this.presence.declaredTimesOn(ids, today),
     ]);
     const byProfile = new Map(attendances.map((a) => [a.employee.id, a]));
 
@@ -731,7 +733,8 @@ export class ReportService {
         mode,
         presence,
         shiftStart: tehranClock(start),
-        checkIn: tehranClock(att?.checkInAt),
+        // «بدون ثبت»: the moment they said they're in, shown as the arrival.
+        checkIn: tehranClock(att?.checkInAt ?? declaredTimes.get(profile.id)),
         checkOut: tehranClock(att?.checkOutAt),
         checkInDistanceM: att?.checkInDistanceM ?? null,
       };
