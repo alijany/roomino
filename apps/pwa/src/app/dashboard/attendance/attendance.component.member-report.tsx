@@ -6,7 +6,8 @@ import { Tabs } from '@/ui/molecules/tabs';
 import { IconAlertCircle, IconDownload, IconPlus, IconUserCheck } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { CorrectionBase, ReviewBase, useRevokePresence } from './attendance.api';
+import { ConfirmModal } from '@/ui/molecules/confirm-modal';
+import { CorrectionBase, ReviewBase, useDeleteRequest, useRevokePresence } from './attendance.api';
 import { DayList } from './attendance.component.day-list';
 import { Panel } from './attendance.component.layout';
 import { PeriodPicker } from './attendance.component.period-picker';
@@ -65,7 +66,9 @@ export function MemberReport({
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [confirmingPresence, setConfirmingPresence] = useState<string[] | null>(null);
+  const [deleting, setDeleting] = useState<AttendanceRequest | null>(null);
   const revoke = useRevokePresence(correctionBase);
+  const remove = useDeleteRequest();
   const { data, error, isLoading, refresh } = report;
 
   const scopedDays = useMemo(
@@ -107,6 +110,20 @@ export function MemberReport({
       refresh();
     } catch (revokeError) {
       toast.error(errorMessage(revokeError, 'بازگرداندن انجام نشد'));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      await remove.submit(deleting.id);
+      toast.success('درخواست حذف شد');
+      setViewing(null);
+      refresh();
+    } catch (deleteError) {
+      toast.error(errorMessage(deleteError, 'حذف انجام نشد'));
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -349,8 +366,27 @@ export function MemberReport({
         request={viewing}
         onClose={() => setViewing(null)}
         actions={
-          viewing && canReview && <ReviewActions request={viewing} base={reviewBase} onDone={reviewDone} size="md" />
+          viewing && (
+            <>
+              {canReview && <ReviewActions request={viewing} base={reviewBase} onDone={reviewDone} size="md" />}
+              {canGrant && (
+                <Button variant="outline" size="md" className="text-red-600" onClick={() => setDeleting(viewing)}>
+                  حذف
+                </Button>
+              )}
+            </>
+          )
         }
+      />
+      <ConfirmModal
+        isOpen={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        title="حذف درخواست"
+        message="درخواست حذف شود؟ اگر مرخصی تایید شده باشد، مدتش به مانده مرخصی برمی‌گردد و روزهای ثبت‌شده آزاد می‌شوند."
+        confirmButtonText="حذف"
+        cancelButtonText="بازگشت"
+        isLoading={remove.isLoading}
       />
     </div>
   );

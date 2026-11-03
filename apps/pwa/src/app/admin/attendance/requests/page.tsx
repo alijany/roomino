@@ -147,7 +147,7 @@ export default function RequestQueuePage() {
           onClose={() => setDeleting(null)}
           onConfirm={handleDelete}
           title="حذف درخواست"
-          message="درخواست برای همیشه حذف شود؟ اثر تایید قبلی (مانده مرخصی، تردد ثبت‌شده) برنمی‌گردد."
+          message="درخواست حذف شود؟ اگر مرخصی تایید شده باشد، مدتش به مانده مرخصی برمی‌گردد و روزهای ثبت‌شده آزاد می‌شوند (تردد دستی تاییدشده برنمی‌گردد)."
           confirmButtonText="حذف"
           cancelButtonText="بازگشت"
           isLoading={remove.isLoading}

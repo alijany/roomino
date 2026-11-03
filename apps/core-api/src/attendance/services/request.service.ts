@@ -814,9 +814,49 @@ export class RequestService {
     return granted;
   }
 
+  /**
+   * Delete a request. An approved leave is taken back: its minutes return to
+   * the balance and the days it marked go back to unmarked.
+   */
   async remove(id: number) {
     const request = await this.getOrFail(id);
-    await this.em.removeAndFlush(request);
+    const leaveType = leaveTypeOf(request.type);
+
+    await this.em.transactional(async (em) => {
+      if (leaveType && request.status === RequestStatus.APPROVED) {
+        const { year } = dateToJalali(this.referenceDate(request));
+        await em.nativeUpdate(
+          LeaveBalanceEntity,
+          { employee: request.employee.id, leaveType, year },
+          {
+            usedMinutes: raw('greatest(used_minutes - ?, 0)', [
+              request.durationMinutes ?? 0,
+            ]),
+            updated_at: new Date(),
+          },
+        );
+
+        if (!isHourly(request.type) && request.dateFrom) {
+          for (const date of eachDate(
+            request.dateFrom,
+            request.dateTo ?? request.dateFrom,
+          )) {
+            const row = await em.findOne(AttendanceEntity, {
+              employee: request.employee.id,
+              date,
+            });
+            if (row?.status !== AttendanceStatus.ON_LEAVE) continue;
+            if (row.checkInAt || row.checkOutAt) {
+              row.status = AttendanceStatus.PRESENT;
+            } else {
+              em.remove(row);
+            }
+          }
+        }
+      }
+      em.remove(request);
+      await em.flush();
+    });
   }
 
   /**

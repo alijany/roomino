@@ -382,7 +382,12 @@ export function DayList({
                       بازگرداندن اعلام حضور
                     </Button>
                   )}
-                  {actions.onGrant && (
+                  {actions.onGrant &&
+                    !day.requests.some(
+                      (r) =>
+                        r.status !== RequestStatus.REJECTED &&
+                        (r.type.startsWith('leave_') || r.type.startsWith('remote_')),
+                    ) && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => actions.onGrant?.(day)}>
                       <IconPlus className="size-4" />
                       ثبت مرخصی / دورکاری
