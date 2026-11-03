@@ -174,6 +174,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [suppStart, setSuppStart] = useState(user.supplementaryInsuranceStart ?? '');
     const [suppAmount, setSuppAmount] = useState<number | null>(user.supplementaryInsuranceAmount ?? null);
     const [cooperationEnded, setCooperationEnded] = useState(Boolean(user.cooperationEnded));
+    const [introduce, setIntroduce] = useState(Boolean(user.introduce));
     const [agreementType, setAgreementType] = useState<'gross' | 'net'>(user.agreementType ?? 'gross');
     const [salaryMode, setSalaryMode] = useState<'regular' | 'hybrid' | 'flat'>(user.salaryMode ?? 'regular');
     // A flat salary has no legal basis, so these facts do not move it.
@@ -209,6 +210,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         suppAmount === (user.supplementaryInsuranceAmount ?? null) &&
         cooperationEnded === Boolean(user.cooperationEnded) &&
         agreementType === (user.agreementType ?? 'gross') &&
+        introduce === Boolean(user.introduce) &&
         salaryMode === (user.salaryMode ?? 'regular');
 
     const missing = [
@@ -255,6 +257,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     agreementType,
                     salaryMode,
                 },
+                    introduce: hireDate ? introduce : false,
             });
             toast.success('تغییرات ذخیره شد');
             onSaved();
@@ -398,6 +401,11 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     maxLength={20}
                 />
                 <div className="lg:col-span-6"><OptionalDate label="تاریخ شروع بیمه" value={insuranceStartDate} onChange={setInsuranceStartDate} /></div>
+                {hireDate && (
+                    <div className="lg:col-span-12">
+                        <PayrollToggle label="معرفی در داشبورد همکاران (تا یک ماه از شروع همکاری)" checked={introduce} onChange={setIntroduce} />
+                    </div>
+                )}
                 <Input
                     id="edit-sheba"
                     containerClassName="lg:col-span-4"

@@ -69,6 +69,7 @@ function toUserListItem(user: UserEntity) {
     cooperationEnded: user.cooperationEnded,
     agreementType: user.agreementType,
     salaryMode: user.salaryMode,
+    introduce: user.introduce,
     profilePicture: user.profilePicture ?? null,
     isApproved: user.isApproved,
     roles: user.roles
@@ -285,6 +286,7 @@ export class AdminUserController {
     });
     return {
       id: user.id,
+      introduce: dto.introduce,
       name: user.name,
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
@@ -321,6 +323,7 @@ export class AdminUserController {
   }
 }
 
+      introduce: user.introduce,
 /** What a signed-in person does with their own account. */
 @Controller('users')
 @UseGuards(JwtAuthGuard)

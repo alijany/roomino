@@ -394,6 +394,7 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       agreementType?: string;
       salaryMode?: string;
     },
+      introduce?: boolean;
   ): Promise<UserEntity> {
     const user = await this.findOne({ id: userId });
     if (!user) {
@@ -519,6 +520,14 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (details.cooperationEnded !== undefined)
       user.cooperationEnded = details.cooperationEnded;
     if (details.agreementType !== undefined)
+    if (details.introduce !== undefined) {
+      if (details.introduce && !(details.hireDate ?? user.hireDate)) {
+        throw new BadRequestException(
+          'برای معرفی، ابتدا تاریخ شروع همکاری را ثبت کنید',
+        );
+      }
+      user.introduce = details.introduce;
+    }
       user.agreementType = details.agreementType;
 
     if (details.salaryMode !== undefined) user.salaryMode = details.salaryMode;

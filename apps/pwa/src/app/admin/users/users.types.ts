@@ -46,6 +46,8 @@ export interface User {
   cooperationEnded?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
+  /** Shown to the team on the dashboard for a month from the first day. */
+  introduce?: boolean;
   profilePicture?: string | null;
   isApproved: boolean;
   roles: UserRole[];
@@ -123,3 +125,5 @@ export interface UpdateUserNameDto {
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
 }
+  /** Shown to the team on the dashboard for a month from the first day. */
+  introduce?: boolean;

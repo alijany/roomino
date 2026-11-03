@@ -214,3 +214,6 @@ export class UpdateUserNameDto {
   @IsIn(['regular', 'hybrid', 'flat'], { message: 'نوع حقوق نامعتبر است' })
   salaryMode?: string;
 }
+  /** Show the person to the team on the dashboard; needs a hire date. */
+  @IsOptional() @IsBoolean() introduce?: boolean;
+

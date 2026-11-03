@@ -60,6 +60,10 @@ export class UserEntity extends BaseEntity {
 
   /** Last day of cooperation, civil date. Empty while the person is still here. */
   @Property({ type: 'date', nullable: true })
+  /** Introduced to the team on the dashboard for a month from the first day. */
+  @Property({ default: false })
+  introduce: boolean = false;
+
   endDate?: string;
 
   /**
