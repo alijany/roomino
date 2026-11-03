@@ -17,6 +17,8 @@ export interface User {
   name: string;
   firstName: string | null;
   lastName: string | null;
+  /** What colleagues see in place of the official name; empty means none. */
+  displayName?: string | null;
   phone: string;
   nationalId?: string | null;
   personnelCode?: string | null;
@@ -44,10 +46,10 @@ export interface User {
   /** A premium for this person alone (rial); empty uses the year's. */
   supplementaryInsuranceAmount?: number | null;
   cooperationEnded?: boolean;
-  agreementType?: 'gross' | 'net';
-  salaryMode?: 'regular' | 'hybrid' | 'flat';
   /** Shown to the team on the dashboard for a month from the first day. */
   introduce?: boolean;
+  agreementType?: 'gross' | 'net';
+  salaryMode?: 'regular' | 'hybrid' | 'flat';
   profilePicture?: string | null;
   isApproved: boolean;
   roles: UserRole[];
@@ -90,6 +92,8 @@ export interface AddUserRoleDto {
 export interface UpdateUserNameDto {
   firstName: string;
   lastName: string;
+  /** Empty clears it. */
+  displayName?: string;
   /** The number the person signs in with. */
   phone?: string;
   /** Ten digits; an empty string clears it. */
@@ -122,8 +126,8 @@ export interface UpdateUserNameDto {
   /** Rial; null clears it. */
   supplementaryInsuranceAmount?: number | null;
   cooperationEnded?: boolean;
+  /** Shown to the team on the dashboard for a month from the first day. */
+  introduce?: boolean;
   agreementType?: 'gross' | 'net';
   salaryMode?: 'regular' | 'hybrid' | 'flat';
 }
-  /** Shown to the team on the dashboard for a month from the first day. */
-  introduce?: boolean;

@@ -32,6 +32,13 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   lastName?: string;
+
+  /** Empty clears it. */
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(60, { message: 'نام نمایشی حداکثر ۶۰ نویسه است' })
+  displayName?: string;
 }
 
 export class UpdatePhoneDto {
@@ -58,6 +65,13 @@ export class UpdateUserNameDto {
   @IsNotEmpty({ message: 'نام خانوادگی را وارد کنید' })
   @MaxLength(50, { message: 'نام خانوادگی حداکثر ۵۰ نویسه است' })
   lastName: string;
+
+  /** The name colleagues see; empty clears it. */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(60, { message: 'نام نمایشی حداکثر ۶۰ نویسه است' })
+  displayName?: string;
 
   /** The mobile number; changing it changes the number the person signs in with. */
   @IsOptional()
@@ -206,6 +220,9 @@ export class UpdateUserNameDto {
   /** Cooperation is over: no sign-in, and out of every list but the users list. */
   @IsOptional() @IsBoolean() cooperationEnded?: boolean;
 
+  /** Show the person to the team on the dashboard; needs a hire date. */
+  @IsOptional() @IsBoolean() introduce?: boolean;
+
   @IsOptional()
   @IsIn(['gross', 'net'], { message: 'نوع توافق نامعتبر است' })
   agreementType?: string;
@@ -214,6 +231,3 @@ export class UpdateUserNameDto {
   @IsIn(['regular', 'hybrid', 'flat'], { message: 'نوع حقوق نامعتبر است' })
   salaryMode?: string;
 }
-  /** Show the person to the team on the dashboard; needs a hire date. */
-  @IsOptional() @IsBoolean() introduce?: boolean;
-

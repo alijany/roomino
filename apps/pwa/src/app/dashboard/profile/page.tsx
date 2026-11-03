@@ -35,6 +35,7 @@ export default function ProfilePage() {
   const profileSchema = z.object({
     firstName: z.string().min(1, 'نام را وارد کنید'),
     lastName: z.string().optional().or(z.literal('')),
+    displayName: z.string().max(60, 'نام نمایشی حداکثر ۶۰ نویسه است').optional().or(z.literal('')),
   });
 
   type ProfileFormData = z.infer<typeof profileSchema>;
@@ -44,6 +45,7 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
+      displayName: user?.displayName || '',
     }
   });
 
@@ -51,6 +53,7 @@ export default function ProfilePage() {
     reset({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
+      displayName: user?.displayName || '',
     });
   }, [user, reset]);
 
@@ -59,6 +62,7 @@ export default function ProfilePage() {
       await updateProfile({
         firstName: data.firstName,
         lastName: data.lastName,
+        displayName: data.displayName ?? '',
       });
       await refreshProfile();
       reset(data);
@@ -73,6 +77,7 @@ export default function ProfilePage() {
     reset({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
+      displayName: user?.displayName || '',
     });
   };
 
@@ -174,6 +179,18 @@ export default function ProfilePage() {
                     {...register('lastName')}
                     error={errors.lastName?.message}
                   />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    نام نمایشی (اختیاری)
+                  </label>
+                  <Input
+                    placeholder="نامی که همکاران می‌بینند، مثلاً نام کوتاه‌تر یا نام دلخواه شما"
+                    {...register('displayName')}
+                    error={errors.displayName?.message}
+                  />
+                  <p className="mt-1 text-xs text-slate-400">در فیش حقوقی و اسناد رسمی همچنان نام و نام خانوادگی ثبت‌شده می‌آید.</p>
                 </div>
               </div>
 

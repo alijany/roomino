@@ -1,4 +1,5 @@
 import { EntityManager, FilterQuery, QueryOrder } from '@mikro-orm/core';
+import { nameWords } from '../../libs/utils/name-search.util';
 import {
   BadRequestException,
   ConflictException,
@@ -54,7 +55,15 @@ export class JobGroupService {
     return this.em.find(
       UserEntity,
       (like
-        ? { $or: [{ firstName: like }, { lastName: like }, { phone: like }] }
+        ? {
+            $or: [
+              { $and: nameWords(text as string) },
+              { displayName: like },
+              { firstName: like },
+              { lastName: like },
+              { phone: like },
+            ],
+          }
         : {}) as FilterQuery<UserEntity>,
       { orderBy: { lastName: QueryOrder.ASC }, limit: 20 },
     );

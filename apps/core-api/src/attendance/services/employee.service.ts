@@ -1,4 +1,5 @@
 import { EntityManager, FilterQuery, QueryOrder } from '@mikro-orm/core';
+import { nameWords } from '../../libs/utils/name-search.util';
 import {
   BadRequestException,
   ConflictException,
@@ -91,6 +92,8 @@ export class EmployeeService {
     return {
       $or: [
         { user: { personnelCode: like } },
+        { user: { $and: nameWords(text) } },
+        { user: { displayName: like } },
         { user: { firstName: like } },
         { user: { lastName: like } },
         { user: { phone: like } },
@@ -167,7 +170,15 @@ export class EmployeeService {
         cooperationEnded: false,
         ...(taken.length ? { id: { $nin: taken.map((p) => p.user.id) } } : {}),
         ...(like
-          ? { $or: [{ firstName: like }, { lastName: like }, { phone: like }] }
+          ? {
+              $or: [
+                { $and: nameWords(text as string) },
+                { displayName: like },
+                { firstName: like },
+                { lastName: like },
+                { phone: like },
+              ],
+            }
           : {}),
       } as FilterQuery<UserEntity>,
       { orderBy: { lastName: QueryOrder.ASC }, limit },

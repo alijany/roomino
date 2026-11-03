@@ -356,6 +356,9 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (updateData.lastName !== undefined) {
       user.lastName = updateData.lastName;
     }
+    if (updateData.displayName !== undefined) {
+      user.displayName = updateData.displayName || undefined;
+    }
 
     await this.persistAndFlush(user);
     return user;
@@ -391,10 +394,10 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       supplementaryInsuranceStart?: string;
       supplementaryInsuranceAmount?: number | null;
       cooperationEnded?: boolean;
+      introduce?: boolean;
       agreementType?: string;
       salaryMode?: string;
     },
-      introduce?: boolean;
   ): Promise<UserEntity> {
     const user = await this.findOne({ id: userId });
     if (!user) {
@@ -517,9 +520,6 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       user.supplementaryInsuranceAmount =
         details.supplementaryInsuranceAmount ?? undefined;
     }
-    if (details.cooperationEnded !== undefined)
-      user.cooperationEnded = details.cooperationEnded;
-    if (details.agreementType !== undefined)
     if (details.introduce !== undefined) {
       if (details.introduce && !(details.hireDate ?? user.hireDate)) {
         throw new BadRequestException(
@@ -528,6 +528,9 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       }
       user.introduce = details.introduce;
     }
+    if (details.cooperationEnded !== undefined)
+      user.cooperationEnded = details.cooperationEnded;
+    if (details.agreementType !== undefined)
       user.agreementType = details.agreementType;
 
     if (details.salaryMode !== undefined) user.salaryMode = details.salaryMode;

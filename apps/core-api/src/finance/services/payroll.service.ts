@@ -428,7 +428,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       const extras = readBigint(line.extras);
       const base = {
         lineId: line.id,
-        name: line.user.name ?? null,
+        name: line.user.legalName ?? null,
         personnelCode: line.user.personnelCode ?? null,
         sheba: line.user.sheba ?? '',
         status: line.status,
@@ -880,7 +880,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       status: line.status,
       user: {
         id: user.id,
-        name: user.name ?? null,
+        name: user.legalName ?? null,
         personnelCode: user.personnelCode ?? null,
         jobTitle: user.jobTitle ?? null,
         profilePicture: user.profilePicture ?? null,

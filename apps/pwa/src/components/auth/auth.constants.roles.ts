@@ -32,6 +32,7 @@ export type UserSummary = {
   name?: string;
   firstName?: string;
   lastName?: string;
+  displayName?: string | null;
   phone?: string;
   email?: string;
   profilePicture?: string | null;

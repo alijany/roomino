@@ -16,6 +16,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { nameWords } from '../libs/utils/name-search.util';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -40,6 +41,7 @@ function toUserListItem(user: UserEntity) {
     name: user.name,
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
+    displayName: user.displayName ?? null,
     phone: user.phone,
     nationalId: user.nationalId ?? null,
     personnelCode: user.personnelCode ?? null,
@@ -67,9 +69,9 @@ function toUserListItem(user: UserEntity) {
         ? null
         : Number(user.supplementaryInsuranceAmount),
     cooperationEnded: user.cooperationEnded,
+    introduce: user.introduce,
     agreementType: user.agreementType,
     salaryMode: user.salaryMode,
-    introduce: user.introduce,
     profilePicture: user.profilePicture ?? null,
     isApproved: user.isApproved,
     roles: user.roles
@@ -160,6 +162,8 @@ export class AdminUserController {
           like
             ? {
                 $or: [
+                  { $and: nameWords(text as string) },
+                  { displayName: like },
                   { firstName: like },
                   { lastName: like },
                   { phone: like },
@@ -253,6 +257,7 @@ export class AdminUserController {
     await this.userService.updateProfile(id, {
       firstName: dto.firstName,
       lastName: dto.lastName,
+      displayName: dto.displayName,
     });
     if (dto.phone !== undefined) {
       await this.userService.updatePhoneNumber(id, dto.phone);
@@ -281,15 +286,16 @@ export class AdminUserController {
       supplementaryInsuranceStart: dto.supplementaryInsuranceStart,
       supplementaryInsuranceAmount: dto.supplementaryInsuranceAmount,
       cooperationEnded: dto.cooperationEnded,
+      introduce: dto.introduce,
       agreementType: dto.agreementType,
       salaryMode: dto.salaryMode,
     });
     return {
       id: user.id,
-      introduce: dto.introduce,
       name: user.name,
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
+      displayName: user.displayName ?? null,
       phone: user.phone,
       nationalId: user.nationalId ?? null,
       personnelCode: user.personnelCode ?? null,
@@ -317,13 +323,13 @@ export class AdminUserController {
           ? null
           : Number(user.supplementaryInsuranceAmount),
       cooperationEnded: user.cooperationEnded,
+      introduce: user.introduce,
       agreementType: user.agreementType,
       salaryMode: user.salaryMode,
     };
   }
 }
 
-      introduce: user.introduce,
 /** What a signed-in person does with their own account. */
 @Controller('users')
 @UseGuards(JwtAuthGuard)

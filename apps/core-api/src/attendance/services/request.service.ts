@@ -6,6 +6,7 @@ import {
   raw,
   UniqueConstraintViolationException,
 } from '@mikro-orm/core';
+import { nameWords } from '../../libs/utils/name-search.util';
 import {
   BadRequestException,
   ConflictException,
@@ -330,6 +331,8 @@ export class RequestService {
         ? {
             $or: [
               { employee: { user: { personnelCode: like } } },
+              { employee: { user: { $and: nameWords(query.text as string) } } },
+              { employee: { user: { displayName: like } } },
               { employee: { user: { firstName: like } } },
               { employee: { user: { lastName: like } } },
             ],

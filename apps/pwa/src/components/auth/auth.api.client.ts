@@ -32,6 +32,7 @@ export interface AuthResponse {
     name?: string;
     firstName?: string;
     lastName?: string;
+    displayName?: string | null;
     nationalId: string;
     phone: string;
     profilePicture?: string;
@@ -43,6 +44,8 @@ export interface AuthResponse {
 export interface UpdateProfileRequest {
   firstName: string;
   lastName?: string;
+  /** The name colleagues see; empty clears it. */
+  displayName?: string;
 }
 
 export interface UpdatePhoneRequest {

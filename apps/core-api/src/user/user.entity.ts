@@ -20,9 +20,18 @@ export class UserEntity extends BaseEntity {
   @Property({ nullable: true })
   lastName?: string;
 
-  // Virtual property for full name
-  get name(): string {
+  /** The name colleagues see; empty falls back to the official one. */
+  @Property({ nullable: true, length: 60 })
+  displayName?: string;
+
+  /** First and last name as on the papers: payslips, bank files, settlements. */
+  get legalName(): string {
     return `${this.firstName || ''} ${this.lastName || ''}`.trim() || undefined;
+  }
+
+  /** The name shown across the app: the display name, else the official one. */
+  get name(): string {
+    return this.displayName?.trim() || this.legalName;
   }
 
   @Property({ nullable: true })
@@ -51,6 +60,10 @@ export class UserEntity extends BaseEntity {
   @Property({ type: 'date', nullable: true })
   hireDate?: string;
 
+  /** Introduced to the team on the dashboard for a month from the first day. */
+  @Property({ default: false })
+  introduce: boolean = false;
+
   /**
    * Last day of a trial period (دوره آزمایشی), civil date. Empty for someone
    * who had none. It stays after the date passes, so it is known they were on trial.
@@ -60,10 +73,6 @@ export class UserEntity extends BaseEntity {
 
   /** Last day of cooperation, civil date. Empty while the person is still here. */
   @Property({ type: 'date', nullable: true })
-  /** Introduced to the team on the dashboard for a month from the first day. */
-  @Property({ default: false })
-  introduce: boolean = false;
-
   endDate?: string;
 
   /**

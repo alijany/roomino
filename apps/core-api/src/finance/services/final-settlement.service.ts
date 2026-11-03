@@ -1,4 +1,5 @@
 import { EntityManager } from '@mikro-orm/postgresql';
+import { nameWords } from '../../libs/utils/name-search.util';
 import {
   BadRequestException,
   ConflictException,
@@ -65,7 +66,7 @@ export class FinalSettlementService {
       date: s.date,
       user: {
         id: u.id,
-        name: u.name ?? null,
+        name: u.legalName ?? null,
         personnelCode: u.personnelCode ?? null,
         jobTitle: u.jobTitle ?? null,
         profilePicture: u.profilePicture ?? null,
@@ -110,6 +111,8 @@ export class FinalSettlementService {
         ...(like
           ? {
               $or: [
+                { $and: nameWords(text as string) },
+                { displayName: like },
                 { firstName: like },
                 { lastName: like },
                 { personnelCode: like },

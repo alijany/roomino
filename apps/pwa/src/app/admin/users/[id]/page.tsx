@@ -126,7 +126,7 @@ function EditUserContent() {
                     <div className="space-y-4">
                         <UserHero user={user} />
                         {/* Keyed by what the server holds, so a save starts the fields from it. */}
-                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
+                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.displayName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
                             below={
                             <>
                                 <SectionCard id="sec-contract" icon={IconFileText} title="قرارداد و NDA" hint="سابقه‌ی قراردادها، تمدید و امضای NDA؛ هر تغییر همان لحظه ذخیره می‌شود">
@@ -150,6 +150,7 @@ function EditUserContent() {
 function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: () => void; below?: ReactNode; danger?: ReactNode }) {
     const [firstName, setFirstName] = useState(user.firstName ?? '');
     const [lastName, setLastName] = useState(user.lastName ?? '');
+    const [displayName, setDisplayName] = useState(user.displayName ?? '');
     const [phone, setPhone] = useState(user.phone ?? '');
     const [nationalId, setNationalId] = useState(user.nationalId ?? '');
     const [personnelCode, setPersonnelCode] = useState(user.personnelCode ?? '');
@@ -173,8 +174,8 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [supp, setSupp] = useState(Boolean(user.supplementaryInsurance));
     const [suppStart, setSuppStart] = useState(user.supplementaryInsuranceStart ?? '');
     const [suppAmount, setSuppAmount] = useState<number | null>(user.supplementaryInsuranceAmount ?? null);
-    const [cooperationEnded, setCooperationEnded] = useState(Boolean(user.cooperationEnded));
     const [introduce, setIntroduce] = useState(Boolean(user.introduce));
+    const [cooperationEnded, setCooperationEnded] = useState(Boolean(user.cooperationEnded));
     const [agreementType, setAgreementType] = useState<'gross' | 'net'>(user.agreementType ?? 'gross');
     const [salaryMode, setSalaryMode] = useState<'regular' | 'hybrid' | 'flat'>(user.salaryMode ?? 'regular');
     // A flat salary has no legal basis, so these facts do not move it.
@@ -185,6 +186,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const unchanged =
         firstName.trim() === (user.firstName ?? '') &&
         lastName.trim() === (user.lastName ?? '') &&
+        displayName.trim() === (user.displayName ?? '') &&
         phone.trim() === (user.phone ?? '') &&
         nationalId.trim() === (user.nationalId ?? '') &&
         personnelCode.trim() === (user.personnelCode ?? '') &&
@@ -208,9 +210,9 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         supp === Boolean(user.supplementaryInsurance) &&
         suppStart === (user.supplementaryInsuranceStart ?? '') &&
         suppAmount === (user.supplementaryInsuranceAmount ?? null) &&
+        introduce === Boolean(user.introduce) &&
         cooperationEnded === Boolean(user.cooperationEnded) &&
         agreementType === (user.agreementType ?? 'gross') &&
-        introduce === Boolean(user.introduce) &&
         salaryMode === (user.salaryMode ?? 'regular');
 
     const missing = [
@@ -230,6 +232,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                 data: {
                     firstName: firstName.trim(),
                     lastName: lastName.trim(),
+                    displayName: displayName.trim(),
                     phone: phone.trim(),
                     nationalId: nationalId.trim(),
                     personnelCode: personnelCode.trim() || undefined,
@@ -254,10 +257,10 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     supplementaryInsuranceStart: suppStart,
                     supplementaryInsuranceAmount: suppAmount,
                     cooperationEnded,
+                    introduce: hireDate ? introduce : false,
                     agreementType,
                     salaryMode,
                 },
-                    introduce: hireDate ? introduce : false,
             });
             toast.success('تغییرات ذخیره شد');
             onSaved();
@@ -319,6 +322,16 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     onChange={(e) => setLastName(e.target.value)}
                     maxLength={50}
                     required
+                />
+                <Input
+                    id="edit-display-name"
+                    containerClassName="lg:col-span-6"
+                    packageId="edit-display-name"
+                    label="نام نمایشی (اختیاری)"
+                    placeholder="نامی که همکاران می‌بینند؛ خالی یعنی همان نام و نام خانوادگی"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    maxLength={60}
                 />
                 <Input
                     id="edit-phone"
@@ -388,6 +401,11 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
                 <div className="lg:col-span-6"><OptionalDate label="شروع همکاری" value={hireDate} onChange={setHireDate} /></div>
                 <div className="lg:col-span-6"><OptionalDate label="پایان دوره آزمایشی" value={probationEndDate} onChange={setProbationEndDate} /></div>
+                {hireDate && (
+                    <div className="lg:col-span-12">
+                        <PayrollToggle label="معرفی در داشبورد همکاران (تا یک ماه از شروع همکاری)" checked={introduce} onChange={setIntroduce} />
+                    </div>
+                )}
                 <Input
                     id="edit-insurance-number"
                     containerClassName="lg:col-span-6"
@@ -401,11 +419,6 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     maxLength={20}
                 />
                 <div className="lg:col-span-6"><OptionalDate label="تاریخ شروع بیمه" value={insuranceStartDate} onChange={setInsuranceStartDate} /></div>
-                {hireDate && (
-                    <div className="lg:col-span-12">
-                        <PayrollToggle label="معرفی در داشبورد همکاران (تا یک ماه از شروع همکاری)" checked={introduce} onChange={setIntroduce} />
-                    </div>
-                )}
                 <Input
                     id="edit-sheba"
                     containerClassName="lg:col-span-4"
