@@ -3,22 +3,22 @@
 import { Button } from '@/ui/atoms';
 import { Modal } from '@/ui/atoms/ui.modal';
 import { Avatar } from '@/ui/atoms/ui.avatar';
+import { IconHourglassHigh } from '@tabler/icons-react';
 import { useState } from 'react';
 import { dismissWelcome, greetNewcomer, useWelcome } from './welcome.api';
 import { Newcomer } from './welcome.types';
-import { dayMonthLabel } from './welcome.util';
 
 /** The line under a newcomer: name, day and role in bold, trial only in passing. */
 function IntroLine({ n }: { n: Newcomer }) {
   return (
     <p className="text-sm leading-7 text-slate-600">
-      <b className="text-slate-800">{n.name?.split(' ')[0] ?? 'همکار جدید'}</b> از <b className="text-slate-800">{dayMonthLabel(n.hireDate)}</b>
+      <b className="text-slate-800">{n.name?.split(' ')[0] ?? 'همکار جدید'}</b> به‌تازگی
       {n.jobTitle && (
         <>
           {' '}به‌عنوان <b className="text-slate-800">{n.jobTitle}</b>
         </>
       )}
-      {n.probation && ' (در دورهٔ آزمایشی)'} به خانوادهٔ <b className="text-slate-800">تسمینو</b> پیوست. با انرژی و ایده‌های تازه‌اش در کنار ماست 🌱
+      {' '}به خانوادهٔ <b className="text-slate-800">تسمینو</b> پیوست و با انرژی و ایده‌های تازه‌اش در کنار ماست و امیدواریم کنار هم روزهای خوب و پر از تجربه‌های تازه‌ای بسازیم ✨
     </p>
   );
 }
@@ -57,20 +57,31 @@ export function WelcomeModal() {
   };
 
   return (
-    <Modal isOpen={!closed} onClose={close} className="flex max-h-[85vh] flex-col bg-white pb-2 lg:w-[480px]">
+    <Modal isOpen={!closed} onClose={close} className="flex max-h-[85vh] flex-col bg-white pb-2 lg:w-[400px]">
       <div className="px-5 pt-5 text-center">
         <h2 className="text-lg font-bold text-slate-800">
-          {newcomers.length > 1 ? 'همکاران تازه‌نفس تسمینو اینجا هستند 🎉' : 'یک همکار تازه‌نفس به تسمینو اضافه شد 🎉'}
+          {newcomers.length > 1 ? 'همکاران تازه‌نفس تسمینو اینجا هستند 🎉' : 'یک راوی جدید به تسمینو اضافه شد 🎉'}
         </h2>
         <p className="mt-1 text-sm text-slate-500">{newcomers.length > 1 ? 'همراهانی تازه برای ساختن کارهای بزرگ' : 'یک همراه دیگر برای ساختن کارهای بزرگ'}</p>
               </div>
 
       <ul className="mt-4 min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto px-5">
         {newcomers.map((n) => (
-          <li key={n.id} className="flex flex-col gap-3 py-4">
-            <div className="flex items-center gap-3">
-              <Avatar src={n.picture} name={n.name} className="size-14" labelled />
-              <div className="min-w-0">
+          <li key={n.id} className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="relative">
+                <Avatar src={n.picture} name={n.name} className="size-14" labelled />
+                {n.probation && (
+                  <span
+                    title="دوره آزمایشی"
+                    aria-label="دوره آزمایشی"
+                    className="absolute -left-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-amber-400 text-white ring-2 ring-white"
+                  >
+                    <IconHourglassHigh className="size-3" stroke={2.5} />
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 max-w-full">
                 <div className="truncate font-semibold text-slate-800">{n.name}</div>
                 {n.jobTitle && <div className="truncate text-xs text-slate-400">{n.jobTitle}</div>}
               </div>
