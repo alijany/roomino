@@ -208,7 +208,7 @@ function PayrollContent() {
             {month && month.items.length > 0 && (
               <>
                 {' · '}
-                {isFinal ? 'قطعی شده' : `پیش‌نویس، ${month.drafts.toLocaleString('fa-IR')} ردیف`}
+                {isFinal ? (month.missing > 0 ? `قطعی شده، ${month.missing.toLocaleString('fa-IR')} نفر بدون ردیف` : 'قطعی شده') : `پیش‌نویس، ${month.drafts.toLocaleString('fa-IR')} ردیف`}
               </>
             )}
           </p>
@@ -221,7 +221,7 @@ function PayrollContent() {
       <div className="flex flex-wrap gap-2">
         {canEdit && (
           <>
-        <Button className="gap-1" disabled={generate.isLoading || isFinal} onClick={handleGenerate}>
+        <Button className="gap-1" disabled={generate.isLoading || (isFinal && !month?.missing)} onClick={handleGenerate}>
           <IconPlus className="size-4" />
           ساخت ردیف‌ها
           {month && month.missing > 0 && <Badge tone="info">{month.missing.toLocaleString('fa-IR')} نفر</Badge>}
