@@ -2,8 +2,8 @@
 
 import { Button } from "@/ui/atoms";
 import { TZDate } from '@date-fns/tz';
-import { addDays, addMonths, eachDayOfInterval, format, isBefore, startOfDay, startOfMonth } from "date-fns-jalali";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { addDays, addMonths, addYears, eachDayOfInterval, format, isBefore, startOfDay, startOfMonth } from "date-fns-jalali";
+import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight } from "@tabler/icons-react";
 import { useState, useEffect, useMemo } from "react";
 
 type CalendarProps = {
@@ -70,15 +70,25 @@ export function Calendar({
   return (
     <div className="bg-white rounded-2xl w-full h-full space-y-2 lg:space-y-3">
       <div className="flex justify-between items-center">
-        <Button variant="outline" className="border-none" size="sm" onClick={() => setViewMonth(addMonths(viewMonth, -1))}>
-          <IconChevronRight />
-          <span>ماه قبل</span>
-        </Button>
+        <div className="flex items-center">
+          <Button variant="outline" className="border-none !px-2" size="sm" title="سال قبل" aria-label="سال قبل" onClick={() => setViewMonth(addYears(viewMonth, -1))}>
+            <IconChevronsRight />
+          </Button>
+          <Button variant="outline" className="border-none" size="sm" onClick={() => setViewMonth(addMonths(viewMonth, -1))}>
+            <IconChevronRight />
+            <span>ماه قبل</span>
+          </Button>
+        </div>
         <h2 className="font-semibold">{format(viewMonth, "MMMM yyyy")}</h2>
-        <Button variant="outline" className="border-none" size="sm" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
-          <span>ماه بعد</span>
-          <IconChevronLeft />
-        </Button>
+        <div className="flex items-center">
+          <Button variant="outline" className="border-none" size="sm" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
+            <span>ماه بعد</span>
+            <IconChevronLeft />
+          </Button>
+          <Button variant="outline" className="border-none !px-2" size="sm" title="سال بعد" aria-label="سال بعد" onClick={() => setViewMonth(addYears(viewMonth, 1))}>
+            <IconChevronsLeft />
+          </Button>
+        </div>
       </div>
 
       <hr />

@@ -52,7 +52,14 @@ export function durationLabel(minutes: number | null | undefined): string {
  * A request's length as people think of it: whole days for daily types
  * (leave, mission, remote work), hours and minutes for everything else.
  */
-export function requestDurationLabel(request: Pick<AttendanceRequest, 'type' | 'durationMinutes'>): string {
+export function requestDurationLabel(
+  request: Pick<AttendanceRequest, 'type' | 'durationMinutes'> & Partial<Pick<AttendanceRequest, 'dateFrom' | 'dateTo'>>,
+): string {
+  // «اعلام حضور روزهای گذشته» carries no minutes: its length is the days it covers.
+  if (request.type === RequestType.PRESENCE && request.dateFrom) {
+    const days = Math.round((Date.parse(`${request.dateTo ?? request.dateFrom}T00:00:00Z`) - Date.parse(`${request.dateFrom}T00:00:00Z`)) / 86_400_000) + 1;
+    return `${fa(days)} روز`;
+  }
   const minutes = request.durationMinutes;
   if (minutes && shapeOf(request.type) === 'range' && minutes % MINUTES_PER_WORKDAY === 0) {
     return `${fa(minutes / MINUTES_PER_WORKDAY)} روز`;
