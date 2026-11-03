@@ -11641,6 +11641,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "bigint"
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 0,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "date"
         }
       },
       "name": "user_entity",

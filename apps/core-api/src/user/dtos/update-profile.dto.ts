@@ -73,6 +73,13 @@ export class UpdateUserNameDto {
   @Matches(/^\d{10}$/, { message: 'کد ملی باید ۱۰ رقم باشد' })
   nationalId?: string;
 
+  /** Civil date `YYYY-MM-DD`; empty clears it. */
+  @IsOptional()
+  @code()
+  @ValidateIf((_, v) => v !== '')
+  @Matches(DATE, { message: 'تاریخ تولد نامعتبر است' })
+  birthDate?: string;
+
   @IsOptional()
   @code()
   @IsString()

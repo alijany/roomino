@@ -375,6 +375,7 @@ export class UserService extends BaseRepositoryService<UserEntity> {
       endDate?: string;
       probationEndDate?: string;
       insuranceNumber?: string;
+      birthDate?: string;
       insuranceStartDate?: string;
       bankCardNumber?: string;
       bankAccountNumber?: string;
@@ -479,6 +480,9 @@ export class UserService extends BaseRepositoryService<UserEntity> {
     if (details.endDate !== undefined) user.endDate = end;
     if (details.insuranceNumber !== undefined) {
       user.insuranceNumber = details.insuranceNumber || undefined;
+    }
+    if (details.birthDate !== undefined) {
+      user.birthDate = details.birthDate || undefined;
     }
     if (details.insuranceStartDate !== undefined) {
       user.insuranceStartDate = details.insuranceStartDate || undefined;

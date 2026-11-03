@@ -2,7 +2,7 @@
 
 import { Button } from "@/ui/atoms";
 import { TZDate } from '@date-fns/tz';
-import { addDays, addMonths, addYears, eachDayOfInterval, format, isBefore, startOfDay, startOfMonth } from "date-fns-jalali";
+import { addDays, addMonths, addYears, getYear, setYear, eachDayOfInterval, format, isBefore, startOfDay, startOfMonth } from "date-fns-jalali";
 import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight } from "@tabler/icons-react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -29,7 +29,14 @@ export function Calendar({
     ? startOfDay(minSelectableDate)
     : defaultMinDate;
   const today: Date = startOfDay(now);
-  const [viewMonth, setViewMonth] = useState<Date>(today);
+  // Open on the chosen day, so a far-off date (a birthday) needs no paging.
+  const [viewMonth, setViewMonth] = useState<Date>(selectedDates[0] ?? today);
+  const [pickingYear, setPickingYear] = useState(false);
+  const years: number[] = useMemo(() => {
+    const first = getYear(minDate);
+    const last = Math.max(getYear(today) + 5, getYear(viewMonth));
+    return Array.from({ length: last - first + 1 }, (_, i) => last - i);
+  }, [minDate, today, viewMonth]);
 
   // Calculate the first day of the month and its day-of-week (1-7)
   const daysInMonth: Date[] = useMemo(() => {
@@ -79,7 +86,9 @@ export function Calendar({
             <span>ماه قبل</span>
           </Button>
         </div>
-        <h2 className="font-semibold">{format(viewMonth, "MMMM yyyy")}</h2>
+        <button type="button" className="font-semibold rounded-lg px-2 py-1 hover:bg-slate-100" title="انتخاب سال" onClick={() => setPickingYear((v) => !v)}>
+          {format(viewMonth, "MMMM yyyy")}
+        </button>
         <div className="flex items-center">
           <Button variant="outline" className="border-none" size="sm" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
             <span>ماه بعد</span>
@@ -93,6 +102,24 @@ export function Calendar({
 
       <hr />
 
+      {pickingYear ? (
+        <div className="grid max-h-72 grid-cols-4 gap-1 overflow-y-auto">
+          {years.map((year) => (
+            <Button
+              key={year}
+              variant={year === getYear(viewMonth) ? "secondary" : "ghost"}
+              className="rounded-2xl"
+              onClick={() => {
+                setViewMonth(setYear(viewMonth, year));
+                setPickingYear(false);
+              }}
+            >
+              {year}
+            </Button>
+          ))}
+        </div>
+      ) : (
+      <>
       <div className="grid grid-cols-7 text-center font-semibold">
         {daysInWeek.map((day) => (
           <div key={day} className="py-1">
@@ -119,6 +146,8 @@ export function Calendar({
           );
         })}
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -158,6 +158,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [endDate, setEndDate] = useState(user.endDate ?? '');
     const [probationEndDate, setProbationEndDate] = useState(user.probationEndDate ?? '');
     const [insuranceNumber, setInsuranceNumber] = useState(user.insuranceNumber ?? '');
+    const [birthDate, setBirthDate] = useState(user.birthDate ?? '');
     const [insuranceStartDate, setInsuranceStartDate] = useState(user.insuranceStartDate ?? '');
     const [bankCardNumber, setBankCardNumber] = useState(user.bankCardNumber ?? '');
     const [bankAccountNumber, setBankAccountNumber] = useState(user.bankAccountNumber ?? '');
@@ -191,6 +192,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         endDate === (user.endDate ?? '') &&
         probationEndDate === (user.probationEndDate ?? '') &&
         insuranceNumber.trim() === (user.insuranceNumber ?? '') &&
+        birthDate === (user.birthDate ?? '') &&
         insuranceStartDate === (user.insuranceStartDate ?? '') &&
         bankCardNumber.trim() === (user.bankCardNumber ?? '') &&
         bankAccountNumber.trim() === (user.bankAccountNumber ?? '') &&
@@ -234,6 +236,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     endDate,
                     probationEndDate,
                     insuranceNumber: insuranceNumber.trim(),
+                    birthDate,
                     insuranceStartDate,
                     bankCardNumber: bankCardNumber.trim(),
                     bankAccountNumber: bankAccountNumber.trim(),
@@ -339,6 +342,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     onChange={(e) => setNationalId(e.target.value.replace(/[^0-9۰-۹٠-٩]/g, ''))}
                     maxLength={10}
                 />
+                <div className="lg:col-span-3"><OptionalDate label="تاریخ تولد" value={birthDate} onChange={setBirthDate} min={new Date('1940-01-01')} initial="1995-01-01" /></div>
                 <Input
                     id="edit-personnel-code"
                     containerClassName="lg:col-span-3"
@@ -570,7 +574,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
 }
 
 /** A Jalali date that may be empty: «تعیین تاریخ» starts it at today, ✕ clears it. */
-function OptionalDate({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function OptionalDate({ label, value, onChange, min = new Date('2000-01-01'), initial }: { label: string; value: string; onChange: (value: string) => void; min?: Date; initial?: string }) {
     return (
         <div className="w-full min-w-0">
             <div className="mb-1.5 text-sm font-medium text-slate-700">{label}</div>
@@ -582,7 +586,7 @@ function OptionalDate({ label, value, onChange }: { label: string; value: string
                             className="min-w-0 flex-1 justify-start gap-2 !px-3"
                             label={label}
                             value={fromCivilDate(value)}
-                            minSelectableDate={new Date('2000-01-01')}
+                            minSelectableDate={min}
                             onSelect={(d) => onChange(toCivilDate(d))}
                         />
                         <Button type="button" variant="ghost" size="sm" className="shrink-0 !px-2 text-slate-400" aria-label={`پاک کردن ${label}`} onClick={() => onChange('')}>
@@ -590,7 +594,7 @@ function OptionalDate({ label, value, onChange }: { label: string; value: string
                         </Button>
                     </>
                 ) : (
-                    <Button type="button" variant="outline" size="sm" className="w-full justify-start text-slate-500" onClick={() => onChange(tehranToday())}>
+                    <Button type="button" variant="outline" size="sm" className="w-full justify-start text-slate-500" onClick={() => onChange(initial ?? tehranToday())}>
                         تعیین تاریخ
                     </Button>
                 )}
