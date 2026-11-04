@@ -11689,6 +11689,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "father_name": {
+          "name": "father_name",
+          "type": "varchar(60)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 60,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "name": "user_entity",

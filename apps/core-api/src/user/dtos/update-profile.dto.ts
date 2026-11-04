@@ -87,6 +87,13 @@ export class UpdateUserNameDto {
   @Matches(/^\d{10}$/, { message: 'کد ملی باید ۱۰ رقم باشد' })
   nationalId?: string;
 
+  /** Empty clears it. */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(60, { message: 'نام پدر حداکثر ۶۰ نویسه است' })
+  fatherName?: string;
+
   /** Civil date `YYYY-MM-DD`; empty clears it. */
   @IsOptional()
   @code()

@@ -104,6 +104,10 @@ export class UserEntity extends BaseEntity {
   @Property({ type: 'date', nullable: true })
   ndaSignedDate?: string;
 
+  /** Father's name, for the payroll and insurance paperwork. */
+  @Property({ length: 60, nullable: true })
+  fatherName?: string;
+
   /** Date of birth, civil date. */
   @Property({ type: 'date', nullable: true })
   birthDate?: string;

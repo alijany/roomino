@@ -126,7 +126,7 @@ function EditUserContent() {
                     <div className="space-y-4">
                         <UserHero user={user} />
                         {/* Keyed by what the server holds, so a save starts the fields from it. */}
-                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.displayName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
+                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.displayName}|${user.fatherName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
                             below={
                             <>
                                 <SectionCard id="sec-contract" icon={IconFileText} title="قرارداد و NDA" hint="سابقه‌ی قراردادها، تمدید و امضای NDA؛ هر تغییر همان لحظه ذخیره می‌شود">
@@ -159,6 +159,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     const [endDate, setEndDate] = useState(user.endDate ?? '');
     const [probationEndDate, setProbationEndDate] = useState(user.probationEndDate ?? '');
     const [insuranceNumber, setInsuranceNumber] = useState(user.insuranceNumber ?? '');
+    const [fatherName, setFatherName] = useState(user.fatherName ?? '');
     const [birthDate, setBirthDate] = useState(user.birthDate ?? '');
     const [insuranceStartDate, setInsuranceStartDate] = useState(user.insuranceStartDate ?? '');
     const [bankCardNumber, setBankCardNumber] = useState(user.bankCardNumber ?? '');
@@ -195,6 +196,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         endDate === (user.endDate ?? '') &&
         probationEndDate === (user.probationEndDate ?? '') &&
         insuranceNumber.trim() === (user.insuranceNumber ?? '') &&
+        fatherName.trim() === (user.fatherName ?? '') &&
         birthDate === (user.birthDate ?? '') &&
         insuranceStartDate === (user.insuranceStartDate ?? '') &&
         bankCardNumber.trim() === (user.bankCardNumber ?? '') &&
@@ -241,6 +243,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     endDate,
                     probationEndDate,
                     insuranceNumber: insuranceNumber.trim(),
+                    fatherName: fatherName.trim(),
                     birthDate,
                     insuranceStartDate,
                     bankCardNumber: bankCardNumber.trim(),
@@ -357,6 +360,15 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     value={nationalId}
                     onChange={(e) => setNationalId(e.target.value.replace(/[^0-9۰-۹٠-٩]/g, ''))}
                     maxLength={10}
+                />
+                <Input
+                    id="edit-father-name"
+                    containerClassName="lg:col-span-3"
+                    packageId="edit-father-name"
+                    label="نام پدر"
+                    value={fatherName}
+                    onChange={(e) => setFatherName(e.target.value)}
+                    maxLength={60}
                 />
                 <div className="lg:col-span-3"><OptionalDate label="تاریخ تولد" value={birthDate} onChange={setBirthDate} min={new Date('1940-01-01')} initial="1995-01-01" /></div>
                 <Input

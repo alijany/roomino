@@ -29,6 +29,7 @@ export interface User {
   probationEndDate?: string | null;
   insuranceNumber?: string | null;
   birthDate?: string | null;
+  fatherName?: string | null;
   insuranceStartDate?: string | null;
   bankCardNumber?: string | null;
   bankAccountNumber?: string | null;
@@ -106,6 +107,8 @@ export interface UpdateUserNameDto {
   /** Empty clears it (no trial). */
   probationEndDate?: string;
   insuranceNumber?: string;
+  /** Empty clears it. */
+  fatherName?: string;
   /** Civil date; empty clears it. */
   birthDate?: string;
   /** Civil date; empty clears it. */
