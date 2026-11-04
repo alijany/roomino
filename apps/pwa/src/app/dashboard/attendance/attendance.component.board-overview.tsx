@@ -1,7 +1,8 @@
 'use client';
 
 import { cn } from '@/libs/style/style.util.helpers';
-import { Button } from '@/ui/atoms';
+import { Button, Input } from '@/ui/atoms';
+import { IconSearch } from '@tabler/icons-react';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
 import { ReviewBase } from './attendance.api';
@@ -11,6 +12,15 @@ import { RequestDetailModal, ReviewActions } from './attendance.component.review
 import { ScheduleModeBoardNotice } from './attendance.component.schedule-mode';
 import { AttendanceRequest, Board, BoardRow, BoardStatus } from './attendance.types';
 import { fa } from './attendance.util';
+
+/** Persian and Arabic digits to Latin, ي/ك to ی/ک, lower-cased — so typing either way finds the same person. */
+const searchKey = (text: string) =>
+  text
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .toLowerCase();
 
 type Group = 'office' | 'remote' | 'leave' | 'waiting' | 'missing';
 type Filter = Group | 'all';
@@ -139,6 +149,7 @@ export function BoardOverview({
   emptyMessage: string;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<AttendanceRequest | null>(null);
 
   const counts = useMemo(() => {
@@ -149,7 +160,14 @@ export function BoardOverview({
     return result;
   }, [data.rows]);
 
-  const rows = filter === 'all' ? data.rows : data.rows.filter((row) => GROUPS[filter].includes(row.status));
+  const words = searchKey(search).split(/\s+/).filter(Boolean);
+  const rows = data.rows
+    .filter((row) => filter === 'all' || GROUPS[filter].includes(row.status))
+    .filter((row) => {
+      if (!words.length) return true;
+      const haystack = searchKey(`${row.employee.name ?? ''} ${row.employee.personnelCode ?? ''}`);
+      return words.every((word) => haystack.includes(word));
+    });
 
   return (
     <div className="space-y-3">
@@ -195,12 +213,27 @@ export function BoardOverview({
       <div className="grid gap-3 xl:grid-cols-3">
         <Panel className="gap-3 xl:col-span-2">
           {toolbar}
+          <div className="sm:w-72">
+            <Input
+              icon={<IconSearch className="size-4 text-slate-400" />}
+              placeholder="نام یا کد پرسنلی"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           {rows.length ? (
             <BoardTable rows={rows} groupLabel={groupLabel} onOpen={onOpenRow} />
           ) : data.rows.length ? (
             <div className="flex flex-col items-center gap-3 py-10 text-sm text-slate-400">
-              کسی در این وضعیت نیست.
-              <Button variant="outline" size="sm" onClick={() => setFilter('all')}>
+              {search.trim() ? 'کسی با این مشخصات پیدا نشد.' : 'کسی در این وضعیت نیست.'}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFilter('all');
+                  setSearch('');
+                }}
+              >
                 نمایش همه
               </Button>
             </div>
