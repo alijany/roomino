@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { jalaliLabel, tehranToday } from '@/app/dashboard/attendance/attendance.util';
+import { useTeams } from '../teams/teams.api';
 import { useContractStatuses } from './contracts.api';
 import { ContractStatus } from './contracts.types';
 import { useApproveUser } from './users.api';
@@ -56,6 +57,8 @@ function StatusBadge({ user, contract, loaded }: { user: User; contract?: Contra
 export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps) {
     const router = useRouter();
     const { data: statuses } = useContractStatuses();
+    const { data: teams } = useTeams();
+    const teamNames = new Map((teams?.items ?? []).map((t) => [t.id, t.name]));
     const contracts = new Map((statuses?.items ?? []).map((c) => [c.userId, c]));
     return (
         <Table
@@ -75,7 +78,7 @@ export function UsersTable({ users, onChanged, canManageRoles }: UsersTableProps
                         />
                     ),
                 },
-                { key: 'title', header: 'عنوان شغلی', render: (user) => user.jobTitle ?? '—', hideOnMobile: true },
+                { key: 'team', header: 'تیم', render: (user) => (user.teamId ? teamNames.get(user.teamId) ?? '—' : '—'), hideOnMobile: true },
                 {
                     key: 'hire',
                     header: 'شروع همکاری',

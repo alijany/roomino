@@ -17,6 +17,7 @@ import {
   ShiftController,
 } from './controllers/shift.controller';
 import { TeamController } from './controllers/team.controller';
+import { TeamsController } from './controllers/teams.controller';
 import { WorkPolicyController } from './controllers/work-policy.controller';
 import { WorkplaceController } from './controllers/workplace.controller';
 import { AttendanceRequestAttachmentEntity } from './entities/attendance-request-attachment.entity';
@@ -117,6 +118,7 @@ import { WorkplaceService } from './services/workplace.service';
     AdminShiftController,
     AdminHolidayController,
     JobGroupController,
+    TeamsController,
     WorkPolicyController,
     EmployeeController,
     MeController,

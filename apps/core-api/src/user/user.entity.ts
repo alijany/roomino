@@ -3,11 +3,14 @@ import {
   Collection,
   Entity,
   EventArgs,
+  ManyToOne,
   OneToMany,
   Property,
+  Rel,
   Unique,
   types,
 } from '@mikro-orm/core';
+import { JobGroupEntity } from 'src/attendance/entities/job-group.entity';
 import { BaseEntity } from 'src/libs/orm/orm.entity.base';
 import { RolesEntity } from 'src/roles/roles.entity';
 import { nextPersonnelCode } from './user.personnel-code';
@@ -103,6 +106,10 @@ export class UserEntity extends BaseEntity {
 
   @Property({ type: 'date', nullable: true })
   ndaSignedDate?: string;
+
+  /** The person's team in the organisation; their attendance settings come from it. */
+  @ManyToOne(() => JobGroupEntity, { nullable: true, deleteRule: 'set null' })
+  team?: Rel<JobGroupEntity>;
 
   /** Father's name, for the payroll and insurance paperwork. */
   @Property({ length: 60, nullable: true })

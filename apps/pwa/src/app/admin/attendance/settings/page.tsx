@@ -16,7 +16,7 @@ import { WorkplacesSettings } from '@/app/dashboard/attendance/attendance.compon
 const TABS = [
   { id: 'workplaces', label: 'محل‌های کار' },
   { id: 'shifts', label: 'شیفت‌ها' },
-  { id: 'groups', label: 'گروه‌های شغلی' },
+  { id: 'groups', label: 'تیم‌ها' },
   { id: 'policies', label: 'سیاست‌های کاری' },
   { id: 'holidays', label: 'تعطیلات' },
 ];
@@ -32,7 +32,7 @@ export default function AttendanceSettingsPage() {
           <PageHeader
             icon={<IconAdjustmentsHorizontal className="size-6" />}
             title="تنظیمات حضور و غیاب"
-            subtitle="محل کار و شعاع مجاز، شیفت‌ها، گروه‌ها و تاییدکنندگان، سقف مرخصی و تعطیلات"
+            subtitle="محل کار و شعاع مجاز، شیفت‌ها، تیم‌ها و مدیران، سقف مرخصی و تعطیلات"
           />
           <Panel className="gap-3">
             <Tabs tabs={TABS} defaultTab="workplaces" onTabChange={setTab} />

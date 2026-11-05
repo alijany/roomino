@@ -52,6 +52,7 @@ function toUserListItem(user: UserEntity) {
     insuranceNumber: user.insuranceNumber ?? null,
     birthDate: user.birthDate ?? null,
     fatherName: user.fatherName ?? null,
+    teamId: user.team?.id ?? null,
     insuranceStartDate: user.insuranceStartDate ?? null,
     bankCardNumber: user.bankCardNumber ?? null,
     bankAccountNumber: user.bankAccountNumber ?? null,
@@ -114,6 +115,7 @@ export class AdminUserController {
       role,
       status,
       activeOnly,
+      teamId,
       ...rest
     } = filters;
     const today = new Date().toLocaleDateString('sv-SE', {
@@ -160,6 +162,13 @@ export class AdminUserController {
           rest,
           byStatus,
           role ? { roles: { role } } : {},
+          teamId
+            ? {
+                team: {
+                  $in: await this.userService.teamWithDescendants(teamId),
+                },
+              }
+            : {},
           like
             ? {
                 $or: [
@@ -308,6 +317,7 @@ export class AdminUserController {
       insuranceNumber: user.insuranceNumber ?? null,
       birthDate: user.birthDate ?? null,
       fatherName: user.fatherName ?? null,
+      teamId: user.team?.id ?? null,
       insuranceStartDate: user.insuranceStartDate ?? null,
       bankCardNumber: user.bankCardNumber ?? null,
       bankAccountNumber: user.bankAccountNumber ?? null,

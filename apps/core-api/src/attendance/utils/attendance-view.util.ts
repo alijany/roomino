@@ -84,6 +84,8 @@ export function toShiftView(shift: ShiftEntity) {
   };
 }
 
+const wrappedLoaded = (ref: { name?: string }) => ref.name !== undefined;
+
 export function toJobGroupView(group: JobGroupEntity, employeeCount?: number) {
   return {
     id: group.id,
@@ -94,6 +96,9 @@ export function toJobGroupView(group: JobGroupEntity, employeeCount?: number) {
       ? group.approvers.getItems().map(toUserBrief)
       : [],
     employeeCount: employeeCount ?? null,
+    parentId: group.parent?.id ?? null,
+    parentName:
+      group.parent && wrappedLoaded(group.parent) ? group.parent.name : null,
   };
 }
 

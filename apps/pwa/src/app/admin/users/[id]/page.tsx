@@ -11,6 +11,7 @@ import { IconCash, IconFileText, IconId, IconShieldLock, IconUser, IconX } from 
 import { useParams } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import { toast } from 'react-toastify';
+import { setUserTeam, useTeams } from '../../teams/teams.api';
 import { useUpdateUserName, useUser } from '../users.api';
 import { useFeatures } from '../../settings/settings.api';
 import { ContractsCard } from '../contracts.component.card';
@@ -126,7 +127,7 @@ function EditUserContent() {
                     <div className="space-y-4">
                         <UserHero user={user} />
                         {/* Keyed by what the server holds, so a save starts the fields from it. */}
-                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.displayName}|${user.fatherName}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
+                        <BasicInfoForm key={`${user.firstName}|${user.lastName}|${user.displayName}|${user.fatherName}|${user.teamId}|${user.phone}|${user.nationalId}|${user.personnelCode}|${user.jobTitle}`} user={user} onSaved={refresh}
                             below={
                             <>
                                 <SectionCard id="sec-contract" icon={IconFileText} title="قرارداد و NDA" hint="سابقه‌ی قراردادها، تمدید و امضای NDA؛ هر تغییر همان لحظه ذخیره می‌شود">
@@ -182,6 +183,8 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
     // A flat salary has no legal basis, so these facts do not move it.
     const dim = salaryMode === 'flat' ? 'opacity-40' : '';
     const { submit, isLoading, error } = useUpdateUserName();
+    const teams = useTeams();
+    const [teamId, setTeamId] = useState<number | null>(user.teamId ?? null);
     const features = useFeatures();
 
     const unchanged =
@@ -196,6 +199,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         endDate === (user.endDate ?? '') &&
         probationEndDate === (user.probationEndDate ?? '') &&
         insuranceNumber.trim() === (user.insuranceNumber ?? '') &&
+        teamId === (user.teamId ?? null) &&
         fatherName.trim() === (user.fatherName ?? '') &&
         birthDate === (user.birthDate ?? '') &&
         insuranceStartDate === (user.insuranceStartDate ?? '') &&
@@ -265,6 +269,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     salaryMode,
                 },
             });
+            if (teamId !== (user.teamId ?? null)) await setUserTeam(user.id, teamId);
             toast.success('تغییرات ذخیره شد');
             onSaved();
         } catch {
@@ -393,6 +398,22 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
                     maxLength={100}
                     required
                 />
+                <div className="space-y-1.5 lg:col-span-6 sm:col-span-2">
+                    <div className="text-sm font-medium text-slate-700">تیم</div>
+                    <Dropdown
+                        items={[
+                            { label: 'بدون تیم', value: null as number | null },
+                            ...(teams.data?.items ?? []).map((t) => ({
+                                label: t.parentName ? `${t.name} (زیر ${t.parentName})` : t.name,
+                                value: t.id as number | null,
+                            })),
+                        ]}
+                        value={teamId}
+                        onChange={(value) => setTeamId(value ?? null)}
+                        placeholder="بدون تیم"
+                        variant="outline"
+                    />
+                </div>
                 <Input
                     id="edit-email"
                     containerClassName="lg:col-span-3"

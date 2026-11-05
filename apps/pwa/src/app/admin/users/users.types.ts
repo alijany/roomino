@@ -30,6 +30,8 @@ export interface User {
   insuranceNumber?: string | null;
   birthDate?: string | null;
   fatherName?: string | null;
+  /** The person's team in the organisation. */
+  teamId?: number | null;
   insuranceStartDate?: string | null;
   bankCardNumber?: string | null;
   bankAccountNumber?: string | null;
@@ -84,6 +86,8 @@ export interface UserFilterDto {
   status?: UserStatusFilter;
   text?: string;
   role?: Role;
+  /** A team; its sub-teams' members are included. */
+  teamId?: number;
 }
 
 export interface AddUserRoleDto {

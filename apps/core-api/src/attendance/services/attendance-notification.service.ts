@@ -37,8 +37,8 @@ export class AttendanceNotificationService {
   }
 
   /**
-   * Who should decide on a person's request: the approvers of their job
-   * group, else HR, else admins. Never the requester.
+   * Who should decide on a person's request: the managers of their team
+   * (or of the nearest parent team), else HR, else admins. Never the requester.
    */
   private async reviewersFor(
     profile: EmployeeProfileEntity,
@@ -46,13 +46,18 @@ export class AttendanceNotificationService {
     const requesterId = profile.user.id;
     let ids: number[] = [];
 
-    if (profile.jobGroup) {
-      const group = await this.em.findOne(
+    // The team's managers; with none (or only the requester), the nearest
+    // parent team that has some.
+    let teamId: number | undefined = profile.jobGroup?.id;
+    for (let depth = 0; teamId && depth < 20; depth++) {
+      const team: JobGroupEntity | null = await this.em.findOne(
         JobGroupEntity,
-        { id: profile.jobGroup.id },
-        { populate: ['approvers'] },
+        { id: teamId },
+        { populate: ['approvers', 'parent'] },
       );
-      ids = group?.approvers.getItems().map((u) => u.id) ?? [];
+      ids = team?.approvers.getItems().map((u) => u.id) ?? [];
+      if (ids.some((id) => id !== requesterId)) break;
+      teamId = team?.parent?.id;
     }
 
     for (const role of [Role.HR, Role.ADMIN]) {

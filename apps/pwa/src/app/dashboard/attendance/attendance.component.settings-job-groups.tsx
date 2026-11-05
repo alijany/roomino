@@ -1,56 +1,45 @@
 'use client';
 
-import { Avatar, Button, Input } from '@/ui/atoms';
+import { Avatar, Button } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView } from '@/ui/molecules';
-import { ConfirmModal } from '@/ui/molecules/confirm-modal';
-import { IconPencil, IconPlus, IconSearch, IconTrash, IconX } from '@tabler/icons-react';
+import { IconPencil } from '@tabler/icons-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useApproverCandidates, useDeleteJobGroup, useJobGroups, useSaveJobGroup } from './attendance.api';
+import { useJobGroups, useSaveJobGroup } from './attendance.api';
 import { AttendanceModeBadge, Field, FormModal } from './attendance.component.layout';
 import { AttendanceModePicker } from './attendance.component.mode-picker';
 import { WeekdayPicker } from './attendance.component.weekday-picker';
 import { WEEKDAY_LABELS } from './attendance.constants';
-import { AttendanceMode, JobGroup, UserBrief } from './attendance.types';
+import { AttendanceMode, JobGroup } from './attendance.types';
 import { errorMessage, fa } from './attendance.util';
 
+/**
+ * The attendance side of the organisation's teams: how each team checks in
+ * and its fixed remote days. Teams themselves — name, parent, managers and
+ * members — are managed under «تیم‌ها».
+ */
 export function JobGroupsSettings() {
   const { data, error, isLoading, refresh } = useJobGroups();
-  const remove = useDeleteJobGroup();
-  const [editing, setEditing] = useState<JobGroup | 'new' | null>(null);
-  const [deleting, setDeleting] = useState<JobGroup | null>(null);
-
-  const handleDelete = async () => {
-    if (!deleting) return;
-    try {
-      await remove.submit(deleting.id);
-      toast.success('گروه شغلی حذف شد');
-      refresh();
-    } catch (deleteError) {
-      toast.error(errorMessage(deleteError, 'حذف انجام نشد'));
-    } finally {
-      setDeleting(null);
-    }
-  };
+  const [editing, setEditing] = useState<JobGroup | null>(null);
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-slate-500">
-          تاییدکنندگان هر گروه در «تیم من» درخواست‌ها و تردد اعضای گروه را بررسی می‌کنند — هرگز درخواست خودشان را.
+          شیوهٔ تردد و روزهای دورکاری ثابت هر تیم را اینجا تنظیم کنید. مدیران تیم در «تیم من» درخواست‌ها و تردد اعضا (و زیرتیم‌ها) را بررسی می‌کنند — هرگز درخواست خودشان را.
         </p>
-        <Button className="gap-2" onClick={() => setEditing('new')}>
-          <IconPlus className="size-4" />
-          گروه جدید
-        </Button>
+        <Link href="/admin/teams" className="text-sm font-medium text-brand-600 hover:underline">
+          مدیریت تیم‌ها، مدیران و اعضا
+        </Link>
       </div>
       <DataView
         data={data}
         error={error}
         isLoading={isLoading}
         isEmpty={(d) => !d?.items.length}
-        emptyMessage="هنوز گروه شغلی تعریف نشده است."
+        emptyMessage="هنوز تیمی تعریف نشده است. تیم‌ها را از «تیم‌ها» در مدیریت سازمان بسازید."
         onRetry={refresh}
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -59,6 +48,7 @@ export function JobGroupsSettings() {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-medium text-slate-800">{group.name}</div>
+                  {group.parentName && <div className="text-xs text-slate-400">زیر {group.parentName}</div>}
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     {fa(group.employeeCount ?? 0)} عضو
                     <AttendanceModeBadge mode={group.attendanceMode} />
@@ -69,20 +59,9 @@ export function JobGroupsSettings() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" className="!px-2" onClick={() => setEditing(group)} aria-label="ویرایش">
-                    <IconPencil className="size-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="!px-2 border-none text-rose-500"
-                    onClick={() => setDeleting(group)}
-                    aria-label={`حذف ${group.name}`}
-                  >
-                    <IconTrash className="size-4" />
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" className="!px-2" onClick={() => setEditing(group)} aria-label="ویرایش">
+                  <IconPencil className="size-4" />
+                </Button>
               </div>
               <div className="flex flex-wrap gap-1">
                 {group.approvers.length ? (
@@ -93,7 +72,7 @@ export function JobGroupsSettings() {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-xs text-amber-600">بدون تاییدکننده — درخواست‌ها به منابع انسانی می‌رسد</span>
+                  <span className="text-xs text-amber-600">بدون مدیر — درخواست‌ها به منابع انسانی می‌رسد</span>
                 )}
               </div>
             </div>
@@ -101,46 +80,21 @@ export function JobGroupsSettings() {
         </div>
       </DataView>
 
-      {editing && (
-        <JobGroupForm
-          key={editing === 'new' ? 'new' : editing.id}
-          group={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
-          onSaved={refresh}
-        />
-      )}
-      <ConfirmModal
-        isOpen={deleting !== null}
-        onClose={() => setDeleting(null)}
-        onConfirm={handleDelete}
-        title="حذف گروه شغلی"
-        message={`«${deleting?.name ?? ''}» حذف شود؟ اعضای آن بدون گروه می‌مانند.`}
-        confirmButtonText="حذف"
-        cancelButtonText="بازگشت"
-        isLoading={remove.isLoading}
-      />
+      {editing && <JobGroupForm key={editing.id} group={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
     </div>
   );
 }
 
-function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onClose: () => void; onSaved: () => void }) {
+function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup; onClose: () => void; onSaved: () => void }) {
   const save = useSaveJobGroup();
-  const [name, setName] = useState(group?.name ?? '');
-  const [mode, setMode] = useState<AttendanceMode>(group?.attendanceMode ?? AttendanceMode.TRACKED);
-  const [remoteDays, setRemoteDays] = useState<number[]>(group?.remoteDays ?? []);
-  const [approvers, setApprovers] = useState<UserBrief[]>(group?.approvers ?? []);
-  const [search, setSearch] = useState('');
-  const candidates = useApproverCandidates(search, search.trim().length > 0);
-
-  const add = (user: UserBrief) => {
-    if (!approvers.some((a) => a.id === user.id)) setApprovers([...approvers, user]);
-    setSearch('');
-  };
+  const [mode, setMode] = useState<AttendanceMode>(group.attendanceMode);
+  const [remoteDays, setRemoteDays] = useState<number[]>(group.remoteDays);
 
   const handleSave = async () => {
     try {
-      await save.submit({ id: group?.id, data: { name: name.trim(), approverIds: approvers.map((a) => a.id), attendanceMode: mode, remoteDays } });
-      toast.success(group ? 'گروه شغلی ویرایش شد' : 'گروه شغلی ایجاد شد');
+      // Only the attendance settings: name, parent and managers stay as they are.
+      await save.submit({ id: group.id, data: { name: group.name, attendanceMode: mode, remoteDays } });
+      toast.success('تنظیمات حضور و غیاب تیم ذخیره شد');
       onSaved();
       onClose();
     } catch (saveError) {
@@ -152,10 +106,10 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
     <FormModal
       isOpen
       onClose={onClose}
-      title={group ? 'ویرایش گروه شغلی' : 'گروه شغلی جدید'}
+      title={`حضور و غیاب تیم «${group.name}»`}
       footer={
         <>
-          <Button className="flex-1" disabled={!name.trim() || save.isLoading} onClick={handleSave}>
+          <Button className="flex-1" disabled={save.isLoading} onClick={handleSave}>
             {save.isLoading ? 'در حال ذخیره...' : 'ذخیره'}
           </Button>
           <Button variant="ghost" className="flex-1 bg-slate-100" onClick={onClose}>
@@ -164,64 +118,18 @@ function JobGroupForm({ group, onClose, onSaved }: { group: JobGroup | null; onC
         </>
       }
     >
-      <Input label="نام گروه" value={name} onChange={(e) => setName(e.target.value)} />
       <Field
         label="نوع حضور اعضا"
         hint={
-          group && mode !== group.attendanceMode
+          mode !== group.attendanceMode
             ? 'اعضایی که نوع حضور جداگانه ندارند از این تغییر پیروی می‌کنند. «بدون ثبت» از امروز شروع می‌شود، بازگشت از آن از فردا؛ روزهای گذشته عوض نمی‌شوند.'
             : 'هر عضو را می‌توان در فرم پرسنل استثنا کرد.'
         }
       >
         <AttendanceModePicker value={mode} onChange={(next) => next && setMode(next)} />
       </Field>
-      <Field label="روزهای دورکاری ثابت" hint="برای همه‌ی اعضای گروه؛ به روزهای دورکاری خود هر عضو اضافه می‌شود. در این روزها ورود و خروج از هر جایی پذیرفته و کل موظفی شیفت کارکرد حساب می‌شود.">
+      <Field label="روزهای دورکاری ثابت" hint="برای همه‌ی اعضای تیم؛ به روزهای دورکاری خود هر عضو اضافه می‌شود. در این روزها ورود و خروج از هر جایی پذیرفته و کل موظفی شیفت کارکرد حساب می‌شود.">
         <WeekdayPicker value={remoteDays} onChange={setRemoteDays} />
-      </Field>
-      <Field label="تاییدکنندگان">
-        <div className="mb-2 flex flex-wrap gap-1">
-          {approvers.map((a) => (
-            <span key={a.id} className="flex items-center gap-1.5 rounded-lg bg-sky-50 py-1 pe-2 ps-1 text-sm text-sky-700">
-              <Avatar src={a.profilePicture} name={a.name} className="size-6" />
-              {a.name ?? fa(a.phone)}
-              <button type="button" onClick={() => setApprovers(approvers.filter((x) => x.id !== a.id))} aria-label="حذف">
-                <IconX className="size-3.5" />
-              </button>
-            </span>
-          ))}
-          {!approvers.length && <span className="text-xs text-slate-400">هنوز کسی انتخاب نشده است.</span>}
-        </div>
-        <Input
-          icon={<IconSearch className="size-4 text-slate-400" />}
-          placeholder="جستجوی کاربر با نام یا موبایل"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {search.trim() && (
-          <div className="mt-2 max-h-40 space-y-1 overflow-y-auto">
-            {candidates.data?.items
-              .filter((u) => !approvers.some((a) => a.id === u.id))
-              .map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => add(u)}
-                  className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <span className="flex items-center gap-2">
-                    <IconPlus className="size-4 text-slate-400" />
-                    <Avatar src={u.profilePicture} name={u.name} className="size-6" />
-                    {u.name ?? 'بدون نام'}
-                  </span>
-                  <span dir="ltr" className="text-xs text-slate-400">{fa(u.phone)}</span>
-                </button>
-              ))}
-            {candidates.isLoading && <p className="py-2 text-center text-xs text-slate-400">در حال جستجو...</p>}
-            {candidates.data && !candidates.data.items.some((u) => !approvers.some((a) => a.id === u.id)) && (
-              <p className="py-2 text-center text-xs text-slate-400">کاربر دیگری پیدا نشد.</p>
-            )}
-          </div>
-        )}
       </Field>
     </FormModal>
   );

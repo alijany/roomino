@@ -4608,6 +4608,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "json"
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
         }
       },
       "name": "job_group_entity",
@@ -4635,7 +4651,21 @@
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "job_group_entity_parent_id_foreign": {
+          "columnNames": [
+            "parent_id"
+          ],
+          "constraintName": "job_group_entity_parent_id_foreign",
+          "localTableName": "public.job_group_entity",
+          "referencedTableName": "public.job_group_entity",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "cascade",
+          "deleteRule": "set null"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
@@ -11705,6 +11735,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
         }
       },
       "name": "user_entity",
@@ -11752,7 +11798,21 @@
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "user_entity_team_id_foreign": {
+          "columnNames": [
+            "team_id"
+          ],
+          "constraintName": "user_entity_team_id_foreign",
+          "localTableName": "public.user_entity",
+          "referencedTableName": "public.job_group_entity",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "cascade",
+          "deleteRule": "set null"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },

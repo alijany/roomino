@@ -45,6 +45,23 @@ export function isValidNationalId(value: string): boolean {
 
 @Injectable()
 export class UserService extends BaseRepositoryService<UserEntity> {
+  /** A team's id and the ids of every team beneath it. */
+  async teamWithDescendants(teamId: number): Promise<number[]> {
+    const em = this.repository.getEntityManager();
+    const all = await em.find(JobGroupEntity, {}, { fields: ['id', 'parent'] });
+    const ids = new Set([teamId]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const team of all) {
+        if (team.parent && ids.has(team.parent.id) && !ids.has(team.id)) {
+          ids.add(team.id);
+          grew = true;
+        }
+      }
+    }
+    return [...ids];
+  }
+
   constructor(
     @InjectRepository(UserEntity)
     protected repository: EntityRepository<UserEntity>,

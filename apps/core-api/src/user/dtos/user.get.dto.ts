@@ -45,6 +45,12 @@ export class UsersGetDto {
   @IsEnum(Role)
   role?: Role;
 
+  /** A team; its sub-teams' members are included. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  teamId?: number;
+
   /**
    * Where the person stands: `pending` (not approved yet), `active` (here now),
    * `probation` (on a trial period), `ended` (cooperation over),

@@ -146,7 +146,14 @@ export class SaveJobGroupDto {
   @MaxLength(200)
   name: string;
 
-  /** User ids of the group's approvers; replaces the current set. */
+  /** The parent team; `null` makes it a top-level team, omitted keeps it. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @Type(() => Number)
+  @IsInt()
+  parentId?: number | null;
+
+  /** User ids of the team's managers (its approvers); replaces the current set. */
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(50)

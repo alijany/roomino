@@ -357,7 +357,8 @@ export class EmployeeService {
         const profile = em.create(EmployeeProfileEntity, {
           user: byId.get(person.userId)!,
           workplace: relations.workplace,
-          jobGroup: relations.jobGroup ?? null,
+          // No group chosen: the person's organisation team applies.
+          jobGroup: relations.jobGroup ?? byId.get(person.userId)!.team ?? null,
           workPolicy: workPolicy ?? null,
           useGps: shared.useGps ?? true,
           useWifi: shared.useWifi ?? false,
@@ -418,6 +419,11 @@ export class EmployeeService {
           : {}),
         ...relations,
       });
+      // The team is the person's, so a group chosen here is their team too.
+      if (relations.jobGroup !== undefined) {
+        const user = await em.findOneOrFail(UserEntity, { id: target.user.id });
+        user.team = relations.jobGroup ?? undefined;
+      }
 
       if (dto.shiftId) {
         await this.assignShift(
@@ -439,12 +445,30 @@ export class EmployeeService {
   // --- team access ---------------------------------------------------------------
 
   async approvedGroupIds(userId: number): Promise<number[]> {
-    const groups = await this.em.find(
+    const managed = await this.em.find(
       JobGroupEntity,
       { approvers: userId },
       { fields: ['id'] },
     );
-    return groups.map((g) => g.id);
+    if (!managed.length) return [];
+
+    // A manager also runs every team beneath the ones they manage.
+    const all = await this.em.find(
+      JobGroupEntity,
+      {},
+      { fields: ['id', 'parent'] },
+    );
+    const ids = new Set(managed.map((g) => g.id));
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const team of all) {
+        if (team.parent && ids.has(team.parent.id) && !ids.has(team.id)) {
+          ids.add(team.id);
+          grew = true;
+        }
+      }
+    }
+    return [...ids];
   }
 
   async isApprover(userId: number) {

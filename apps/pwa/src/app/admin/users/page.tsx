@@ -10,6 +10,8 @@ import { DataView, Pagination } from '@/ui/molecules';
 import { IconFilterOff, IconSearch, IconUsers } from '@tabler/icons-react';
 import { useDebouncedFilterText, useUrlFilters } from '@/libs/url/url.hook.use-url-filters';
 import { Suspense } from 'react';
+import { useTeams } from '../teams/teams.api';
+import { teamTree } from '../teams/teams.util';
 import { useUsers } from './users.api';
 import { AddUserForm } from './users.component.add-user';
 import { UsersTable } from './users.component.table';
@@ -43,6 +45,7 @@ function UsersContent() {
     const [filters, setFilters] = useUrlFilters<UserFilterDto>({
         text: 'string',
         role: 'string',
+        teamId: 'number',
         status: 'string',
         page: 'number',
         limit: 'number',
@@ -54,13 +57,21 @@ function UsersContent() {
     const isAdmin = hasRole(Role.ADMIN);
 
     const { data, error, isLoading, refresh } = useUsers(filters);
+    const teams = useTeams();
+    const teamItems = [
+        { value: 'all', label: 'همه تیم‌ها' },
+        ...teamTree(teams.data?.items ?? []).map(({ team }) => ({
+            value: String(team.id),
+            label: team.name,
+        })),
+    ];
 
     const handlePageChange = (page: number) => {
         setFilters(prev => ({ ...prev, page: page - 1 }));
     };
 
     const count = data?.meta?.total ?? 0;
-    const hasFilters = Boolean(filters.text || filters.role || filters.status);
+    const hasFilters = Boolean(filters.text || filters.role || filters.status || filters.teamId);
 
     return (
         <RoleProtectedRoute allowedRoles={RouteItems.users.roles}>
@@ -96,6 +107,14 @@ function UsersContent() {
                                     items={ROLE_ITEMS}
                                     value={filters.role ?? 'all'}
                                     onChange={(value) => setFilters(prev => ({ ...prev, role: value && value !== 'all' ? (value as Role) : undefined, page: undefined }))}
+                                    variant="outline"
+                                />
+                            </div>
+                            <div className="w-44">
+                                <Dropdown
+                                    items={teamItems}
+                                    value={filters.teamId ? String(filters.teamId) : 'all'}
+                                    onChange={(value) => setFilters(prev => ({ ...prev, teamId: value && value !== 'all' ? Number(value) : undefined, page: undefined }))}
                                     variant="outline"
                                 />
                             </div>

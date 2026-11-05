@@ -27,6 +27,7 @@ import {
   IconCalendarOff,
   IconTrendingUp,
   IconUser,
+  IconSitemap,
   IconUsers,
   IconUsersGroup,
   IconWallet,
@@ -68,6 +69,12 @@ export const RouteItems = {
     label: "کاربران",
     roles: [Role.ADMIN, Role.HR],
     icon: <IconUsers className="size-5" />
+  },
+  teams: {
+    href: "/admin/teams",
+    label: "تیم‌ها",
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconSitemap className="size-5" />
   },
   reports: {
     href: "/admin/reports",
@@ -356,6 +363,7 @@ export const routeGroups: RouteGroup[] = [
     routes: [
       RouteItems.rooms,
       RouteItems.users,
+      RouteItems.teams,
       RouteItems.reports,
       RouteItems.siteSettings,
     ]

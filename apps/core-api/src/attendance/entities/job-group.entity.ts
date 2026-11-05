@@ -3,6 +3,7 @@ import {
   Entity,
   Enum,
   ManyToMany,
+  ManyToOne,
   Property,
   Unique,
 } from '@mikro-orm/core';
@@ -11,11 +12,16 @@ import { UserEntity } from '../../user/user.entity';
 import { AttendanceMode } from '../attendance.constants';
 
 /**
- * گروه شغلی. Its approvers run the "my team" area for the group's members:
- * they review requests, correct attendance and adjust shifts.
+ * تیم — an organisation-wide team (the table kept its old job-group name).
+ * Its managers (`approvers`) run the "my team" area for the members of the
+ * team and of every team beneath it: they review requests, correct
+ * attendance and adjust shifts. A team may sit under a parent team.
  *
- * Being an approver is this assignment alone — it is unrelated to the
+ * Being a manager is this assignment alone — it is unrelated to the
  * finance `approver` role.
+ *
+ * Membership lives on `UserEntity.team`; `attendanceMode` and `remoteDays`
+ * are this team's attendance settings.
  */
 @Entity()
 export class JobGroupEntity extends BaseEntity {
@@ -33,6 +39,10 @@ export class JobGroupEntity extends BaseEntity {
    */
   @Property({ type: 'json', nullable: true })
   remoteDays?: number[];
+
+  /** The team this one belongs to; none for a top-level team. */
+  @ManyToOne(() => JobGroupEntity, { nullable: true, deleteRule: 'set null' })
+  parent?: JobGroupEntity;
 
   @ManyToMany(() => UserEntity, undefined, {
     pivotTable: 'attendance_job_group_approver',

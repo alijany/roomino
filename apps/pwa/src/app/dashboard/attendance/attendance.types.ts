@@ -187,12 +187,17 @@ export interface JobGroup {
   attendanceMode: AttendanceMode;
   /** Fixed weekly remote days of every member, 0 = شنبه … 6 = جمعه. */
   remoteDays: number[];
+  /** The team's managers. */
   approvers: UserBrief[];
   employeeCount: number | null;
+  parentId: number | null;
+  parentName: string | null;
 }
 
 export interface JobGroupInput {
   name: string;
+  /** `null` makes it a top-level team; omitted keeps it. */
+  parentId?: number | null;
   approverIds?: number[];
   attendanceMode?: AttendanceMode;
   remoteDays?: number[];
