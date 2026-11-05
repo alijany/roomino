@@ -10,12 +10,14 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { nameWords } from '../libs/utils/name-search.util';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
@@ -32,6 +34,7 @@ import { InviteUserDto } from './dtos/invitation.dto';
 import { UpdateProfileDto, UpdateUserNameDto } from './dtos/update-profile.dto';
 import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
+import { usersWorkbook } from './user-export.util';
 import { UserService } from './user.service';
 
 /** A user as the users page shows them: HR facts and roles with their invitation state. */
@@ -102,22 +105,12 @@ export class AdminUserController {
     return this.userService.inviteUserByRole(inviteDto);
   }
 
-  @Get()
-  @Roles(Role.ADMIN, Role.HR)
-  async getAllUsers(@Query() filters?: UsersGetDto): Promise<{
-    items: any[];
-    meta: { page: number; limit: number; total: number; pageCount: number };
-  }> {
-    const {
-      page = 0,
-      limit = 20,
-      text,
-      role,
-      status,
-      activeOnly,
-      teamId,
-      ...rest
-    } = filters;
+  /** The list's filters as one query, shared by the list and its Excel export. */
+  private async usersWhere(filters: UsersGetDto) {
+    const { text, role, status, activeOnly, teamId, ...rest } = filters;
+    // Paging is not a column to match on.
+    delete rest.page;
+    delete rest.limit;
     const today = new Date().toLocaleDateString('sv-SE', {
       timeZone: 'Asia/Tehran',
     });
@@ -156,34 +149,66 @@ export class AdminUserController {
         : {});
     const like = text?.trim() ? { $ilike: `%${text.trim()}%` } : null;
 
-    const [users, total] = await this.userService.findAll(
+    return {
+      $and: [
+        rest,
+        byStatus,
+        role ? { roles: { role } } : {},
+        teamId
+          ? {
+              team: {
+                $in: await this.userService.teamWithDescendants(teamId),
+              },
+            }
+          : {},
+        like
+          ? {
+              $or: [
+                { $and: nameWords(text as string) },
+                { displayName: like },
+                { firstName: like },
+                { lastName: like },
+                { phone: like },
+                { personnelCode: like },
+                { jobTitle: like },
+              ],
+            }
+          : {},
+      ],
+    } as never;
+  }
+
+  /** The list as an Excel file: the same filters, every page. */
+  @Get('export')
+  @Roles(Role.ADMIN, Role.HR)
+  async exportUsers(@Query() filters: UsersGetDto, @Res() res: Response) {
+    const [users] = await this.userService.findAll(
+      await this.usersWhere(filters),
       {
-        $and: [
-          rest,
-          byStatus,
-          role ? { roles: { role } } : {},
-          teamId
-            ? {
-                team: {
-                  $in: await this.userService.teamWithDescendants(teamId),
-                },
-              }
-            : {},
-          like
-            ? {
-                $or: [
-                  { $and: nameWords(text as string) },
-                  { displayName: like },
-                  { firstName: like },
-                  { lastName: like },
-                  { phone: like },
-                  { personnelCode: like },
-                  { jobTitle: like },
-                ],
-              }
-            : {},
-        ],
-      } as never,
+        orderBy: { created_at: 'DESC' },
+        populate: ['roles', 'team'] as never,
+      },
+    );
+    const today = new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tehran',
+    });
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="users.xlsx"');
+    res.send(await usersWorkbook(users, today));
+  }
+
+  @Get()
+  @Roles(Role.ADMIN, Role.HR)
+  async getAllUsers(@Query() filters?: UsersGetDto): Promise<{
+    items: any[];
+    meta: { page: number; limit: number; total: number; pageCount: number };
+  }> {
+    const { page = 0, limit = 20 } = filters;
+    const [users, total] = await this.userService.findAll(
+      await this.usersWhere(filters),
       {
         orderBy: { created_at: 'DESC' },
         limit,

@@ -7,9 +7,11 @@ import { RouteItems } from '@/components/dashboard/dashboard.constants.route-gro
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { Button, Dropdown, Input } from '@/ui/atoms';
 import { DataView, Pagination } from '@/ui/molecules';
-import { IconFilterOff, IconSearch, IconUsers } from '@tabler/icons-react';
+import { IconFileSpreadsheet, IconFilterOff, IconSearch, IconUsers } from '@tabler/icons-react';
 import { useDebouncedFilterText, useUrlFilters } from '@/libs/url/url.hook.use-url-filters';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
+import { toast } from 'react-toastify';
+import { downloadFile } from '../financial/financial.util';
 import { useTeams } from '../teams/teams.api';
 import { teamTree } from '../teams/teams.util';
 import { useUsers } from './users.api';
@@ -58,6 +60,7 @@ function UsersContent() {
 
     const { data, error, isLoading, refresh } = useUsers(filters);
     const teams = useTeams();
+    const [exporting, setExporting] = useState(false);
     const teamItems = [
         { value: 'all', label: 'همه تیم‌ها' },
         ...teamTree(teams.data?.items ?? []).map(({ team }) => ({
@@ -126,6 +129,31 @@ function UsersContent() {
                                     variant="outline"
                                 />
                             </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="min-h-10 gap-1"
+                                disabled={exporting || !count}
+                                onClick={async () => {
+                                    setExporting(true);
+                                    try {
+                                        // The same filters as the list, every page of it.
+                                        const query = new URLSearchParams(
+                                            Object.entries(filters)
+                                                .filter(([key, value]) => value !== undefined && value !== null && key !== 'page' && key !== 'limit')
+                                                .map(([key, value]) => [key, String(value)]),
+                                        ).toString();
+                                        await downloadFile(`/admin/users/export${query ? `?${query}` : ''}`, 'users.xlsx');
+                                    } catch (e) {
+                                        toast.error((e as Error)?.message ?? 'دریافت فایل ناموفق بود');
+                                    } finally {
+                                        setExporting(false);
+                                    }
+                                }}
+                            >
+                                <IconFileSpreadsheet className="size-4" />
+                                {exporting ? 'در حال آماده‌سازی...' : 'خروجی اکسل'}
+                            </Button>
                             {hasFilters && (
                                 <Button variant="ghost" size="sm" className="gap-1 text-slate-500" onClick={() => {
                                     setFilters({});

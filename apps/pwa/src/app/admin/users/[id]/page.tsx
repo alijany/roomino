@@ -73,10 +73,13 @@ function SectionCard({ id, icon: Icon, title, hint, children }: { id: string; ic
 /** The person at a glance: who, what they hold, and the dates that matter. */
 function UserHero({ user }: { user: User }) {
     const today = tehranToday();
+    const { data: teams } = useTeams();
+    const team = teams?.items.find((t) => t.id === user.teamId);
     const left = user.cooperationEnded || Boolean(user.endDate && user.endDate < today);
     const probation = user.probationEndDate ? (user.probationEndDate >= today ? 'در دوره‌ی آزمایشی' : 'آزمایشی بود') : null;
     const facts: Array<[string, string]> = [
         ['نقش', user.roles.length ? user.roles.map((r) => getRoleName(r.role)).join('، ') : '—'],
+        ['تیم', team?.name ?? '—'],
         ['شروع همکاری', user.hireDate ? jalaliLabel(user.hireDate) : '—'],
         ['سابقه', user.hireDate ? tenureLabel(user.hireDate, left && user.endDate && user.endDate < today ? user.endDate : today) : '—'],
         ['نوع حقوق', SALARY_MODE_LABEL[user.salaryMode ?? 'regular']],
@@ -104,7 +107,7 @@ function UserHero({ user }: { user: User }) {
                     <Avatar src={user.profilePicture} name={user.name} className="size-full rounded-[inherit]" />
                 </div>
             </div>
-            <dl className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-5">
+            <dl className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-6">
                 {facts.map(([label, value]) => (
                     <div key={label} className="px-4 py-2.5 lg:px-5">
                         <dt className="text-xs text-slate-400">{label}</dt>
