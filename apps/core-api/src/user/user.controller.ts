@@ -52,6 +52,8 @@ function toUserListItem(user: UserEntity) {
     hireDate: user.hireDate ?? null,
     endDate: user.endDate ?? null,
     probationEndDate: user.probationEndDate ?? null,
+    /** Has started the Telegram bot, so notifications reach them there. */
+    telegramConnected: !!user.chatId,
     insuranceNumber: user.insuranceNumber ?? null,
     birthDate: user.birthDate ?? null,
     fatherName: user.fatherName ?? null,

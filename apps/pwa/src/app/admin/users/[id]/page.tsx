@@ -84,6 +84,7 @@ function UserHero({ user }: { user: User }) {
         ['سابقه', user.hireDate ? tenureLabel(user.hireDate, left && user.endDate && user.endDate < today ? user.endDate : today) : '—'],
         ['نوع حقوق', SALARY_MODE_LABEL[user.salaryMode ?? 'regular']],
         ['کد پرسنلی', user.personnelCode ?? '—'],
+        ['تلگرام', user.telegramConnected ? 'فعال' : 'غیرفعال'],
     ];
 
     return (
@@ -107,7 +108,7 @@ function UserHero({ user }: { user: User }) {
                     <Avatar src={user.profilePicture} name={user.name} className="size-full rounded-[inherit]" />
                 </div>
             </div>
-            <dl className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-6">
+            <dl className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-[repeat(6,minmax(0,1fr))_auto]">
                 {facts.map(([label, value]) => (
                     <div key={label} className="px-4 py-2.5 lg:px-5">
                         <dt className="text-xs text-slate-400">{label}</dt>

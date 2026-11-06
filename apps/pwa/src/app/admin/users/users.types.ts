@@ -27,6 +27,7 @@ export interface User {
   endDate?: string | null;
   /** Last day of a trial period; kept after it passes. */
   probationEndDate?: string | null;
+  telegramConnected?: boolean;
   insuranceNumber?: string | null;
   birthDate?: string | null;
   fatherName?: string | null;
