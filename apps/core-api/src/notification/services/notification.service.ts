@@ -57,6 +57,8 @@ export class NotificationService {
       priority?: 'low' | 'normal' | 'high';
       metadata?: Record<string, any>;
       smsMessage?: string;
+      /** SMS for people without Telegram; otherwise only Telegram and the panel. */
+      sms?: boolean;
       preferredChannels?: NotificationType[];
     },
   ): Promise<NotificationEntity[]> {
@@ -67,6 +69,7 @@ export class NotificationService {
       priority: options?.priority,
       metadata: options?.metadata,
       smsMessage: options?.smsMessage,
+      sms: options?.sms,
     };
 
     return this.notificationDispatcher.dispatch(request);

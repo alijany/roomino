@@ -31,17 +31,18 @@ export class UserResolverService implements IUserResolver {
     }
   }
 
-  async getAvailableChannels(user: UserEntity): Promise<NotificationType[]> {
+  /**
+   * Telegram once the person has connected the bot. SMS only when the caller
+   * asks for it (`options.sms`) and only for someone without Telegram; everything
+   * else stays in Telegram and the panel.
+   */
+  async getAvailableChannels(
+    user: UserEntity,
+    options?: { sms?: boolean },
+  ): Promise<NotificationType[]> {
     const channels: NotificationType[] = [];
-
-    // Telegram first: once a user has connected the bot, notifications go
-    // only there; SMS is the fallback for people who have not.
-    if (user.chatId) {
-      channels.push(NotificationType.TELEGRAM_BOT);
-    } else if (user.phone) {
-      channels.push(NotificationType.SMS);
-    }
-
+    if (user.chatId) channels.push(NotificationType.TELEGRAM_BOT);
+    else if (options?.sms && user.phone) channels.push(NotificationType.SMS);
     return channels;
   }
 

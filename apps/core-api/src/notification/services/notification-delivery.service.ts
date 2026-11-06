@@ -82,6 +82,8 @@ export class NotificationDeliveryService {
    * Deliver notification through the appropriate channel
    */
   async deliverNotification(notification: NotificationEntity): Promise<void> {
+    // In-panel only: the row itself is the notification.
+    if (notification.type === NotificationType.SYSTEM) return;
     const channels = this.channels.get(notification.type) || [];
 
     for (const channel of channels) {

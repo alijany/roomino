@@ -26,6 +26,8 @@ export interface UserNotificationRequest extends BaseNotificationRequest {
   autoDetectChannels?: boolean;
   preferredChannels?: NotificationType[];
   smsMessage?: string; // Optional shorter message for SMS
+  /** SMS for a person without Telegram who has a phone. Off by default: only Telegram and the panel. */
+  sms?: boolean;
 }
 
 /**

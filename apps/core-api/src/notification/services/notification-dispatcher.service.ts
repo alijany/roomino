@@ -104,6 +104,7 @@ export class NotificationDispatcherService {
     if (request.autoDetectChannels) {
       const availableChannels = await this.userResolver.getAvailableChannels(
         user,
+        { sms: request.sms },
       );
       const channels = this.buildChannelsFromTypes(
         availableChannels,
@@ -111,15 +112,13 @@ export class NotificationDispatcherService {
         request,
       );
 
-      if (channels.length === 0) {
-        console.warn(`No available channels found for user ${request.userId}`);
-        return [];
+      // Nobody reachable outside the panel: it stays an in-panel notification.
+      if (channels.length > 0) {
+        return this.handleDirectRequest({
+          ...request,
+          channels,
+        });
       }
-
-      return this.handleDirectRequest({
-        ...request,
-        channels,
-      });
     }
 
     // Use preferred channels if specified

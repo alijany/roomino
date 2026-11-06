@@ -18,7 +18,10 @@ export interface IUserResolver {
   /**
    * Get available notification channels for a user
    */
-  getAvailableChannels(user: UserEntity): Promise<NotificationType[]>;
+  getAvailableChannels(
+    user: UserEntity,
+    options?: { sms?: boolean },
+  ): Promise<NotificationType[]>;
 
   /**
    * Check if user has a specific notification channel available

@@ -103,6 +103,7 @@ export class OnCallReminderService {
         await this.notifications.sendToUser(row.user.id, text, {
           priority: 'high',
           smsMessage: sms,
+          sms: true,
           metadata: { module: 'attendance', link: '/dashboard/oncall' },
         });
         sent++;
