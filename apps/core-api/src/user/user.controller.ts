@@ -1,3 +1,4 @@
+import { raw } from '@mikro-orm/core';
 import {
   BadRequestException,
   Body,
@@ -36,6 +37,18 @@ import { UsersGetDto } from './dtos/user.get.dto';
 import { UserEntity } from './user.entity';
 import { usersWorkbook } from './user-export.util';
 import { UserService } from './user.service';
+
+/** People whose cooperation is over go to the end of the list; newest first within each group. */
+function listOrder(today: string) {
+  return [
+    {
+      [raw('(cooperation_ended or (end_date is not null and end_date < ?))', [
+        today,
+      ])]: 'asc',
+    },
+    { created_at: 'DESC' },
+  ] as never;
+}
 
 /** A user as the users page shows them: HR facts and roles with their invitation state. */
 function toUserListItem(user: UserEntity) {
@@ -108,6 +121,10 @@ export class AdminUserController {
   }
 
   /** The list's filters as one query, shared by the list and its Excel export. */
+  private todayTehran() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tehran' });
+  }
+
   private async usersWhere(filters: UsersGetDto) {
     const { text, role, status, activeOnly, teamId, ...rest } = filters;
     // Paging is not a column to match on.
@@ -187,7 +204,7 @@ export class AdminUserController {
     const [users] = await this.userService.findAll(
       await this.usersWhere(filters),
       {
-        orderBy: { created_at: 'DESC' },
+        orderBy: listOrder(this.todayTehran()),
         populate: ['roles', 'team'] as never,
       },
     );
@@ -212,7 +229,7 @@ export class AdminUserController {
     const [users, total] = await this.userService.findAll(
       await this.usersWhere(filters),
       {
-        orderBy: { created_at: 'DESC' },
+        orderBy: listOrder(this.todayTehran()),
         limit,
         offset: page * limit,
         populate: ['roles'] as never,
