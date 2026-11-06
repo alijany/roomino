@@ -184,7 +184,7 @@ export default function ProfilePage() {
               <section className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <h2 className="text-sm font-bold text-slate-900">شماره تلفن</h2>
                 <div className="flex gap-2">
-                  <Input disabled placeholder="شماره تلفن" value={user?.phone || ''} className="flex-1 font-mono" />
+                  <Input disabled placeholder="شماره تلفن" value={user?.phone || ''} dir="ltr" className="flex-1 text-left font-mono" />
                   {EDITING_ENABLED && (
                     <Button type="button" variant="outline" size="sm" onClick={() => setIsPhoneModalOpen(true)} className="shrink-0">
                       <IconPhone className="size-4" />

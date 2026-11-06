@@ -179,9 +179,14 @@ export class TelegramBotService
       if (command === '/start' && payload) {
         await this.link(chatId, payload);
       } else if (command === '/start') {
+        const linked = await this.em.fork().findOne(UserEntity, { chatId });
         await this.send(
           chatId,
-          'برای دریافت اعلان‌ها، از پنل لایفی‌نو (پروفایل ← اتصال تلگرام) لینک اتصال را باز کنید.',
+          linked
+            ? `سلام ${
+                linked.name ?? ''
+              }! اتصال شما از قبل فعال است و اعلان‌ها را همین‌جا می‌فرستم. برای قطع: /stop`
+            : 'برای دریافت اعلان‌ها، از پنل لایفی‌نو (پروفایل ← اتصال تلگرام) لینک اتصال را باز کنید.',
         );
       } else if (command === '/stop') {
         await this.em
@@ -205,6 +210,14 @@ export class TelegramBotService
     const em = this.em.fork();
     const user = await em.findOne(UserEntity, { id: userId });
     if (!user) return this.send(chatId, 'کاربر پیدا نشد.');
+    if (user.chatId === chatId) {
+      return this.send(
+        chatId,
+        `${
+          user.name ?? ''
+        } عزیز، اتصال شما از قبل فعال بوده و نیازی به کار دیگری نیست. برای قطع: /stop`,
+      );
+    }
     // One Telegram account belongs to one user.
     await em.nativeUpdate(UserEntity, { chatId }, { chatId: null } as never);
     await em.nativeUpdate(UserEntity, { id: userId }, { chatId } as never);
