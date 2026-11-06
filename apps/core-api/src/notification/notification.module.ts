@@ -14,6 +14,8 @@ import { UserResolverService } from './services/user-resolver.service';
 import { NotificationDispatcherService } from './services/notification-dispatcher.service';
 import { NotificationDeliveryService } from './services/notification-delivery.service';
 import { NotificationPreferenceService } from './services/notification-preference.service';
+import { TelegramBotService } from './services/telegram-bot.service';
+import { TelegramController } from './telegram.controller';
 
 // Notification channels
 import { SmsNotificationChannel } from './channels/sms-notification.channel';
@@ -34,11 +36,12 @@ import { UserModule } from 'src/user/user.module';
     RolesModule,
     UserModule,
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, TelegramController],
   providers: [
     // Core services
     NotificationService,
     NotificationPreferenceService,
+    TelegramBotService,
 
     // Repository
     NotificationRepository,

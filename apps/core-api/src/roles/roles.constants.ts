@@ -5,6 +5,7 @@ export enum Role {
   FINANCE_MANAGER = 'finance_manager',
   APPROVER = 'approver',
   HR = 'hr',
+  ONCALL_MANAGER = 'oncall_manager',
   USER = 'user',
 }
 
@@ -15,6 +16,7 @@ export const RoleLabels: Record<Role, string> = {
   [Role.FINANCE_MANAGER]: 'مدیر مالی',
   [Role.APPROVER]: 'تأییدکننده',
   [Role.HR]: 'منابع انسانی',
+  [Role.ONCALL_MANAGER]: 'مسئول کشیک',
   [Role.USER]: 'کاربر',
 };
 
@@ -28,6 +30,7 @@ export const RoleHierarchy: Record<Role, number> = {
   [Role.FINANCE]: 2,
   [Role.APPROVER]: 1,
   [Role.HR]: 1,
+  [Role.ONCALL_MANAGER]: 1,
   [Role.USER]: 0,
 };
 

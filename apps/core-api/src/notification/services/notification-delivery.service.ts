@@ -8,7 +8,10 @@ import { TelegramNotificationChannel } from '../channels/telegram-notification.c
 import { EmailNotificationChannel } from '../channels/email-notification.channel';
 import { AppPushNotificationChannel } from '../channels/app-push-notification.channel';
 import { NotificationRepository } from '../repositories/notification.repository';
-import { NotificationStatus } from '../notification.constants';
+import {
+  NotificationStatus,
+  NotificationType,
+} from '../notification.constants';
 
 /**
  * Service responsible for delivering notifications through appropriate channels
@@ -83,7 +86,12 @@ export class NotificationDeliveryService {
 
     for (const channel of channels) {
       if (channel.canHandle(notification)) {
-        if (process.env.NODE_ENV === 'development') {
+        // Development only simulates what costs money (SMS, email); the Telegram bot is free
+        // and only reaches people who started it themselves, so it is really sent.
+        if (
+          process.env.NODE_ENV === 'development' &&
+          notification.type !== NotificationType.TELEGRAM_BOT
+        ) {
           console.log(
             `[DEV MODE] Notification delivery simulated for notification ID: ${notification.id} via ${channel.type}.`,
           );

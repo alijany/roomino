@@ -34,12 +34,12 @@ export class UserResolverService implements IUserResolver {
   async getAvailableChannels(user: UserEntity): Promise<NotificationType[]> {
     const channels: NotificationType[] = [];
 
-    if (user.phone) {
-      channels.push(NotificationType.SMS);
-    }
-
+    // Telegram first: once a user has connected the bot, notifications go
+    // only there; SMS is the fallback for people who have not.
     if (user.chatId) {
       channels.push(NotificationType.TELEGRAM_BOT);
+    } else if (user.phone) {
+      channels.push(NotificationType.SMS);
     }
 
     return channels;

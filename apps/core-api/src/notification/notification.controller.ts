@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -22,12 +23,14 @@ import { NotificationGetDto } from './dtos/notification.get.dto';
 import { NotificationCategory } from './notification.constants';
 import { NotificationPreferenceService } from './services/notification-preference.service';
 import { NotificationService } from './services/notification.service';
+import { TelegramBotService } from './services/telegram-bot.service';
 
 @Controller('notifications')
 export class NotificationController {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly notificationPreferenceService: NotificationPreferenceService,
+    private readonly telegram: TelegramBotService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -71,6 +74,24 @@ export class NotificationController {
   @Post('mark-all-read')
   async markAllAsRead(@CurrentUser() user: UserEntity) {
     return this.notificationService.markAllAsRead(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('telegram')
+  telegramStatus(@CurrentUser() user: UserEntity) {
+    return this.telegram.status(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('telegram/link')
+  telegramLink(@CurrentUser() user: UserEntity) {
+    return { url: this.telegram.createLinkUrl(user.id) };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('telegram')
+  telegramDisconnect(@CurrentUser() user: UserEntity) {
+    return this.telegram.disconnect(user.id);
   }
 
   @UseGuards(JwtAuthGuard)

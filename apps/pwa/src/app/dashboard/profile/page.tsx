@@ -17,7 +17,11 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import { PhoneChangeModal } from './profile.modal.phone-change';
+import { TelegramConnectCard } from '../notifications/notifications.component.telegram';
 import { prepareAvatar } from '@/libs/image/image.util.avatar';
+
+/** Editing name and phone is switched off for now (the photo can still change); set to true to bring it back. */
+const EDITING_ENABLED = false;
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth();
@@ -107,116 +111,93 @@ export default function ProfilePage() {
   return (
     <ProtectedRoute>
       <DashbaordLayout>
-        <div className="space-y-6 grow flex flex-col overflow-auto">
-          {/* Main Card */}
-          <form onSubmit={handleSubmit(onSubmit)} className="p-4 lg:p-6 rounded-3xl bg-white shadow-sm border border-slate-100 grow flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 py-4 bg-white z-10 sticky top-0">
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">پروفایل کاربری</h1>
-                <p className="text-slate-600 mt-1">اطلاعات حساب کاربری خود را مدیریت کنید</p>
-              </div>
-              <div className="flex gap-2 items-center">
-                {isDirty && <Button variant="outline" onClick={handleCancel} size="sm" disabled={isUpdating} type="button">
-                  <IconX className="size-4" />
-                  لغو
-                </Button>}
-                <Button type="submit" size="sm" disabled={!isDirty || isUpdating}>
-                  <IconCheck className="size-4" />
-                  {isUpdating ? 'در حال ذخیره...' : 'ذخیره'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Profile Picture Section */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="relative group">
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-                  <Avatar src={user?.profilePicture} name={user?.name} className="size-full rounded-none" labelled />
-                </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingImage}
-                  className="absolute bottom-0 right-0 p-3 ui-surface shadow-lg border border-slate-200 hover:bg-slate-50 transition-all group-hover:scale-110"
-                >
-                  <IconCamera className="size-5 text-primary" />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </div>
-              {isUploadingImage && (
-                <p className="text-sm text-slate-600 mt-3">در حال آپلود...</p>
-              )}
-            </div>
-
-            {/* Personal Information */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900">اطلاعات شخصی</h2>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div className="grow overflow-auto">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <form onSubmit={handleSubmit(onSubmit)} className="contents">
+              {/* Header */}
+              <div className="flex items-center justify-between lg:col-span-2">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    نام
-                  </label>
-                  <Input
-                    placeholder="نام خود را وارد کنید"
-                    {...register('firstName')}
-                    error={errors.firstName?.message}
-                  />
+                  <h1 className="text-xl font-bold text-slate-900">پروفایل کاربری</h1>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    {EDITING_ENABLED ? 'اطلاعات حساب کاربری خود را مدیریت کنید' : 'ویرایش نام و شماره تلفن فعلاً غیرفعال است؛ عکس پروفایل را می‌توانید تغییر دهید'}
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    نام خانوادگی
-                  </label>
-                  <Input
-                    placeholder="نام خانوادگی خود را وارد کنید"
-                    {...register('lastName')}
-                    error={errors.lastName?.message}
-                  />
-                </div>
-
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    نام نمایشی (اختیاری)
-                  </label>
-                  <Input
-                    placeholder="نامی که همکاران می‌بینند، مثلاً نام کوتاه‌تر یا نام دلخواه شما"
-                    {...register('displayName')}
-                    error={errors.displayName?.message}
-                  />
-                  <p className="mt-1 text-xs text-slate-400">در فیش حقوقی و اسناد رسمی همچنان نام و نام خانوادگی ثبت‌شده می‌آید.</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  شماره تلفن
-                </label>
-                <div className="flex gap-3">
-                  <Input
-                    disabled
-                    placeholder="شماره تلفن"
-                    value={user?.phone || ''}
-                    className="flex-1 font-mono"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsPhoneModalOpen(true)}
-                    className="shrink-0"
-                  >
-                    <IconPhone className="size-4" />
-                    تغییر
+                {EDITING_ENABLED && <div className="flex items-center gap-2">
+                  {isDirty && <Button variant="outline" onClick={handleCancel} size="sm" disabled={isUpdating} type="button">
+                    <IconX className="size-4" />
+                    لغو
+                  </Button>}
+                  <Button type="submit" size="sm" disabled={!isDirty || isUpdating}>
+                    <IconCheck className="size-4" />
+                    {isUpdating ? 'در حال ذخیره...' : 'ذخیره'}
                   </Button>
-                </div>
+                </div>}
               </div>
-            </div>
-          </form>
+
+              {/* Personal information */}
+              <section className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm lg:col-span-2">
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    <div className="size-16 overflow-hidden rounded-2xl border-2 border-white bg-primary/5 shadow">
+                      <Avatar src={user?.profilePicture} name={user?.name} className="size-full rounded-none" labelled />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="absolute -bottom-1 -right-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow hover:bg-slate-50"
+                      aria-label="تغییر عکس"
+                    >
+                      <IconCamera className="size-4 text-primary" />
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-bold text-slate-900">اطلاعات شخصی</h2>
+                    <p className="text-xs text-slate-500">{isUploadingImage ? 'در حال آپلود عکس...' : user?.name}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">نام</label>
+                    <Input placeholder="نام" disabled={!EDITING_ENABLED} {...register('firstName')} error={errors.firstName?.message} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">نام خانوادگی</label>
+                    <Input placeholder="نام خانوادگی" disabled={!EDITING_ENABLED} {...register('lastName')} error={errors.lastName?.message} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">نام نمایشی (اختیاری)</label>
+                    <Input
+                      placeholder="نامی که همکاران می‌بینند"
+                      disabled={!EDITING_ENABLED}
+                      {...register('displayName')}
+                      error={errors.displayName?.message}
+                    />
+                    <p className="mt-1 text-xs text-slate-400">در فیش حقوقی و اسناد رسمی همچنان نام و نام خانوادگی ثبت‌شده می‌آید.</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Phone */}
+              <section className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <h2 className="text-sm font-bold text-slate-900">شماره تلفن</h2>
+                <div className="flex gap-2">
+                  <Input disabled placeholder="شماره تلفن" value={user?.phone || ''} className="flex-1 font-mono" />
+                  {EDITING_ENABLED && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => setIsPhoneModalOpen(true)} className="shrink-0">
+                      <IconPhone className="size-4" />
+                      تغییر
+                    </Button>
+                  )}
+                </div>
+              </section>
+            </form>
+
+            {/* Notification settings */}
+            <TelegramConnectCard />
+          </div>
         </div>
 
         {/* Phone Change Modal */}

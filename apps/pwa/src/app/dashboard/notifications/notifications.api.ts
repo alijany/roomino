@@ -4,9 +4,6 @@ import useSWR from "swr";
 import {
   GetNotificationsResponse,
   NotificationsFilters,
-  NotificationPreference,
-  UpdateNotificationPreferenceDto,
-  NotificationCategory
 } from "./notifications.types";
 
 function buildNotificationsQueryString(filters: NotificationsFilters): string {
@@ -30,11 +27,6 @@ export function useUnreadCount() {
     return useSwrHelper(swr);
 }
 
-export function useNotificationPreferences() {
-    const swr = useSWR<NotificationPreference[]>('/notifications/preferences', fetcher);
-    return useSwrHelper(swr);
-}
-
 export async function markAsRead(notificationId: number) {
     return fetcher(`/notifications/${notificationId}/read`, {
         method: 'PATCH',
@@ -50,19 +42,6 @@ export async function markAsUnread(notificationId: number) {
 export async function markAllAsRead() {
     return fetcher('/notifications/mark-all-read', {
         method: 'POST',
-    });
-}
-
-export async function updateNotificationPreference(
-    category: NotificationCategory,
-    data: UpdateNotificationPreferenceDto
-) {
-    return fetcher(`/notifications/preferences/${category}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: {
-            'Content-Type': 'application/json',
-        },
     });
 }
 

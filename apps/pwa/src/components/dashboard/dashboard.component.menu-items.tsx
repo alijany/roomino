@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 import { useMyToday } from "@/app/dashboard/attendance/attendance.api";
+import { useMyOnCallSummary } from "@/app/dashboard/oncall/oncall.api";
 import { getRoleName } from "../auth/auth.constants.roles";
 import { useAuth } from "../auth/auth.context.provider";
 import { RouteItems, routeGroups } from "./dashboard.constants.route-groups";
@@ -25,6 +26,7 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
   const pathname = usePathname();
   const { logout, hasAnyRole, user, selectedRole, setSelectedRole } = useAuth();
   const { data: attendance } = useMyToday();
+  const { data: onCall } = useMyOnCallSummary();
   const [expandedGroup, setExpandedGroup] = React.useState<{
     pathname: string;
     id: string | null;
@@ -42,6 +44,8 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
         ...group.routes.filter(route => !route.roles || hasAnyRole(route.roles)),
         // "My team" is an approver assignment, not a role — the server knows.
         ...(group.id === "attendance" && attendance?.isApprover ? [RouteItems.attendanceTeam] : []),
+        // Only people on the on-call list have a کشیک of their own.
+        ...(group.id === "attendance" && onCall?.eligible ? [RouteItems.attendanceMyOncall] : []),
       ],
     }))
     .filter(group => group.routes.length > 0);

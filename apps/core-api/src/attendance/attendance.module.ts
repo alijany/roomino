@@ -17,6 +17,8 @@ import {
   ShiftController,
 } from './controllers/shift.controller';
 import { TeamController } from './controllers/team.controller';
+import { OnCallController } from './controllers/oncall.controller';
+import { OnCallMeController } from './controllers/oncall-me.controller';
 import { TeamsController } from './controllers/teams.controller';
 import { WorkPolicyController } from './controllers/work-policy.controller';
 import { WorkplaceController } from './controllers/workplace.controller';
@@ -29,6 +31,13 @@ import { EmployeeProfileEntity } from './entities/employee-profile.entity';
 import { EmployeeShiftEntity } from './entities/employee-shift.entity';
 import { HolidayEntity } from './entities/holiday.entity';
 import { JobGroupEntity } from './entities/job-group.entity';
+import {
+  OnCallPeriodEntity,
+  OnCallSettingsEntity,
+  OnCallShiftEntity,
+  OnCallChangeEntity,
+  OnCallSwapEntity,
+} from './entities/oncall.entities';
 import { LeaveBalanceEntity } from './entities/leave-balance.entity';
 import { PresenceDeclarationEntity } from './entities/presence-declaration.entity';
 import { ScheduleModePeriodEntity } from './entities/schedule-mode-period.entity';
@@ -43,11 +52,14 @@ import { AttendanceMaintenanceService } from './services/attendance-maintenance.
 import { AttendanceNotificationService } from './services/attendance-notification.service';
 import { AttendanceModeService } from './services/attendance-mode.service';
 import { AttendanceScheduleService } from './services/attendance-schedule.service';
+import { OnCallReminderService } from './services/oncall-reminder.service';
 import { AttendanceSettingsService } from './services/attendance-settings.service';
 import { AttendanceService } from './services/attendance.service';
 import { EmployeeService } from './services/employee.service';
 import { HolidayService } from './services/holiday.service';
 import { JobGroupService } from './services/job-group.service';
+import { OnCallService } from './services/oncall.service';
+import { OnCallSwapService } from './services/oncall-swap.service';
 import { OvertimeSuggestionService } from './services/overtime-suggestion.service';
 import { PresenceService } from './services/presence.service';
 import { ReportService } from './services/report.service';
@@ -87,6 +99,11 @@ import { WorkplaceService } from './services/workplace.service';
       EmployeeModePeriodEntity,
       PresenceDeclarationEntity,
       AttendanceSettingsEntity,
+      OnCallSettingsEntity,
+      OnCallPeriodEntity,
+      OnCallShiftEntity,
+      OnCallChangeEntity,
+      OnCallSwapEntity,
     ]),
     NotificationModule,
     S3StorageModule,
@@ -96,6 +113,8 @@ import { WorkplaceService } from './services/workplace.service';
     WorkplaceService,
     ShiftService,
     JobGroupService,
+    OnCallService,
+    OnCallSwapService,
     WorkPolicyService,
     AttendanceModeService,
     PresenceService,
@@ -109,6 +128,7 @@ import { WorkplaceService } from './services/workplace.service';
     ReportService,
     AttendanceExportService,
     AttendanceScheduleService,
+    OnCallReminderService,
     AttendanceMaintenanceService,
     ScheduleModeService,
   ],
@@ -119,6 +139,8 @@ import { WorkplaceService } from './services/workplace.service';
     AdminHolidayController,
     JobGroupController,
     TeamsController,
+    OnCallController,
+    OnCallMeController,
     WorkPolicyController,
     EmployeeController,
     MeController,

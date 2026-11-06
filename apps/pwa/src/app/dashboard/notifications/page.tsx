@@ -2,13 +2,13 @@
 
 import ProtectedRoute from '@/components/auth/auth.component.protected-route';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
-import { Dropdown, Input } from '@/ui/atoms';
+import { Input } from '@/ui/atoms';
 import { Pagination } from '@/ui/molecules';
 import { DataView } from '@/ui/molecules/dataView/ui.data-view';
 import {
     IconBellRinging,
+    IconBrandTelegram,
     IconCheck,
-    IconFilter,
     IconSearch
 } from '@tabler/icons-react';
 import { debounce } from 'lodash';
@@ -22,22 +22,23 @@ import {
     markAsUnread,
     useNotifications,
 } from './notifications.api';
+import { openTelegramLink, useTelegramStatus } from './notifications.component.telegram';
 import {
-    NotificationCategory,
     NotificationResponse,
     NotificationStatus,
     NotificationsFilters,
 } from './notifications.types';
 
-const CATEGORY_FILTERS: { id: 'all' | NotificationCategory; label: string }[] = [
-    { id: 'all', label: 'همه' },
-    { id: NotificationCategory.SYSTEM, label: 'سیستم' },
-    { id: NotificationCategory.GENERAL, label: 'عمومی' }
-];
+const CHANNEL_LABELS: Record<string, string> = {
+    telegram_bot: 'تلگرام',
+    sms: 'پیامک',
+    email: 'ایمیل',
+    app_push: 'اعلان اپلیکیشن',
+    system: 'سیستم',
+};
 
 export default function NotificationsPage() {
     const [searchText, setSearchText] = useState<string | undefined>();
-    const [selectedCategory, setSelectedCategory] = useState<'all' | NotificationCategory>('all');
 
     const [filters, setFilters] = useState<NotificationsFilters>({
         limit: 20,
@@ -88,43 +89,12 @@ export default function NotificationsPage() {
         }
     };
 
-    const getNotificationIcon = (type: string) => {
-        switch (type) {
-            case 'sms':
-                return '📱';
-            case 'email':
-                return '📧';
-            case 'app_push':
-                return '📲';
-            case 'telegram_bot':
-                return '📬';
-            case 'system':
-                return '🔔';
-            default:
-                return '📌';
-        }
-    };
-
-    const getCategoryText = (category: NotificationCategory) => {
-        switch (category) {
-            case NotificationCategory.SYSTEM:
-                return 'سیستم';
-            case NotificationCategory.GENERAL:
-                return 'عمومی';
-            default:
-                return category;
-        }
-    };
-
-    const categoryFilteredItems = useMemo(() => {
-        if (!data?.items) return [];
-        if (selectedCategory === 'all') return data.items;
-        return data.items.filter(item => item.category === selectedCategory);
-    }, [data?.items, selectedCategory]);
+    const { data: telegram } = useTelegramStatus();
+    const items = data?.items;
 
     const unreadCount = useMemo(
-        () => categoryFilteredItems.filter(item => !item.isRead).length,
-        [categoryFilteredItems]
+        () => (items ?? []).filter(item => !item.isRead).length,
+        [items]
     );
 
     return (
@@ -149,6 +119,15 @@ export default function NotificationsPage() {
 
                         </div>
                         <div className='flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end'>
+                            {telegram?.enabled && !telegram.connected && (
+                                <button
+                                    onClick={openTelegramLink}
+                                    className='inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-medium text-sky-700 shadow-sm transition hover:bg-sky-100'
+                                >
+                                    <IconBrandTelegram size={14} />
+                                    فعال‌سازی تلگرام
+                                </button>
+                            )}
                             <button
                                 onClick={handleMarkAllAsRead}
                                 className='inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100'
@@ -156,12 +135,6 @@ export default function NotificationsPage() {
                                 <IconCheck size={14} className='text-emerald-500' />
                                 همه خوانده شده
                             </button>
-                            <Link
-                                href='/dashboard/notifications/preferences'
-                                className='inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-[11px] font-medium text-slate-50 shadow-sm transition hover:bg-black'
-                            >
-                                تنظیمات کانال‌ها و ترجیحات
-                            </Link>
                         </div>
                     </div>
 
@@ -169,36 +142,13 @@ export default function NotificationsPage() {
                     <div className='flex flex-col gap-2.5 rounded-2xl border z-10 border-slate-200/80 bg-white/80 px-3 py-2.5 backdrop-blur-sm lg:flex-row lg:items-center lg:justify-between lg:px-4 lg:py-3'>
                         <div className='w-full lg:max-w-sm'>
                             <Input
-                                placeholder='جستجو در متن، وضعیت یا دسته‌بندی اعلان‌ها'
+                                placeholder='جستجو در متن یا وضعیت اعلان‌ها'
                                 icon={<IconSearch size={18} />}
                                 value={searchText || ''}
                                 onChange={handleSearchChange}
                             />
                         </div>
                         <div className='flex items-center justify-between gap-2 lg:justify-end'>
-                            <div className='w-40 sm:w-48'>
-                                <Dropdown<'all' | NotificationCategory>
-                                    items={CATEGORY_FILTERS.map(item => ({
-                                        label: item.label,
-                                        value: item.id,
-                                    }))}
-                                    value={selectedCategory}
-                                    onChange={value => setSelectedCategory(value ?? 'all')}
-                                    placeholder='همه دسته‌بندی‌ها'
-                                    variant='outline'
-                                    size='sm'
-                                    renderButton={(label, disabled) => (
-                                        <button
-                                            type='button'
-                                            disabled={disabled}
-                                            className='flex w-full items-center justify-between gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
-                                        >
-                                            <span className='truncate'>{label}</span>
-                                            <IconFilter size={14} className='shrink-0 text-slate-400' />
-                                        </button>
-                                    )}
-                                />
-                            </div>
                         </div>
                     </div>
 
@@ -218,7 +168,7 @@ export default function NotificationsPage() {
                         </div>
 
                         <DataView
-                            data={categoryFilteredItems}
+                            data={items}
                             error={error}
                             isLoading={isLoading}
                             className='flex grow flex-col overflow-hidden'
@@ -234,7 +184,7 @@ export default function NotificationsPage() {
                                 </div>
 
                                 <div className='flex min-h-0 grow flex-col gap-1.5 overflow-auto px-2 py-2.5 lg:px-3 lg:py-3'>
-                                    {categoryFilteredItems.map((notification: NotificationResponse) => {
+                                    {items?.map((notification: NotificationResponse) => {
                                         const created = new Date(notification.created_at);
                                         const dateLabel = created.toLocaleDateString('fa-IR');
                                         const timeLabel = created.toLocaleTimeString('fa-IR', {
@@ -269,18 +219,6 @@ export default function NotificationsPage() {
 
                                                     <div className='flex-1 space-y-1.5'>
                                                         <div className='flex flex-wrap items-center gap-1.5'>
-                                                            <span className='text-lg leading-none'>{getNotificationIcon(notification.type)}</span>
-                                                            <span
-                                                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${notification.isRead
-                                                                    ? 'bg-slate-50 text-slate-600'
-                                                                    : 'bg-slate-900 text-slate-50'
-                                                                    }`}
-                                                            >
-                                                                {getCategoryText(notification.category)}
-                                                                {!notification.isRead && (
-                                                                    <span className='h-1 w-1 rounded-full bg-emerald-400' />
-                                                                )}
-                                                            </span>
                                                             {!notification.isRead && (
                                                                 <span className='inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700'>
                                                                     تازه
@@ -319,7 +257,7 @@ export default function NotificationsPage() {
                                                     <div className='inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5'>
                                                         <span className='text-xs'>کانال</span>
                                                         <span className='h-1 w-1 rounded-full bg-slate-300' />
-                                                        <span className='font-medium'>{notification.type}</span>
+                                                        <span className='font-medium'>{CHANNEL_LABELS[notification.type] ?? notification.type}</span>
                                                     </div>
                                                     <div className='flex items-center gap-1.5 text-[11px] text-slate-400'>
                                                         <span>{dateLabel}</span>

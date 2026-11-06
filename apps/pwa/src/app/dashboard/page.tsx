@@ -4,6 +4,7 @@ import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protec
 import { RouteItems } from '@/components/dashboard/dashboard.constants.route-groups';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { AttendanceTodayCard } from './attendance/attendance.component.today-card';
+import { OnCallCard } from './oncall/oncall.component.card';
 import { WelcomeCard } from './welcome/welcome.component.card';
 import { WelcomeModal } from './welcome/welcome.component.modal';
 
@@ -20,6 +21,7 @@ export default function DashboardHomePage() {
           <WelcomeCard />
           <div className="grid shrink-0 grid-cols-12 items-start gap-3">
             <AttendanceTodayCard className="col-span-12 lg:col-span-6" />
+            <OnCallCard className="col-span-12 lg:col-span-6" />
           </div>
         </div>
         <WelcomeModal />

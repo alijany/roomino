@@ -58,23 +58,3 @@ export interface GetNotificationsResponse {
         pageCount: number;
     };
 }
-
-export interface NotificationPreference {
-    id: number;
-    category: NotificationCategory;
-    enabled: boolean;
-    smsEnabled: boolean;
-    emailEnabled: boolean;
-    appPushEnabled: boolean;
-    telegramEnabled: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface UpdateNotificationPreferenceDto {
-    enabled?: boolean;
-    smsEnabled?: boolean;
-    emailEnabled?: boolean;
-    appPushEnabled?: boolean;
-    telegramEnabled?: boolean;
-}

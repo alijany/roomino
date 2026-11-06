@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { IconBell, IconCircle } from '@tabler/icons-react';
+import { IconBell, IconBrandTelegram, IconChecks, IconCircle } from '@tabler/icons-react';
 import { Button } from '@/ui/atoms/ui.button';
 import { Card, CardHeader, CardContent } from '@/ui/atoms/ui.card';
 // Avatar intentionally not used for now: emojis are rendered directly; remove Avatar if unused in future
 import { Spinner } from '@/ui/atoms/ui.atoms.spinner';
 import Link from 'next/link';
-import { useNotifications, useUnreadCount, markAsRead, getNotificationsCacheKey } from '@/app/dashboard/notifications/notifications.api';
-import { NotificationResponse, NotificationCategory } from '@/app/dashboard/notifications/notifications.types';
+import { useNotifications, useUnreadCount, markAsRead, markAllAsRead, getNotificationsCacheKey } from '@/app/dashboard/notifications/notifications.api';
+import { NotificationResponse } from '@/app/dashboard/notifications/notifications.types';
 import { mutate } from 'swr';
+import { openTelegramLink, useTelegramStatus } from '@/app/dashboard/notifications/notifications.component.telegram';
 
 export function NotificationDropdown() {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { data: unreadData } = useUnreadCount();
+    const { data: telegram } = useTelegramStatus();
     const notificationFilters = { limit: 5, page: 0, isRead: false };
     const { data: notificationsData, isLoading: isNotificationsLoading } = useNotifications(notificationFilters);
 
@@ -47,20 +49,31 @@ export function NotificationDropdown() {
         setIsOpen(false);
     };
 
-    const getCategoryIcon = (category: NotificationCategory) => {
-        switch (category) {
-            case NotificationCategory.SYSTEM:
-                return '🔔';
-            case NotificationCategory.GENERAL:
-                return '📢';
-            default:
-                return '📌';
+    const handleMarkAllAsRead = async () => {
+        try {
+            await markAllAsRead();
+            mutate('/notifications/unread-count');
+            mutate(getNotificationsCacheKey(notificationFilters));
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
         }
     };
 
     const unreadCount = unreadData?.count || 0;
 
     return (
+        <div className="flex items-center gap-2">
+        {telegram?.enabled && !telegram.connected && (
+            <Button
+                onClick={openTelegramLink}
+                variant="outline"
+                className="!min-h-10 !px-2.5 text-sky-600"
+                aria-label="اتصال تلگرام"
+                title="اتصال تلگرام برای دریافت اعلان‌ها"
+            >
+                <IconBrandTelegram size={20} />
+            </Button>
+        )}
         <div className="relative" ref={dropdownRef}>
             <Button
                 onClick={() => setIsOpen(!isOpen)}
@@ -82,6 +95,16 @@ export function NotificationDropdown() {
                     <Card className="flex max-h-[min(500px,calc(100dvh-6rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-pop">
                         <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 p-4">
                             <h3 className="font-semibold">اعلان‌ها</h3>
+                            {unreadCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleMarkAllAsRead}
+                                    className="ms-auto me-3 inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700"
+                                >
+                                    <IconChecks size={16} />
+                                    همه خوانده شد
+                                </button>
+                            )}
                             <Link
                                 href="/dashboard/notifications"
                                 className="text-sm text-brand-700 hover:text-brand-800"
@@ -103,7 +126,7 @@ export function NotificationDropdown() {
                                         >
                                             <div className="flex gap-3">
                                                 <div className="text-2xl flex-shrink-0">
-                                                    <div className="rounded-full w-10 h-10 bg-slate-100 flex items-center justify-center text-lg">{getCategoryIcon(notification.category)}</div>
+                                                    <div className="rounded-full w-10 h-10 bg-slate-100 flex items-center justify-center text-lg"><IconBell size={18} className="text-slate-500" /></div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-start justify-between gap-2">
@@ -156,6 +179,7 @@ export function NotificationDropdown() {
                     </Card>
                 </div>
             )}
+        </div>
         </div>
     );
 }

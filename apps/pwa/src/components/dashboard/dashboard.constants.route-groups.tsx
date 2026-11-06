@@ -27,6 +27,7 @@ import {
   IconCalendarOff,
   IconTrendingUp,
   IconUser,
+  IconPhoneCall,
   IconSitemap,
   IconUsers,
   IconUsersGroup,
@@ -226,6 +227,18 @@ export const RouteItems = {
     roles: [Role.ADMIN, Role.HR],
     icon: <IconId className="size-5" />
   },
+  attendanceMyOncall: {
+    href: "/dashboard/oncall",
+    label: "کشیک من",
+    roles: false as const,
+    icon: <IconPhoneCall className="size-5" />
+  },
+  attendanceOncall: {
+    href: "/admin/attendance/oncall",
+    label: "کشیک",
+    roles: [Role.ADMIN, Role.HR, Role.ONCALL_MANAGER],
+    icon: <IconPhoneCall className="size-5" />
+  },
   attendanceSettings: {
     href: "/admin/attendance/settings",
     label: "تنظیمات حضور و غیاب",
@@ -327,6 +340,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.attendanceRequests,
       RouteItems.attendancePerformance,
       RouteItems.attendanceEmployees,
+      RouteItems.attendanceOncall,
       RouteItems.attendanceSettings,
       RouteItems.attendanceMaintenance,
     ]

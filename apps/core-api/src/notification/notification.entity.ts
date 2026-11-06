@@ -27,7 +27,8 @@ export class NotificationEntity extends BaseEntity {
   })
   category: NotificationCategory;
 
-  @Property()
+  /** Long on purpose: a published on-call period lists every day of a person's. */
+  @Property({ type: 'text' })
   message: string;
 
   @Property({ nullable: true })
