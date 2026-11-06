@@ -12,7 +12,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { StaffGuard } from '../auth/guards/staff.guard';
 import { Role } from '../roles/roles.constants';
-import { UpdateSiteSettingsDto } from './site-settings.dto';
+import { IntegrationSettingsService } from './integration-settings.service';
+import {
+  UpdateIntegrationSettingsDto,
+  UpdateSiteSettingsDto,
+} from './site-settings.dto';
 import { SiteSettingsService } from './site-settings.service';
 
 /** Site-wide settings — the admin and the CEO only. */
@@ -21,7 +25,10 @@ import { SiteSettingsService } from './site-settings.service';
 @Roles(Role.ADMIN, Role.CEO)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class SiteSettingsController {
-  constructor(private readonly settings: SiteSettingsService) {}
+  constructor(
+    private readonly settings: SiteSettingsService,
+    private readonly integrations: IntegrationSettingsService,
+  ) {}
 
   @Get()
   all() {
@@ -37,6 +44,17 @@ export class SiteSettingsController {
         'supplementaryInsuranceEnabled',
       ),
     };
+  }
+
+  /** Telegram bot and SMS credentials; secrets are only reported as set or not. */
+  @Get('integrations')
+  integrationSettings() {
+    return this.integrations.view();
+  }
+
+  @Patch('integrations')
+  updateIntegrations(@Body() dto: UpdateIntegrationSettingsDto) {
+    return this.integrations.update(dto);
   }
 
   @Patch()

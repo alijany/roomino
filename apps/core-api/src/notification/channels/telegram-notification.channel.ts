@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { BaseNotificationChannel } from './base-notification.channel';
 import { NotificationEntity } from '../notification.entity';
 import { NotificationType } from '../notification.constants';
+import { IntegrationSettingsService } from '../../settings/integration-settings.service';
 import { NotificationRepository } from '../repositories/notification.repository';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class TelegramNotificationChannel extends BaseNotificationChannel {
 
   constructor(
     protected notificationRepository: NotificationRepository,
-    private configService: ConfigService,
+    private integrations: IntegrationSettingsService,
   ) {
     super(notificationRepository);
   }
@@ -34,27 +34,15 @@ export class TelegramNotificationChannel extends BaseNotificationChannel {
       throw new Error('Telegram notification missing recipient chat ID');
     }
 
-    const botToken = this.getBotToken(notification.type);
-    if (!botToken) {
+    const { token, apiBase } = await this.integrations.telegram();
+    if (!token) {
       throw new Error(`No bot token configured for ${notification.type}`);
     }
 
-    const base =
-      this.configService.get<string>('TELEGRAM_API_BASE') ||
-      'https://api.telegram.org';
-    await axios.post(`${base}/bot${botToken}/sendMessage`, {
+    await axios.post(`${apiBase}/bot${token}/sendMessage`, {
       chat_id: notification.recipientChatId,
       text: notification.message,
     });
-  }
-
-  private getBotToken(type: NotificationType): string | null {
-    switch (type) {
-      case NotificationType.TELEGRAM_BOT:
-        return this.configService.get<string>('TELEGRAM_BOT_TOKEN');
-      default:
-        return null;
-    }
   }
 
   getPriority(): number {

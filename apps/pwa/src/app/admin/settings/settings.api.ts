@@ -20,3 +20,24 @@ export const useUpdateSiteSettings = () =>
       patchFetcher<Partial<SiteSettings>, SiteSettings>('/admin/settings', { arg }),
     ),
   );
+
+/** Telegram bot and SMS credentials. Secrets come back only as «is set» and a hint. */
+export interface IntegrationSettings {
+  telegram: { botUsername: string; apiBase: string; webhookUrl: string; tokenSet: boolean; tokenHint: string | null };
+  sms: { provider: 'asanak' | 'smsir'; smsirLine: string; smsirOtpTemplate: string; smsirOtpParam: string; smsirKeySet: boolean; smsirKeyHint: string | null; apiUrl: string; username: string; source: string; passwordSet: boolean; passwordHint: string | null };
+}
+
+export interface IntegrationChanges {
+  telegram?: { botToken?: string; botUsername?: string; apiBase?: string; webhookUrl?: string };
+  sms?: { provider?: 'asanak' | 'smsir'; smsirApiKey?: string; smsirLine?: string; smsirOtpTemplate?: string; smsirOtpParam?: string; apiUrl?: string; username?: string; password?: string; source?: string };
+}
+
+export const useIntegrationSettings = () =>
+  useSwrHelper(useSWR<IntegrationSettings>('/admin/settings/integrations', fetcher));
+
+export const useUpdateIntegrationSettings = () =>
+  useSwrMutationHelper(
+    useSWRMutation('/admin/settings/integrations/update', (_k: string, { arg }: { arg: IntegrationChanges }) =>
+      patchFetcher<IntegrationChanges, IntegrationSettings>('/admin/settings/integrations', { arg }),
+    ),
+  );

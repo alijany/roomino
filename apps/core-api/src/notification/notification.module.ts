@@ -4,6 +4,7 @@ import { NotificationEntity } from './notification.entity';
 import { NotificationPreferenceEntity } from './notification-preference.entity';
 import { NotificationService } from './services/notification.service';
 import { SmsModule } from '../sms/sms.module';
+import { SettingsModule } from '../settings/settings.module';
 import { NotificationController } from './notification.controller';
 import { RolesModule } from '../roles/roles.module';
 
@@ -33,6 +34,7 @@ import { UserModule } from 'src/user/user.module';
       NotificationPreferenceEntity,
     ]),
     SmsModule,
+    SettingsModule,
     RolesModule,
     UserModule,
   ],

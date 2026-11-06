@@ -11,6 +11,7 @@ import { IconSettings } from '@tabler/icons-react';
 import { ReactNode, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useSiteSettings, useUpdateSiteSettings } from './settings.api';
+import { IntegrationCards } from './settings.component.integrations';
 
 /** Site-wide settings. Admin and CEO only. */
 export default function SiteSettingsPage() {
@@ -64,6 +65,8 @@ function SettingsContent() {
           </Section>
         )}
       </DataView>
+
+      <IntegrationCards Section={Section} />
 
       <ConfirmModal
         isOpen={confirmClose}

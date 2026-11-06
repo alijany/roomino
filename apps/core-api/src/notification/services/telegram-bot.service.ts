@@ -5,9 +5,15 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
 import { EntityManager } from '@mikro-orm/postgresql';
 import axios from 'axios';
 import { createHmac, timingSafeEqual } from 'crypto';
+import {
+  IntegrationSettingsService,
+  TELEGRAM_SETTINGS_CHANGED,
+  TelegramConfig,
+} from '../../settings/integration-settings.service';
 import { UserEntity } from '../../user/user.entity';
 
 const LINK_TTL_MINUTES = 15;
@@ -28,26 +34,28 @@ export class TelegramBotService
   implements OnApplicationBootstrap, OnModuleDestroy
 {
   private readonly logger = new Logger(TelegramBotService.name);
-  private polling = false;
+  /** Bumped on every (re)start so a polling loop from an older setup ends. */
+  private generation = 0;
+  /** Token, username and URLs as saved on the site-settings page (env as fallback). */
+  private cfg: TelegramConfig = { apiBase: 'https://api.telegram.org' };
 
   constructor(
     private readonly config: ConfigService,
     private readonly em: EntityManager,
+    private readonly integrations: IntegrationSettingsService,
   ) {}
 
   private get token(): string | undefined {
-    return this.config.get<string>('TELEGRAM_BOT_TOKEN') || undefined;
+    return this.cfg.token;
   }
 
   /** Base URL of the Bot API; point it at a relay when Telegram is blocked. */
   get apiBase(): string {
-    return (
-      this.config.get<string>('TELEGRAM_API_BASE') || 'https://api.telegram.org'
-    );
+    return this.cfg.apiBase;
   }
 
   get username(): string | undefined {
-    return this.config.get<string>('TELEGRAM_BOT_USERNAME') || undefined;
+    return this.cfg.username;
   }
 
   get enabled(): boolean {
@@ -109,8 +117,16 @@ export class TelegramBotService
   // ── receiving updates ──────────────────────────────────────────────────
 
   async onApplicationBootstrap() {
+    await this.start();
+  }
+
+  /** The settings page saved new bot details: begin again with them. */
+  @OnEvent(TELEGRAM_SETTINGS_CHANGED)
+  async start() {
+    const generation = ++this.generation;
+    this.cfg = await this.integrations.telegram();
     if (!this.token || process.env.NODE_ENV === 'test') return;
-    const webhookUrl = this.config.get<string>('TELEGRAM_WEBHOOK_URL');
+    const webhookUrl = this.cfg.webhookUrl;
     try {
       if (webhookUrl) {
         await this.call('setWebhook', {
@@ -121,8 +137,7 @@ export class TelegramBotService
         this.logger.log('Telegram webhook registered');
       } else {
         await this.call('deleteWebhook', {});
-        this.polling = true;
-        void this.poll();
+        void this.poll(generation);
         this.logger.log('Telegram long polling started');
       }
     } catch (error) {
@@ -131,12 +146,12 @@ export class TelegramBotService
   }
 
   onModuleDestroy() {
-    this.polling = false;
+    this.generation++;
   }
 
-  private async poll() {
+  private async poll(generation: number) {
     let offset = 0;
-    while (this.polling) {
+    while (generation === this.generation) {
       try {
         const { data } = await axios.post(
           `${this.apiBase}/bot${this.token}/getUpdates`,

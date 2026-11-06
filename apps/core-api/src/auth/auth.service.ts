@@ -213,9 +213,10 @@ export class AuthService {
         return { isNewUser };
       }
 
-      const result = await this.smsService.sendSms(
-        `رمز یکبار مصرف شما: ${otp}`,
+      const result = await this.smsService.sendOtp(
+        otp,
         validatedPhone.nationalNumber,
+        `رمز یکبار مصرف شما: ${otp}`,
       );
 
       if (!result.success) {
