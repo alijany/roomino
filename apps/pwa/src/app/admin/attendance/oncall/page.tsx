@@ -78,7 +78,7 @@ export default function OnCallPage() {
   };
 
   return (
-    <RoleProtectedRoute allowedRoles={RouteItems.attendanceOncall.roles}>
+    <RoleProtectedRoute allowedRoles={[...RouteItems.attendanceOncall.roles, ...RouteItems.attendanceOncallManage.roles]}>
       <DashbaordLayout>
         <div className="flex grow flex-col gap-3 overflow-auto pb-6">
           <PageHeader

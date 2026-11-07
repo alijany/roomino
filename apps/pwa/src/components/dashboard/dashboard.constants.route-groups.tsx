@@ -236,7 +236,15 @@ export const RouteItems = {
   attendanceOncall: {
     href: "/admin/attendance/oncall",
     label: "کشیک",
-    roles: [Role.ADMIN, Role.HR, Role.ONCALL_MANAGER],
+    roles: [Role.ADMIN, Role.HR],
+    icon: <IconPhoneCall className="size-5" />
+  },
+  // The on-call manager has no management tab: this link in their own
+  // attendance menu leads to the same page.
+  attendanceOncallManage: {
+    href: "/admin/attendance/oncall",
+    label: "مدیریت کشیک",
+    roles: [Role.ONCALL_MANAGER],
     icon: <IconPhoneCall className="size-5" />
   },
   attendanceSettings: {
@@ -304,6 +312,7 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.attendanceHome,
       RouteItems.attendanceMyRequests,
       RouteItems.attendanceMyReport,
+      RouteItems.attendanceOncallManage,
     ]
   },
   // Hidden for now — re-add the group below to bring "درخواست‌ها و تأییدها"
