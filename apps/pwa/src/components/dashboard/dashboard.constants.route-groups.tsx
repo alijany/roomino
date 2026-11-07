@@ -6,6 +6,7 @@ import {
   IconBuildingStore,
   IconCashBanknote,
   IconChartPie,
+  IconCalendarCog,
   IconCalendarStats,
   IconChecklist,
   IconClipboardList,
@@ -245,7 +246,7 @@ export const RouteItems = {
     href: "/admin/attendance/oncall",
     label: "مدیریت کشیک",
     roles: [Role.ONCALL_MANAGER],
-    icon: <IconPhoneCall className="size-5" />
+    icon: <IconCalendarCog className="size-5" />
   },
   attendanceSettings: {
     href: "/admin/attendance/settings",
@@ -312,7 +313,6 @@ export const routeGroups: RouteGroup[] = [
       RouteItems.attendanceHome,
       RouteItems.attendanceMyRequests,
       RouteItems.attendanceMyReport,
-      RouteItems.attendanceOncallManage,
     ]
   },
   // Hidden for now — re-add the group below to bring "درخواست‌ها و تأییدها"

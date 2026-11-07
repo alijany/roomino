@@ -48,6 +48,7 @@ export async function usersWorkbook(
     { header: 'پایان دورهٔ آزمایشی', key: 'probationEnd', width: 16 },
     { header: 'پایان همکاری', key: 'endDate', width: 13 },
     { header: 'وضعیت', key: 'status', width: 14 },
+    { header: 'تلگرام', key: 'telegram', width: 12 },
   ];
 
   users.forEach((user, i) =>
@@ -72,6 +73,7 @@ export async function usersWorkbook(
       probationEnd: jalali(user.probationEndDate),
       endDate: jalali(user.endDate),
       status: statusOf(user, today),
+      telegram: user.chatId ? 'فعال' : 'غیرفعال',
     }),
   );
 

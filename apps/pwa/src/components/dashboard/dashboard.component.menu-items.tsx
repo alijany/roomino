@@ -46,6 +46,8 @@ export function MenuItems({ className, itemClassName, onClose }: MenuItemsProps)
         ...(group.id === "attendance" && attendance?.isApprover ? [RouteItems.attendanceTeam] : []),
         // Only people on the on-call list have a کشیک of their own.
         ...(group.id === "attendance" && onCall?.eligible ? [RouteItems.attendanceMyOncall] : []),
+        // The on-call manager's way into the management page, right below it.
+        ...(group.id === "attendance" && hasAnyRole(RouteItems.attendanceOncallManage.roles) ? [RouteItems.attendanceOncallManage] : []),
       ],
     }))
     .filter(group => group.routes.length > 0);
