@@ -9413,6 +9413,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "bigint"
+        },
+        "seniority_raise": {
+          "name": "seniority_raise",
+          "type": "numeric(7,4)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 7,
+          "scale": 4,
+          "default": "45",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
         }
       },
       "name": "payroll_setting_entity",

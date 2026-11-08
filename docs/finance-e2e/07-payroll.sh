@@ -116,13 +116,13 @@ chk "month 1405/08 for three people"       "$(j POST /finance/payroll/140508/gen
 H=$(j GET /finance/payroll/140508 "$ADM")
 MIN=$(j GET /finance/payroll-settings/1405 "$ADM"|python3 -c "import sys,json;print(next(i for i in json.load(sys.stdin)['items'] if i['key']=='minMonthly')['value'])")
 chk "user 1: the minimum wage goes through the rules" "$(echo "$H"|line 1 base)" "$MIN"
-chk "  extras = agreed − the legal package"  "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(i['agreed']-(i['base']+i['housing']+i['bon']+i['marriage']+i['child']+i['seniority'])==i['extras'] and i['extras']>0)" "$H")" "True"
-chk "  the whole agreed salary is paid, less the worker's insurance" "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(i['net']==i['agreed']-i['workerInsurance']-i['tax'])" "$H")" "True"
+chk "  extras = agreed − the legal package's net (after insurance and tax)" "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(i['agreed']-(i['gross']-i['workerInsurance']-i['tax'])==i['extras'] and i['extras']>0)" "$H")" "True"
+chk "  the whole agreed salary is the take-home" "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(i['net']==i['agreed'])" "$H")" "True"
 chk "  take-home = the legal net + extras" "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(i['net']-i['extras']==i['gross']-i['totalDeductions'])" "$H")" "True"
 chk "  extras bear no insurance"           "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==1);print(abs(i['workerInsurance']*100-7*(i['base']+i['housing']+i['seniority']))<=700)" "$H")" "True"
 chk "  the total agreed stays on the line" "$(echo "$H"|line 1 agreed)" "330000000"
 chk "user 2, an ordinary salary, has none" "$(echo "$H"|line 2 extras)" "0"
-chk "user 3 (hybrid) has extras too"       "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==3);print(i['extras']>0 and i['agreed']-(i['base']+i['housing']+i['bon']+i['marriage']+i['child']+i['seniority'])==i['extras'])" "$H")" "True"
+chk "user 3 (hybrid) has extras too"       "$(python3 -c "import json,sys;d=json.loads(sys.argv[1]);i=next(x for x in d['items'] if x['user']['id']==3);print(i['extras']>0 and i['agreed']-(i['gross']-i['workerInsurance']-i['tax'])==i['extras'])" "$H")" "True"
 chk "a salary under the minimum is ordinary" "$(code POST /finance/salary-changes "$ADM" '{"userId":3,"period":140509,"salary":150000000}')" "201"
 chk "  (month 1405/09)"                    "$(j POST /finance/payroll/140509/generate "$ADM"|g "['created']")" "3"
 chk "  has no extras"                      "$(j GET /finance/payroll/140509 "$ADM"|line 3 extras)" "0"

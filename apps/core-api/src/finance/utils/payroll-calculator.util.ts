@@ -1,5 +1,6 @@
 import { PayrollInclusion } from '../entities/payroll-setting.entity';
 import { PayrollValues } from '../payroll-setting.catalog';
+import { seniorityDailyFor } from '../payroll-seniority.catalog';
 
 /**
  * One person's pay for one month, from the year's legal parameters and that
@@ -21,6 +22,8 @@ export interface PayrollInput {
   children: number;
   /** Whole years of service, for the seniority base. */
   seniorityYears: number;
+  /** The year's cumulative seniority table (daily rial by whole years); without one it is years × the year's base. */
+  seniorityTable?: number[];
   insured: boolean;
   /** Board members pay no unemployment insurance. */
   insuranceType: InsuranceType;
@@ -52,10 +55,10 @@ export interface PayrollInput {
   /**
    * A hybrid salary: only the year's legal minimum wage, with its allowances,
    * goes through the rules; whatever the agreed salary has beyond that
-   * package is paid apart, net — no insurance, no tax. With a gross agreement
-   * the extras are the agreed salary less the package's gross (ignored if the
-   * salary is at or under the minimum wage); with a net agreement the agreed
-   * salary is the take-home and the extras are what the package's net lacks.
+   * package is paid apart, net — no insurance, no tax. The package's insurance
+   * and tax are worked out first; the extras are then the difference between
+   * the agreed salary and the package's net, so the take-home is the agreed
+   * salary. A gross agreement is split only above the minimum wage.
    */
   hybrid?: boolean;
 }
@@ -146,8 +149,11 @@ function compute(
   const wageHours = s.wageHours || 220;
   const hourly = fullBase / wageHours;
   const daily = fullBase / 30;
-  const seniorityDaily =
-    x.seniorityYears > 0 ? s.seniorityDaily * x.seniorityYears : 0;
+  const seniorityDaily = seniorityDailyFor(
+    x.seniorityTable,
+    x.seniorityYears,
+    s.seniorityDaily,
+  );
 
   const parts: Parts = {
     base: fullBase * f,
@@ -295,21 +301,9 @@ export function calculatePayroll(
     fullBase = settings.minMonthly;
     const fixed = compute(settings, inclusion, input, fullBase, false);
     const target = input.agreed * input.fraction;
-    if (input.agreement === 'net') {
-      // The agreed salary is the take-home: the extras make up what the
-      // package's own net lacks, so the employer carries the insurance and tax.
-      extras = Math.max(target - fixed.net, 0);
-    } else {
-      const { parts } = fixed;
-      const packageAmount =
-        parts.base +
-        parts.housing +
-        parts.bon +
-        parts.marriage +
-        parts.child +
-        parts.seniority;
-      extras = Math.max(target - packageAmount, 0);
-    }
+    // The package's net is after its insurance and tax; the extras make up
+    // the rest of the agreed salary, so the employer carries both.
+    extras = Math.max(target - fixed.net, 0);
   } else if (input.agreement === 'net') {
     // A net agreement fixes the take-home; find the base wage that gives it.
     const target = input.agreed * input.fraction;

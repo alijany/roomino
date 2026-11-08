@@ -26,6 +26,10 @@ import {
   PayrollValues,
   defaultInclusion,
 } from '../payroll-setting.catalog';
+import {
+  SENIORITY_TABLES,
+  deriveSeniorityTable,
+} from '../payroll-seniority.catalog';
 import { readBigint } from '../utils/money.util';
 
 const MIN_YEAR = 1300;
@@ -190,10 +194,30 @@ export class PayrollSettingService extends BaseRepositoryService<PayrollSettingE
     return row
       ? {
           values: this.valuesOf(row),
+          seniorityTable: await this.seniorityTable(year),
           inclusion: row.inclusion,
           supplementary: this.policyOf(row),
         }
       : null;
+  }
+
+  /**
+   * A year's cumulative seniority table: the published one, else the previous
+   * year's table raised by this year's increase plus its new base. Undefined
+   * when neither exists, and the plain years × base applies.
+   */
+  async seniorityTable(year: number, depth = 0): Promise<number[] | undefined> {
+    if (SENIORITY_TABLES[year]) return SENIORITY_TABLES[year];
+    if (depth >= 5) return undefined;
+    const row = await this.repository.findOne({ year });
+    if (!row) return undefined;
+    const previous = await this.seniorityTable(year - 1, depth + 1);
+    if (!previous) return undefined;
+    return deriveSeniorityTable(
+      previous,
+      Number(row.seniorityRaise),
+      readBigint(row.seniorityDaily),
+    );
   }
 
   /** The policy as the page and the payroll read it; null while the year has none. */

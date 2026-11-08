@@ -93,6 +93,8 @@ function jalaliPeriod(civil: string): number {
 interface Context {
   year: number;
   values: PayrollValues;
+  /** The year's cumulative seniority table, when it is known. */
+  seniorityTable: number[] | undefined;
   inclusion: Record<string, PayrollInclusion>;
   /** The year's supplementary-insurance policy. */
   supplementary: {
@@ -632,6 +634,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     return {
       year,
       values: set.values,
+      seniorityTable: set.seniorityTable,
       inclusion: set.inclusion,
       // Switched off site-wide, nothing is taken, whoever is enrolled.
       supplementary: {
@@ -736,6 +739,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       married: user.married,
       children: user.childrenCount,
       seniorityYears,
+      seniorityTable: ctx.seniorityTable,
       insured: user.insured,
       insuranceType: (user.insuranceType === 'board'
         ? 'board'

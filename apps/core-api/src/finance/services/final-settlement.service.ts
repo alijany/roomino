@@ -311,6 +311,7 @@ export class FinalSettlementService {
       married: user.married,
       children: user.childrenCount,
       seniorityYears: serviceYears,
+      seniorityTable: set.seniorityTable,
       insured: user.insured,
       insuranceType: (user.insuranceType === 'board' ? 'board' : 'worker') as
         | 'board'

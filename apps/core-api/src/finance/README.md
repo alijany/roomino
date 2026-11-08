@@ -230,13 +230,18 @@ work deficit come off. It is one transfer, «salary», with no extras.
 **Hybrid salary.** A user's `salaryMode` is `regular`, `hybrid` or `flat`. For a hybrid
 user the *legal package* — the year's minimum monthly wage (prorated by the days
 worked) with its allowances and seniority — goes through the rules (insurance,
-tax); the agreed salary's shortfall against that package is the line's `extras`,
-paid net, outside insurance and tax. With a **gross** agreement the whole
-agreed salary is paid, less the worker's insurance on the package; with a **net**
-agreement the agreed salary is the take-home and the extras make up what the
-package's own net lacks, so the employer carries the insurance and tax. If the
-agreed salary does not reach the package, only the package is paid and `extras`
-is zero (flagged). A gross salary at or under the minimum wage is simply ordinary.
+tax) first; the line's `extras` are then the agreed salary less the package's
+*net* (after that insurance and tax), paid net, outside insurance and tax. So the
+take-home is the agreed salary — gross or net agreement alike — and the employer
+carries the insurance and tax; the premium, advance, loan and other deductions come
+off after that. If the agreed salary does not reach the package's net, only the
+package is paid and `extras` is zero (flagged). A gross salary at or under the
+minimum wage is simply ordinary.
+
+**Seniority base.** Per year of service it is *cumulative*, not «years × this year's
+base»: `payroll-seniority.catalog.ts` holds the daily figure per Jalali year for 0–30
+years (1405: bidbarg.net's table, until Social Security publishes its own). A year with
+no table falls back to `seniorityDaily × years`.
 Eidi, severance and leave buy-out follow the legal part. The person's facts (hire/end date, married, children,
 insured, insurance type, tax exemption, gross/net agreement) are on the user.
 

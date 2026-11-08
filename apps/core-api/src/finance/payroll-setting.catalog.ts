@@ -12,6 +12,7 @@ export type PayrollKey =
   | 'minDaily'
   | 'minMonthly'
   | 'seniorityDaily'
+  | 'seniorityRaise'
   | 'housing'
   | 'bon'
   | 'marriage'
@@ -99,7 +100,15 @@ export const PAYROLL_PARAMETERS: PayrollParameter[] = [
     group: BASE,
     label: 'پایه سنوات (روزانه)',
     kind: 'money',
-    hint: 'برای هر سال سابقه نزد کارفرما',
+    hint: 'پایه‌ی یک سال سابقه؛ برای سال‌هایی که جدول تجمیعی دارند (۱۴۰۵) محاسبه از روی جدول است',
+  },
+
+  {
+    key: 'seniorityRaise',
+    group: BASE,
+    label: 'ضریب افزایش سنوات تجمیعی',
+    kind: 'percent',
+    hint: 'درصد افزایش سطوح مزدی همین سال؛ جدول سنوات تجمیعی سال از جدول سال قبل ضربدر این ضریب به‌اضافه‌ی پایه‌ی سنوات ساخته می‌شود',
   },
 
   { key: 'housing', group: ALLOW, label: 'حق مسکن', kind: 'money' },
@@ -350,7 +359,8 @@ export const OFFICIAL_PAYROLL: Record<number, PayrollValues> = {
   1405: {
     minDaily: 5_541_850,
     minMonthly: 166_255_500,
-    seniorityDaily: 166_670,
+    seniorityDaily: 166_667,
+    seniorityRaise: 45,
     housing: 30_000_000,
     bon: 22_000_000,
     marriage: 5_000_000,

@@ -1,4 +1,8 @@
 import { OFFICIAL_PAYROLL } from '../payroll-setting.catalog';
+import {
+  SENIORITY_TABLES,
+  deriveSeniorityTable,
+} from '../payroll-seniority.catalog';
 import { defaultInclusion } from '../payroll-setting.catalog';
 import { calculatePayroll, PayrollInput } from './payroll-calculator.util';
 
@@ -235,7 +239,9 @@ const SHEET: Array<
   ],
 ];
 
-const settings = OFFICIAL_PAYROLL[1405];
+// The sheet multiplies 166,670 by the years; these rows carry no year, so they
+// keep that plain rule rather than the cumulative table.
+const settings = { ...OFFICIAL_PAYROLL[1405], seniorityDaily: 166_670 };
 const inclusion = defaultInclusion();
 const PERIOD = 140507;
 
@@ -568,12 +574,14 @@ describe('calculatePayroll — what the sheet had no data for', () => {
         input({ agreed, hybrid: true }),
       );
       expect(r.base).toBe(minimum);
-      expect(r.extras).toBe(agreed - packageOf(r));
-      // The insurance is on the package only, and the whole agreed salary is paid.
-      expect(r.workerInsurance).toBe(Math.round((r.base + r.housing) * 0.07));
+      // The package's insurance and tax come off first; the extras are what is
+      // left of the agreed salary after that, so the take-home is the agreed salary.
       expect(r.tax).toBe(0);
-      expect(r.net).toBe(agreed - r.workerInsurance);
-      expect(r.totalCost).toBe(agreed + r.employerInsurance + r.accrual);
+      expect(r.extras).toBe(agreed - (r.gross - r.workerInsurance - r.tax));
+      expect(r.net).toBe(agreed);
+      expect(r.totalCost).toBe(
+        r.gross + r.extras + r.employerInsurance + r.accrual,
+      );
     });
 
     it('pays only the package when the agreed salary does not reach it', () => {
@@ -640,8 +648,38 @@ describe('calculatePayroll — what the sheet had no data for', () => {
         input({ agreed, hybrid: true, fraction: 0.5 }),
       );
       expect(r.base).toBe(Math.round(minimum / 2));
-      expect(r.extras).toBe(Math.round(agreed / 2 - packageOf(r)));
+      const packageNet = r.gross - r.workerInsurance - r.tax;
+      expect(
+        Math.abs(r.extras - (agreed / 2 - packageNet)),
+      ).toBeLessThanOrEqual(1);
     });
+  });
+
+  it("takes the seniority base from the year's cumulative table", () => {
+    const r = calculatePayroll(
+      OFFICIAL_PAYROLL[1405],
+      inclusion,
+      input({
+        agreed: 300_000_000,
+        seniorityYears: 3,
+        seniorityTable: SENIORITY_TABLES[1405],
+      }),
+    );
+    expect(r.seniority).toBe(13_108_410);
+    // No table for the year: plain years × the year's base.
+    const plain = calculatePayroll(
+      { ...OFFICIAL_PAYROLL[1405], seniorityDaily: 100_000 },
+      inclusion,
+      input({ agreed: 300_000_000, seniorityYears: 3 }),
+    );
+    expect(plain.seniority).toBe(9_000_000);
+  });
+
+  it("derives a year's table from the previous one", () => {
+    const y1404 = [0, 94_000, 186_400, 299_128, 435_529, 561_017];
+    expect(deriveSeniorityTable(y1404, 45, 166_667)).toEqual(
+      SENIORITY_TABLES[1405].slice(0, 6),
+    );
   });
 
   it('flags a base wage below the legal minimum', () => {

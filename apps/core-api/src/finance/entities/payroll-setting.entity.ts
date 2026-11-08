@@ -79,6 +79,10 @@ export class PayrollSettingEntity extends BaseEntity {
   @Property({ columnType: 'numeric(7,4)' })
   insUnemployment: number;
 
+  /** Raise for the other wage levels, which lifts last year's cumulative seniority table. */
+  @Property({ columnType: 'numeric(7,4)', default: 45 })
+  seniorityRaise: number;
+
   @Property({ columnType: 'numeric(7,4)' })
   taxRate1: number;
 
