@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from '../../notification/services/notification.service';
 import { RolesEntity } from '../../roles/roles.entity';
-import { Role } from '../../roles/roles.constants';
+import { Role, expandRoles } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import {
   DEFAULT_ONCALL_RATES,
@@ -54,11 +54,9 @@ export class OnCallService {
   /** Admin, HR and the on-call manager lay the list out; everyone else only reads published periods. */
   async canManage(user: UserEntity) {
     const roles = await this.em.find(RolesEntity, { user: user.id });
-    return roles.some(
-      (r) =>
-        r.role === Role.ADMIN ||
-        r.role === Role.HR ||
-        r.role === Role.ONCALL_MANAGER,
+    const held = expandRoles(roles.map((r) => r.role));
+    return [Role.ADMIN, Role.HR, Role.ONCALL_MANAGER].some((r) =>
+      held.includes(r),
     );
   }
 

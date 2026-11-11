@@ -137,6 +137,10 @@ but its value stays rial. Never convert by hand; getting this backwards is a
 | `approver` | Budget holder who approves payment requests |
 | `hr` | Rooms and users; runs attendance — setup, employees, all requests, reports |
 | `user` | Default; books rooms, raises payment requests, checks in and files leave |
+| `senior_finance` | کارشناس ارشد مالی — counts as `finance` + `finance_manager` (incl. the second advance signature and its notifications) |
+| `personnel` | کارگزینی — counts as `hr` |
+
+Implied roles live in `ROLE_IMPLIES` (`roles.constants.ts` on both sides, keep in step): the guard, `hasRole`/`hasAnyRole`, `usersWithRole` and notification lookups expand them, so a new role that should inherit another's access is one map entry.
 
 **Access is by exact role match, not by level.** `finance` and `approver` are
 peers with different jobs, not nested tiers — `RolesGuard` (backend) and

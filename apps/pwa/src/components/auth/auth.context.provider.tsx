@@ -4,7 +4,7 @@ import { ApiError } from '@/libs/api/api.types.error';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AuthResponse, useProfile, useRequestOtpMutation, useVerifyOtpMutation } from './auth.api.client';
-import { InvitationStatus, Role, RoleType } from './auth.constants.roles';
+import { InvitationStatus, Role, RoleType, expandRoles } from './auth.constants.roles';
 import { logout as logoutUtil, storeAuthTokens } from './auth.utils.tokens';
 
 interface AuthContextType {
@@ -77,12 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (organizationId !== undefined) {
             // Check for role in specific organization
             return profileData.roles.some(
-                (userRole) => userRole.role === role && userRole.organization === organizationId
+                (userRole) => expandRoles([userRole.role]).includes(role) && userRole.organization === organizationId
             );
         }
 
         // Check for role in any context (global or any organization)
-        return profileData.roles.some((userRole) => userRole.role === role);
+        return profileData.roles.some((userRole) => expandRoles([userRole.role]).includes(role));
     }, [profileData]);
 
     const hasAnyRole = useCallback((roles: Role[], organizationId?: number): boolean => {
@@ -91,12 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (organizationId !== undefined) {
             // Check for any role in specific organization
             return profileData.roles.some(
-                (userRole) => roles.includes(userRole.role) && userRole.organization === organizationId
+                (userRole) => expandRoles([userRole.role]).some((r) => roles.includes(r)) && userRole.organization === organizationId
             );
         }
 
         // Check for any role in any context
-        return profileData.roles.some((userRole) => roles.includes(userRole.role));
+        return profileData.roles.some((userRole) => expandRoles([userRole.role]).some((r) => roles.includes(r)));
     }, [profileData]);
 
     // get role by specific invitation status

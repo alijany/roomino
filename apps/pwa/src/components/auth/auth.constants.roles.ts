@@ -5,8 +5,10 @@ export enum Role {
   CEO = 'ceo',
   FINANCE = 'finance',
   FINANCE_MANAGER = 'finance_manager',
+  SENIOR_FINANCE = 'senior_finance',
   APPROVER = 'approver',
   HR = 'hr',
+  PERSONNEL = 'personnel',
   ONCALL_MANAGER = 'oncall_manager',
   USER = 'user',
 }
@@ -53,8 +55,10 @@ const roleNames: Record<Role, string> = {
   [Role.CEO]: 'مدیر عامل',
   [Role.FINANCE]: 'کارشناس مالی',
   [Role.FINANCE_MANAGER]: 'مدیر مالی',
+  [Role.SENIOR_FINANCE]: 'کارشناس ارشد مالی',
   [Role.APPROVER]: 'تأییدکننده',
   [Role.HR]: 'منابع انسانی',
+  [Role.PERSONNEL]: 'کارگزینی',
   [Role.ONCALL_MANAGER]: 'مسئول کشیک',
   [Role.USER]: 'کاربر',
 };
@@ -72,15 +76,31 @@ export const RoleHierarchy: Record<Role, number> = {
   [Role.ADMIN]: 3,
   [Role.CEO]: 3,
   [Role.FINANCE_MANAGER]: 2,
+  [Role.SENIOR_FINANCE]: 2,
   [Role.FINANCE]: 2,
   [Role.APPROVER]: 1,
   [Role.HR]: 1,
+  [Role.PERSONNEL]: 1,
   [Role.ONCALL_MANAGER]: 1,
   [Role.USER]: 0,
 };
 
 export function hasPermission(userRole: Role, requiredRole: Role): boolean {
   return RoleHierarchy[userRole] >= RoleHierarchy[requiredRole];
+}
+
+/**
+ * Roles that carry another role's access — keep in step with the backend's
+ * ROLE_IMPLIES. A holder counts as having the implied roles too.
+ */
+const ROLE_IMPLIES: Partial<Record<Role, readonly Role[]>> = {
+  [Role.SENIOR_FINANCE]: [Role.FINANCE, Role.FINANCE_MANAGER],
+  [Role.PERSONNEL]: [Role.HR],
+};
+
+/** The roles a person effectively has: theirs plus whatever those imply. */
+export function expandRoles(roles: readonly Role[]): Role[] {
+  return [...new Set(roles.flatMap((r) => [r, ...(ROLE_IMPLIES[r] ?? [])]))];
 }
 
 export const Roles = Object.values(Role);

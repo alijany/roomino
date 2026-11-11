@@ -8,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BaseRepositoryService } from '../../libs/orm/orm.repository.service.base';
-import { Role } from '../../roles/roles.constants';
+import { Role, expandRoles } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import {
   ADVANCE_APPROVAL_CHAIN,
@@ -159,7 +159,7 @@ export class AdvanceRequestService extends BaseRepositoryService<AdvanceRequestE
   // ---------------------------------------------------------------------------
 
   rolesOf(user: UserEntity): Role[] {
-    return user.roles?.getItems().map((entry) => entry.role) ?? [];
+    return expandRoles(user.roles?.getItems().map((entry) => entry.role) ?? []);
   }
 
   hasRole(user: UserEntity, role: Role): boolean {

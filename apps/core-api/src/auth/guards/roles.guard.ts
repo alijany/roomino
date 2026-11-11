@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserEntity } from 'src/user/user.entity';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { Role } from 'src/roles/roles.constants';
+import { Role, expandRoles } from 'src/roles/roles.constants';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -21,12 +21,8 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user: UserEntity = request.user; // Assuming user is attached to request by JWT guard
 
-    return (
-      user &&
-      user.roles &&
-      requiredRoles.some((role) =>
-        user.roles.exists((userRole) => userRole.role === role),
-      )
-    );
+    if (!user || !user.roles) return false;
+    const held = expandRoles(user.roles.getItems().map((r) => r.role));
+    return requiredRoles.some((role) => held.includes(role));
   }
 }

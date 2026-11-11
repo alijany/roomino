@@ -1,7 +1,7 @@
 import { EntityManager } from '@mikro-orm/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from '../../notification/services/notification.service';
-import { Role } from '../../roles/roles.constants';
+import { Role, rolesImplying } from '../../roles/roles.constants';
 import { RolesEntity } from '../../roles/roles.entity';
 import { RequestStatus, RequestTypeLabels } from '../attendance.constants';
 import { AttendanceRequestEntity } from '../entities/attendance-request.entity';
@@ -62,7 +62,9 @@ export class AttendanceNotificationService {
 
     for (const role of [Role.HR, Role.ADMIN]) {
       if (ids.filter((id) => id !== requesterId).length) break;
-      const holders = await this.em.find(RolesEntity, { role });
+      const holders = await this.em.find(RolesEntity, {
+        role: { $in: rolesImplying(role) },
+      });
       ids = holders.map((r) => r.user.id);
     }
 

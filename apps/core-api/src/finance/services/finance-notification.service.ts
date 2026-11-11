@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationCategory } from '../../notification/notification.constants';
 import { NotificationPreferenceService } from '../../notification/services/notification-preference.service';
 import { NotificationService } from '../../notification/services/notification.service';
-import { Role } from '../../roles/roles.constants';
+import { Role, rolesImplying } from '../../roles/roles.constants';
 import { RolesService } from '../../roles/roles.service';
 import { PaymentRequestEntity } from '../entities/payment-request.entity';
 import { Currency } from '../finance.constants';
@@ -88,13 +88,17 @@ export class FinanceNotificationService {
   /** Everyone currently holding a role, used to reach "the approvers". */
   private async usersWithRole(role: Role): Promise<number[]> {
     const [roles] = await this.rolesService.findAll(
-      { role },
+      { role: { $in: rolesImplying(role) } },
       { populate: ['user'] as never },
     );
 
-    return roles
-      .map((entry) => entry.user?.id)
-      .filter((id): id is number => Boolean(id));
+    return [
+      ...new Set(
+        roles
+          .map((entry) => entry.user?.id)
+          .filter((id): id is number => Boolean(id)),
+      ),
+    ];
   }
 
   /** Submitted → the role that owns the next outstanding approval step. */

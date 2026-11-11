@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Role } from '../../roles/roles.constants';
+import { Role, expandRoles } from '../../roles/roles.constants';
 import { S3StorageService } from '../../storage/s3-storage.service';
 import { UserEntity } from '../../user/user.entity';
 import {
@@ -42,9 +42,8 @@ export class RequestAttachmentService {
     const request = await this.requests.getOrFail(requestId);
 
     const owns = request.employee.user.id === user.id;
-    const isStaff = user.roles
-      .getItems()
-      .some((r) => r.role === Role.ADMIN || r.role === Role.HR);
+    const held = expandRoles(user.roles.getItems().map((r) => r.role));
+    const isStaff = held.includes(Role.ADMIN) || held.includes(Role.HR);
     if (owns || isStaff) return { request, owns };
 
     const team = await this.employees.teamIds(user.id);

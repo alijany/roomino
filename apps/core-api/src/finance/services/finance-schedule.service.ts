@@ -1,7 +1,7 @@
 import { EntityManager, QueryOrder } from '@mikro-orm/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { Role } from '../../roles/roles.constants';
+import { Role, rolesImplying } from '../../roles/roles.constants';
 import { RolesEntity } from '../../roles/roles.entity';
 import { PaymentRequestEntity } from '../entities/payment-request.entity';
 import {
@@ -126,7 +126,7 @@ export class FinanceScheduleService {
 
       const recipients = await em.find(
         RolesEntity,
-        { role: { $in: [Role.FINANCE, Role.ADMIN] } },
+        { role: { $in: [...rolesImplying(Role.FINANCE), Role.ADMIN] } },
         { populate: ['user'] as never },
       );
 

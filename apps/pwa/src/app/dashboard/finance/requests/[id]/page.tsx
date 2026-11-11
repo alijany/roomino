@@ -55,7 +55,7 @@ import {
   formatRequestAmount,
   isOverdue,
 } from '../../finance.util';
-import { getRoleName, Role } from '@/components/auth/auth.constants.roles';
+import { expandRoles, getRoleName, Role } from '@/components/auth/auth.constants.roles';
 import { useAuth } from '@/components/auth/auth.context.provider';
 
 export default function PaymentRequestDetailPage() {
@@ -132,7 +132,7 @@ export default function PaymentRequestDetailPage() {
   const permissions = data?.permissions;
   const meta = data ? STATUS_META[data.status] : undefined;
 
-  const roles = user?.roles?.map((entry) => entry.role) ?? [];
+  const roles = expandRoles(user?.roles?.map((entry) => entry.role) ?? []);
   /**
    * Someone who both approves and pays. Rare on a big team, normal on a small
    * one — and worth naming rather than hiding, because the two acts stay
