@@ -41,28 +41,28 @@ export class FinanceReportController {
   }
 
   @Get('dashboard')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   dashboard(@Query() query: RangeQueryDto) {
     const { from, to } = this.resolveRange(query);
     return this.reports.dashboard(from, to);
   }
 
   @Get('reports/by-category')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async byCategory(@Query() query: RangeQueryDto) {
     const { from, to } = this.resolveRange(query);
     return { items: await this.reports.byCategory(from, to) };
   }
 
   @Get('reports/by-vendor')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async byVendor(@Query() query: RangeQueryDto) {
     const { from, to } = this.resolveRange(query);
     return { items: await this.reports.byVendor(from, to) };
   }
 
   @Get('reports/trend')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async trend(@Query('months') months?: string) {
     const parsed = Number(months);
     return {
@@ -73,7 +73,7 @@ export class FinanceReportController {
   }
 
   @Get('reports/upcoming')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   upcoming(@Query('days') days?: string) {
     const parsed = Number(days);
     return this.reports.upcoming(
@@ -82,7 +82,7 @@ export class FinanceReportController {
   }
 
   @Get('reports/monthly')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   monthly(@Query() query: MonthQueryDto) {
     const now = new Date();
     return this.reports.monthly(
@@ -98,7 +98,7 @@ export class FinanceReportController {
    * text as mojibake, which turns into a support ticket every single month.
    */
   @Get('reports/export')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="finance-export.csv"')
   async exportCsv(@Query() query: ExportQueryDto): Promise<string> {

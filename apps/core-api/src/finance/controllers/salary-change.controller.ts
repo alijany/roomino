@@ -30,7 +30,12 @@ import { SalaryChangeStatus, SalaryChangeType } from '../finance.constants';
 import { SalaryChangeService } from '../services/salary-change.service';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [
+  Role.ADMIN,
+  Role.CEO,
+  Role.FINANCE_MANAGER,
+  Role.PERSONNEL,
+];
 
 /** Salary history of everyone. Admin-only: this is the most sensitive data in the system. */
 @Controller('admin/finance/salary-changes')

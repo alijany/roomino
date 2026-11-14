@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/components/auth/auth.context.provider';
 import { RoleProtectedRoute } from '@/components/auth/auth.component.role-protected-route';
 import { Role, getRoleName } from '@/components/auth/auth.constants.roles';
 import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
@@ -22,7 +23,7 @@ import { User } from '../users.types';
 /** One user for the admin: the basic facts and the roles. More sections will follow here. */
 export default function EditUserPage() {
     return (
-        <RoleProtectedRoute allowedRoles={[Role.ADMIN]}>
+        <RoleProtectedRoute allowedRoles={[Role.ADMIN, Role.PERSONNEL, Role.SENIOR_FINANCE]}>
             <DashbaordLayout>
                 <EditUserContent />
             </DashbaordLayout>
@@ -123,6 +124,8 @@ function UserHero({ user }: { user: User }) {
 function EditUserContent() {
     const { id } = useParams<{ id: string }>();
     const { data: user, error, isLoading, refresh } = useUser(Number(id));
+    // Roles, permissions and deleting a user stay with the admin.
+    const isAdmin = useAuth().hasRole(Role.ADMIN);
 
     return (
         <div className="flex grow flex-col gap-3 overflow-auto pb-6">
@@ -137,12 +140,14 @@ function EditUserContent() {
                                 <SectionCard id="sec-contract" icon={IconFileText} title="قرارداد و NDA" hint="سابقه‌ی قراردادها، تمدید و امضای NDA؛ هر تغییر همان لحظه ذخیره می‌شود">
                                     <ContractsCard userId={user.id} />
                                 </SectionCard>
+                            {isAdmin && (
                             <SectionCard id="sec-roles" icon={IconShieldLock} title="نقش‌ها و دسترسی‌ها" hint="هر تغییر همان لحظه ذخیره می‌شود">
                                 <RolesEditor user={user} onChanged={refresh} />
                             </SectionCard>
+                            )}
                             </>
                             }
-                            danger={<DeleteUserCard user={user} />}
+                            danger={isAdmin ? <DeleteUserCard user={user} /> : undefined}
                         />
                     </div>
                 )}
@@ -153,6 +158,7 @@ function EditUserContent() {
 
 /** Name, mobile, national ID, personnel code and job title — saved together with the button. */
 function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: () => void; below?: ReactNode; danger?: ReactNode }) {
+    const isAdmin = useAuth().hasRole(Role.ADMIN);
     const [firstName, setFirstName] = useState(user.firstName ?? '');
     const [lastName, setLastName] = useState(user.lastName ?? '');
     const [displayName, setDisplayName] = useState(user.displayName ?? '');
@@ -285,7 +291,7 @@ function BasicInfoForm({ user, onSaved, below, danger }: { user: User; onSaved: 
         <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start">
             <aside className="ui-surface hidden overflow-hidden lg:sticky lg:top-0 lg:block">
                 <nav aria-label="بخش‌های صفحه" className="space-y-0.5 p-2">
-                    {SECTIONS.map(({ id: sectionId, label, icon: Icon }) => (
+                    {SECTIONS.filter(({ id: sectionId }) => sectionId !== 'sec-roles' || isAdmin).map(({ id: sectionId, label, icon: Icon }) => (
                         <button
                             key={sectionId}
                             type="button"

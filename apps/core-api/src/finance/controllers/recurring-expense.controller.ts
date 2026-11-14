@@ -41,20 +41,20 @@ export class RecurringExpenseController {
   constructor(private readonly recurring: RecurringExpenseService) {}
 
   @Get()
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async list(@Query() query: ListRecurringDto) {
     const { items, meta } = await this.recurring.listPaginated(query);
     return { items: items.map(toRecurringView), meta };
   }
 
   @Get(':id')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async detail(@Param('id', ParseIntPipe) id: number) {
     return toRecurringView(await this.recurring.getOrFail(id));
   }
 
   @Post()
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async create(
     @Body(NormalizeNumbersPipe) dto: CreateRecurringExpenseDto,
     @CurrentUser() user: UserEntity,
@@ -64,7 +64,7 @@ export class RecurringExpenseController {
   }
 
   @Patch(':id')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: UpdateRecurringExpenseDto,
@@ -74,7 +74,7 @@ export class RecurringExpenseController {
   }
 
   @Delete(':id')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async remove(@Param('id', ParseIntPipe) id: number) {
     const { deactivated } = await this.recurring.removeSchedule(id);
     return { success: true, deactivated };
@@ -86,7 +86,7 @@ export class RecurringExpenseController {
    * notifications.
    */
   @Post('run-daily-cycle')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   runDailyCycle() {
     return this.recurring.runDailyCycle();
   }

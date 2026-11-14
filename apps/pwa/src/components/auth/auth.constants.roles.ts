@@ -96,11 +96,19 @@ export function hasPermission(userRole: Role, requiredRole: Role): boolean {
 const ROLE_IMPLIES: Partial<Record<Role, readonly Role[]>> = {
   [Role.SENIOR_FINANCE]: [Role.FINANCE, Role.FINANCE_MANAGER],
   [Role.PERSONNEL]: [Role.HR],
+  [Role.FINANCE_MANAGER]: [Role.HR],
 };
 
 /** The roles a person effectively has: theirs plus whatever those imply. */
 export function expandRoles(roles: readonly Role[]): Role[] {
-  return [...new Set(roles.flatMap((r) => [r, ...(ROLE_IMPLIES[r] ?? [])]))];
+  const seen = new Set<Role>();
+  const visit = (r: Role) => {
+    if (seen.has(r)) return;
+    seen.add(r);
+    (ROLE_IMPLIES[r] ?? []).forEach(visit);
+  };
+  roles.forEach(visit);
+  return [...seen];
 }
 
 export const Roles = Object.values(Role);

@@ -38,7 +38,7 @@ export default function PayrollSettingsPage() {
 
 function PayrollSettingsContent() {
   // The CEO and the finance manager look; the admin changes.
-  const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER]);
+  const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL]);
   const years = usePayrollYears();
   // The chosen year lives in the address (`?year=1404`), so a refresh or a shared link keeps it.
   const router = useRouter();

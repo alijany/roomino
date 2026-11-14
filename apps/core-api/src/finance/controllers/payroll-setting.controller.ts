@@ -26,7 +26,12 @@ import { SiteSettingsService } from '../../settings/site-settings.service';
 import { PayrollSettingService } from '../services/payroll-setting.service';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [
+  Role.ADMIN,
+  Role.CEO,
+  Role.FINANCE_MANAGER,
+  Role.PERSONNEL,
+];
 
 /**
  * The legal payroll parameters, one set per Jalali year. Admin-only: these

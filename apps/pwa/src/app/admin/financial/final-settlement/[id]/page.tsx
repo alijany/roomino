@@ -68,7 +68,7 @@ function Row({ label, value, strong, negative, accent, show = true }: { label: s
 function SettlementEditor({ s, refresh }: { s: FinalSettlement; refresh: () => void }) {
   const router = useRouter();
   const { hasRole } = useAuth();
-  const canEdit = hasRole(Role.ADMIN) || hasRole(Role.FINANCE_MANAGER);
+  const canEdit = hasRole(Role.ADMIN) || hasRole(Role.FINANCE_MANAGER) || hasRole(Role.PERSONNEL);
   const locked = s.status === 'final' || !canEdit;
 
   const update = useUpdateSettlement();

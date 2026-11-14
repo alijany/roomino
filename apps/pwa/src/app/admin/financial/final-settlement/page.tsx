@@ -32,7 +32,7 @@ export default function FinalSettlementsPage() {
 function SettlementsContent() {
   const router = useRouter();
   const { hasRole } = useAuth();
-  const canMake = hasRole(Role.ADMIN) || hasRole(Role.FINANCE_MANAGER);
+  const canMake = hasRole(Role.ADMIN) || hasRole(Role.FINANCE_MANAGER) || hasRole(Role.PERSONNEL);
   const { data, error, isLoading, refresh } = useSettlements();
   const [creating, setCreating] = useState(false);
 

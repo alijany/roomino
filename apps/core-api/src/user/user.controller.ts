@@ -199,7 +199,7 @@ export class AdminUserController {
 
   /** The list as an Excel file: the same filters, every page. */
   @Get('export')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async exportUsers(@Query() filters: UsersGetDto, @Res() res: Response) {
     const [users] = await this.userService.findAll(
       await this.usersWhere(filters),
@@ -220,7 +220,7 @@ export class AdminUserController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async getAllUsers(@Query() filters?: UsersGetDto): Promise<{
     items: any[];
     meta: { page: number; limit: number; total: number; pageCount: number };
@@ -250,7 +250,7 @@ export class AdminUserController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async approveUser(@Param('id', ParseIntPipe) id: number) {
     return this.userService.approveUser(id);
   }
@@ -292,7 +292,7 @@ export class AdminUserController {
    */
   /** One user, for the edit page. Declared after the `profile` routes, like `PATCH :id`. */
   @Get(':id')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async getUser(@Param('id', ParseIntPipe) id: number) {
     const user = await this.userService.findOne(
       { id },
@@ -303,7 +303,7 @@ export class AdminUserController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.PERSONNEL, Role.SENIOR_FINANCE)
   async updateUserName(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserNameDto,

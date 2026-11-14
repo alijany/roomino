@@ -37,26 +37,26 @@ export class FinalSettlementController {
   constructor(private readonly settlements: FinalSettlementService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO, Role.PERSONNEL)
   list() {
     return this.settlements.list();
   }
 
   /** People who have no settlement yet, for the picker. */
   @Get('candidates')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   candidates(@Query('text') text?: string) {
     return this.settlements.candidates(text);
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO, Role.PERSONNEL)
   get(@Param('id', ParseIntPipe) id: number) {
     return this.settlements.get(id);
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   create(
     @Body(NormalizeNumbersPipe) dto: CreateFinalSettlementDto,
     @CurrentUser() user: UserEntity,
@@ -65,7 +65,7 @@ export class FinalSettlementController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: UpdateFinalSettlementDto,
@@ -74,19 +74,19 @@ export class FinalSettlementController {
   }
 
   @Post(':id/finalize')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   finalize(@Param('id', ParseIntPipe) id: number) {
     return this.settlements.finalize(id);
   }
 
   @Post(':id/reopen')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   reopen(@Param('id', ParseIntPipe) id: number) {
     return this.settlements.reopen(id);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.FINANCE_MANAGER, Role.PERSONNEL)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.settlements.remove(id);
   }

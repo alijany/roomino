@@ -69,7 +69,7 @@ export const RouteItems = {
   users: {
     href: "/admin/users",
     label: "کاربران",
-    roles: [Role.ADMIN, Role.HR],
+    roles: [Role.ADMIN, Role.HR, Role.SENIOR_FINANCE],
     icon: <IconUsers className="size-5" />
   },
   teams: {
@@ -113,7 +113,7 @@ export const RouteItems = {
   financeDashboard: {
     href: "/admin/finance",
     label: "پیشخوان مالی",
-    roles: [Role.FINANCE, Role.ADMIN],
+    roles: [Role.FINANCE, Role.ADMIN, Role.PERSONNEL],
     icon: <IconChartPie className="size-5" />
   },
   financeMyRequests: {
@@ -137,19 +137,19 @@ export const RouteItems = {
   financeVendors: {
     href: "/admin/finance/vendors",
     label: "طرف‌حساب‌ها",
-    roles: [Role.FINANCE, Role.ADMIN],
+    roles: [Role.FINANCE, Role.ADMIN, Role.PERSONNEL],
     icon: <IconBuildingStore className="size-5" />
   },
   financeRecurring: {
     href: "/admin/finance/recurring",
     label: "هزینه‌های دوره‌ای",
-    roles: [Role.FINANCE, Role.ADMIN],
+    roles: [Role.FINANCE, Role.ADMIN, Role.PERSONNEL],
     icon: <IconRepeat className="size-5" />
   },
   financeReports: {
     href: "/admin/finance/reports",
     label: "گزارش‌های مالی",
-    roles: [Role.FINANCE, Role.ADMIN],
+    roles: [Role.FINANCE, Role.ADMIN, Role.PERSONNEL],
     icon: <IconReportMoney className="size-5" />
   },
   financeSources: {
@@ -268,35 +268,35 @@ export const RouteItems = {
   financeSettings: {
     href: "/admin/finance/settings",
     label: "تنظیمات مالی",
-    roles: [Role.ADMIN],
+    roles: [Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL],
     icon: <IconSettings className="size-5" />
   },
 
   payroll: {
     href: "/admin/financial/payroll",
     label: "حقوق و دستمزد",
-    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL],
     icon: <IconReportMoney className="size-5" />
   },
 
   finalSettlement: {
     href: "/admin/financial/final-settlement",
     label: "تسویه حساب نهایی",
-    roles: [Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO],
+    roles: [Role.ADMIN, Role.FINANCE_MANAGER, Role.CEO, Role.PERSONNEL],
     icon: <IconCalendarOff className="size-5" />
   },
 
   salaryHistory: {
     href: "/admin/financial/salary-history",
     label: "تاریخچه‌ی حقوق",
-    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL],
     icon: <IconTrendingUp className="size-5" />
   },
 
   payrollSettings: {
     href: "/admin/financial/payroll-settings",
     label: "تنظیمات حقوق و دستمزد",
-    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER],
+    roles: [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL],
     icon: <IconReceiptTax className="size-5" />
   },
 };

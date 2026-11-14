@@ -33,19 +33,19 @@ export class ContractController {
   constructor(private readonly contracts: ContractService) {}
 
   @Get('status')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async statuses() {
     return { items: await this.contracts.statuses() };
   }
 
   @Get('users/:userId')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   forUser(@Param('userId', ParseIntPipe) userId: number) {
     return this.contracts.forUser(userId);
   }
 
   @Post('users/:userId')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   create(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: CreateContractDto,
@@ -54,7 +54,7 @@ export class ContractController {
   }
 
   @Put('users/:userId/nda')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   setNda(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: SetNdaDto,
@@ -63,7 +63,7 @@ export class ContractController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateContractDto,
@@ -73,7 +73,7 @@ export class ContractController {
 
   @Delete(':id')
   @HttpCode(204)
-  @Roles(Role.ADMIN, Role.HR)
+  @Roles(Role.ADMIN, Role.HR, Role.SENIOR_FINANCE)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.contracts.remove(id);
   }

@@ -30,7 +30,7 @@ export class ApprovalRuleController {
   constructor(private readonly rules: ApprovalRuleService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   async list() {
     const [items] = await this.rules.listAll();
 
@@ -50,7 +50,7 @@ export class ApprovalRuleController {
   }
 
   @Put()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   async replace(@Body(NormalizeNumbersPipe) dto: ReplaceApprovalRulesDto) {
     await this.rules.replaceAll(dto.rules);
     return this.list();

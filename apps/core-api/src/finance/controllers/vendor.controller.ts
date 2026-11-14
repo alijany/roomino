@@ -70,13 +70,13 @@ export class AdminVendorController {
   constructor(private readonly vendors: VendorService) {}
 
   @Post()
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async create(@Body(NormalizeNumbersPipe) dto: CreateVendorDto) {
     return toVendorView(await this.vendors.createVendor(dto));
   }
 
   @Patch(':id')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: UpdateVendorDto,
@@ -85,7 +85,7 @@ export class AdminVendorController {
   }
 
   @Delete(':id')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async remove(@Param('id', ParseIntPipe) id: number) {
     const { deactivated } = await this.vendors.removeVendor(id);
     // The caller needs to know which happened — "deleted" and "hidden from new
@@ -94,7 +94,7 @@ export class AdminVendorController {
   }
 
   @Post(':id/accounts')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async addAccount(
     @Param('id', ParseIntPipe) id: number,
     @Body(NormalizeNumbersPipe) dto: CreatePayeeAccountDto,
@@ -103,7 +103,7 @@ export class AdminVendorController {
   }
 
   @Patch('accounts/:accountId')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async updateAccount(
     @Param('accountId', ParseIntPipe) accountId: number,
     @Body(NormalizeNumbersPipe) dto: UpdatePayeeAccountDto,
@@ -112,7 +112,7 @@ export class AdminVendorController {
   }
 
   @Delete('accounts/:accountId')
-  @Roles(Role.FINANCE, Role.ADMIN)
+  @Roles(Role.FINANCE, Role.ADMIN, Role.PERSONNEL)
   async removeAccount(@Param('accountId', ParseIntPipe) accountId: number) {
     await this.vendors.removeAccount(accountId);
     return { success: true };

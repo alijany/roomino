@@ -31,7 +31,12 @@ import { PayrollService } from '../services/payroll.service';
 import { bankWorkbook } from '../utils/payroll-bank.util';
 
 /** Who can look at payroll; changing it stays with the admin. */
-const PAYROLL_ROLES = [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER];
+const PAYROLL_ROLES = [
+  Role.ADMIN,
+  Role.CEO,
+  Role.FINANCE_MANAGER,
+  Role.PERSONNEL,
+];
 
 /**
  * Monthly payroll. Admin-only. A month is its lines: `generate` adds a draft

@@ -58,13 +58,13 @@ export class AdminExpenseCategoryController {
   constructor(private readonly categories: ExpenseCategoryService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   create(@Body() dto: CreateExpenseCategoryDto) {
     return this.categories.createCategory(dto);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateExpenseCategoryDto,
@@ -73,7 +73,7 @@ export class AdminExpenseCategoryController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SENIOR_FINANCE, Role.PERSONNEL)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.categories.removeCategory(id);
     return { success: true };

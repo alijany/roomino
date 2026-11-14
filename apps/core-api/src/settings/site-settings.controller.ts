@@ -37,7 +37,7 @@ export class SiteSettingsController {
 
   /** What is switched on, for the pages that show or hide fields by it. */
   @Get('features')
-  @Roles(Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER)
+  @Roles(Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL)
   async features() {
     return {
       supplementaryInsurance: await this.settings.get(
