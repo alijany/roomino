@@ -36,6 +36,13 @@ const userBrief = (user: UserEntity) => ({
   profilePicture: user.profilePicture ?? null,
 });
 
+/** A confirmed change can still be corrected for this long after it was recorded. */
+const EDIT_WINDOW_DAYS = 30;
+
+const withinEditWindow = (createdAt: Date) =>
+  Date.now() - new Date(createdAt).getTime() <=
+  EDIT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
 /** A salary from a percent of the previous one, rounded to a multiple of `roundTo`. */
 function applyPercent(previous: number, percent: number, roundTo = 1) {
   return Math.round((previous * (1 + percent / 100)) / roundTo) * roundTo;
@@ -104,6 +111,11 @@ export class SalaryChangeService extends BaseRepositoryService<SalaryChangeEntit
         isLatest:
           i.status === SalaryChangeStatus.CONFIRMED &&
           latestId.get(i.user.id) === i.id,
+        // A proposal is always editable; a confirmed change only while it is
+        // the person's latest and within a month of being recorded.
+        editable:
+          i.status === SalaryChangeStatus.PROPOSED ||
+          (latestId.get(i.user.id) === i.id && withinEditWindow(i.createdAt)),
       }))
       .filter(
         (i) =>
@@ -203,12 +215,27 @@ export class SalaryChangeService extends BaseRepositoryService<SalaryChangeEntit
     return { ok: true };
   }
 
-  /** Edit an open proposal — any field, any time before it is confirmed. */
+  /**
+   * Edit an open proposal any time, or a person's latest confirmed change for a
+   * month after it was recorded — only the latest, so the types and percentages
+   * of the changes before it stay true.
+   */
   async updateProposal(id: number, dto: UpdateSalaryProposalDto) {
     const row = await this.repository.findOne({ id }, { populate: ['user'] });
     if (!row) throw new NotFoundException('تغییر حقوق پیدا نشد');
-    if (row.status !== SalaryChangeStatus.PROPOSED) {
-      throw new ConflictException('فقط پیشنهادها قابل ویرایش‌اند');
+    const confirmed = row.status === SalaryChangeStatus.CONFIRMED;
+    if (confirmed) {
+      const newest = await this.latestConfirmed(row.user.id);
+      if (newest?.id !== row.id) {
+        throw new ConflictException(
+          'فقط آخرین تغییر قطعی هر نفر قابل ویرایش است',
+        );
+      }
+      if (!withinEditWindow(row.created_at)) {
+        throw new ConflictException(
+          'بیش از یک ماه از ثبت این تغییر گذشته و دیگر قابل ویرایش نیست',
+        );
+      }
     }
     if (dto.salary !== undefined && dto.percent !== undefined) {
       throw new BadRequestException(
@@ -216,7 +243,18 @@ export class SalaryChangeService extends BaseRepositoryService<SalaryChangeEntit
       );
     }
 
-    const latest = await this.latestConfirmed(row.user.id);
+    // What it is measured against: the latest confirmed change, or for a
+    // confirmed one being edited, the change before it.
+    const latest = confirmed
+      ? await this.repository.findOne(
+          {
+            user: row.user.id,
+            status: SalaryChangeStatus.CONFIRMED,
+            id: { $ne: row.id },
+          },
+          { orderBy: { period: 'DESC' } },
+        )
+      : await this.latestConfirmed(row.user.id);
     const period = dto.period ?? row.period;
     assertPeriod(period);
     this.assertAfterLatest(latest, period, row.user);
@@ -225,10 +263,11 @@ export class SalaryChangeService extends BaseRepositoryService<SalaryChangeEntit
     if (dto.salary !== undefined || dto.percent !== undefined) {
       salary = this.salaryOf(latest, dto);
     }
-    this.typeOf(latest, salary); // refuses a salary equal to the current one
+    const type = this.typeOf(latest, salary); // refuses a salary equal to the current one
 
     row.period = period;
     row.salary = salary;
+    if (confirmed) row.type = type;
     if (dto.note !== undefined) row.note = dto.note.trim() || undefined;
     await this.em.flush();
     return { ok: true };

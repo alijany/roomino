@@ -41,7 +41,9 @@ export function ChangeForm({
 
   // What the person earns in the chosen month, from the overview.
   const row = overview.data?.items.find((r) => r.user.id === picked?.id) ?? null;
-  const current = row?.salary ?? null;
+  // Editing a confirmed change measures against the one before it (the overview's figure is the change itself).
+  const confirmedEdit = editing?.status === 'confirmed';
+  const current = confirmedEdit ? editing.previous : (row?.salary ?? null);
 
   // A person or month changes what the salary is now; start from it (or the proposal being edited).
   useEffect(() => {
@@ -69,7 +71,7 @@ export function ChangeForm({
     setPercent(current && value ? String(Math.round(((value - current) / current) * 10_000) / 100) : '');
   };
 
-  const stale = row?.since != null && row.since >= period;
+  const stale = !confirmedEdit && row?.since != null && row.since >= period;
   const ready = Boolean(row) && salary > 0 && salary !== current && !stale;
 
   const handleSave = async () => {
@@ -77,7 +79,7 @@ export function ChangeForm({
     try {
       if (editing) {
         await update.submit({ id: editing.id, data: { period, salary, note: note.trim() } });
-        toast.success('پیشنهاد ویرایش شد');
+        toast.success(confirmedEdit ? 'تغییر حقوق ویرایش شد' : 'پیشنهاد ویرایش شد');
       } else {
         await record.submit({ userId: row.user.id, period, salary, propose: propose || undefined, note: note.trim() || undefined });
         toast.success(propose ? 'پیشنهاد ثبت شد' : 'تغییر حقوق ثبت شد');
@@ -98,7 +100,7 @@ export function ChangeForm({
       isOpen
       onClose={onClose}
       wide
-      title={editing ? 'ویرایش پیشنهاد حقوق' : 'ثبت تغییر حقوق'}
+      title={editing ? (confirmedEdit ? 'ویرایش تغییر حقوق' : 'ویرایش پیشنهاد حقوق') : 'ثبت تغییر حقوق'}
       footer={
         <>
           <Button className="flex-1" disabled={!ready || record.isLoading || update.isLoading} onClick={handleSave}>

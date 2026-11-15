@@ -266,20 +266,26 @@ function SalaryHistoryContent() {
                   render: (c) => !canEdit ? null : (
                     <div className="flex gap-1">
                       {c.status === 'proposed' && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="!px-2 border-none text-emerald-600"
-                            aria-label="قطعی کردن"
-                            onClick={() => setConfirming([c])}
-                          >
-                            <IconCheck className="size-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" className="!px-2 border-none" aria-label="ویرایش پیشنهاد" onClick={() => setEditing(c)}>
-                            <IconPencil className="size-4" />
-                          </Button>
-                        </>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="!px-2 border-none text-emerald-600"
+                          aria-label="قطعی کردن"
+                          onClick={() => setConfirming([c])}
+                        >
+                          <IconCheck className="size-4" />
+                        </Button>
+                      )}
+                      {c.editable && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="!px-2 border-none"
+                          aria-label={c.status === 'proposed' ? 'ویرایش پیشنهاد' : 'ویرایش تغییر حقوق'}
+                          onClick={() => setEditing(c)}
+                        >
+                          <IconPencil className="size-4" />
+                        </Button>
                       )}
                       {(c.status === 'proposed' || c.isLatest) && (
                         <Button

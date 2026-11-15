@@ -27,6 +27,8 @@ export interface SalaryChange {
   createdBy: string | null;
   /** The person's latest confirmed change — the only confirmed one that can be deleted. */
   isLatest: boolean;
+  /** A proposal always; a confirmed change while it is the person's latest and under a month old. */
+  editable: boolean;
 }
 
 export interface SalaryOverviewRow {
