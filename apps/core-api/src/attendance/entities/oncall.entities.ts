@@ -20,14 +20,17 @@ export type OnCallDayType = 'normal' | 'thursday' | 'friday' | 'holiday';
 
 export type OnCallTemplates = Record<OnCallDayType, OnCallSlot[]>;
 
-/** Pay per hour on call for each kind of day, in rial. */
-export type OnCallRates = Record<OnCallDayType, number>;
+/**
+ * What an hour on call is worth for each kind of day, as a multiple of the
+ * person's hourly wage (their agreed salary of that month ÷ wage hours).
+ */
+export type OnCallMultipliers = Record<OnCallDayType, number>;
 
-export const DEFAULT_ONCALL_RATES: OnCallRates = {
-  normal: 0,
-  thursday: 0,
-  friday: 0,
-  holiday: 0,
+export const DEFAULT_ONCALL_MULTIPLIERS: OnCallMultipliers = {
+  normal: 1,
+  thursday: 1.4,
+  friday: 1.4,
+  holiday: 1.4,
 };
 
 export const DEFAULT_ONCALL_TEMPLATES: OnCallTemplates = {
@@ -53,9 +56,9 @@ export class OnCallSettingsEntity extends BaseEntity {
   @Property({ default: 26 })
   periodStartDay: number = 26;
 
-  /** What an hour on call pays per kind of day (rial); empty until it is set. */
+  /** The multiple of the hourly wage an hour on call pays per kind of day; the defaults until it is set. */
   @Property({ type: 'json', nullable: true })
-  hourlyRates?: OnCallRates;
+  multipliers?: OnCallMultipliers;
 
   /** User ids of the eligible people (anyone in the organisation), in list order. */
   @Property({ type: 'json' })

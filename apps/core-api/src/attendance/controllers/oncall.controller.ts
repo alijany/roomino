@@ -66,7 +66,7 @@ export class OnCallController {
     @Query() query: OnCallPeriodQueryDto,
     @Res() res: Response,
   ) {
-    const { period, rates, items } = await this.oncall.report(
+    const { period, multipliers, canSeePay, items } = await this.oncall.report(
       user,
       query.year,
       query.month,
@@ -79,7 +79,7 @@ export class OnCallController {
       'Content-Disposition',
       'attachment; filename="oncall-report.xlsx"',
     );
-    res.send(await onCallReportWorkbook(period, rates, items));
+    res.send(await onCallReportWorkbook(period, multipliers, canSeePay, items));
   }
 
   /** Edits to the published schedule not yet announced. */

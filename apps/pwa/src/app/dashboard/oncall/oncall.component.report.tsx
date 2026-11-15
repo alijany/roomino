@@ -31,7 +31,8 @@ export function OnCallReport({ year, month, onClose }: { year: number; month: nu
   };
 
   const total = data?.items.reduce((sum, i) => sum + i.totalMinutes, 0) ?? 0;
-  const totalAmount = data?.items.reduce((sum, i) => sum + i.amount, 0) ?? 0;
+  const totalAmount = data?.items.reduce((sum, i) => sum + (i.amount ?? 0), 0) ?? 0;
+  const showPay = data?.canSeePay ?? false;
 
   return (
     <FormModal
@@ -69,7 +70,7 @@ export function OnCallReport({ year, month, onClose }: { year: number; month: nu
                   <th className="py-2 font-medium">سپری‌شده</th>
                   <th className="py-2 font-medium">باقی‌مانده</th>
                   <th className="py-2 font-medium">جمع</th>
-                  <th className="py-2 font-medium">مبلغ (تومان)</th>
+                  {showPay && <th className="py-2 font-medium">مبلغ (تومان)</th>}
                   <th className="py-2 text-start font-medium">جزئیات</th>
                 </tr>
               </thead>
@@ -81,7 +82,15 @@ export function OnCallReport({ year, month, onClose }: { year: number; month: nu
                     <td className="py-2 text-center text-slate-600">{clock(item.doneMinutes)}</td>
                     <td className="py-2 text-center text-slate-600">{clock(item.remainingMinutes)}</td>
                     <td className="py-2 text-center font-semibold text-slate-800">{clock(item.totalMinutes)}</td>
-                    <td className="py-2 text-center text-slate-700">{formatMoney(item.amount, { withUnit: false, emptyText: '—' })}</td>
+                    {showPay && (
+                      <td className="py-2 text-center text-slate-700">
+                        {item.missingSalary ? (
+                          <span className="text-xs text-rose-500">حقوق ثبت نشده</span>
+                        ) : (
+                          formatMoney(item.amount, { withUnit: false, emptyText: '—' })
+                        )}
+                      </td>
+                    )}
                     <td className="py-2 text-xs text-slate-400">
                       {([
                         ['عادی', item.byType.normal],
@@ -102,7 +111,7 @@ export function OnCallReport({ year, month, onClose }: { year: number; month: nu
                     جمع کل
                   </td>
                   <td className="py-2 text-center font-semibold text-slate-700">{clock(total)}</td>
-                  <td className="py-2 text-center font-semibold text-slate-700">{formatMoney(totalAmount, { withUnit: false })}</td>
+                  {showPay && <td className="py-2 text-center font-semibold text-slate-700">{formatMoney(totalAmount, { withUnit: false })}</td>}
                   <td />
                 </tr>
               </tfoot>

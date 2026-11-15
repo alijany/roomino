@@ -10,9 +10,10 @@ import { RolesEntity } from '../../roles/roles.entity';
 import { Role, expandRoles } from '../../roles/roles.constants';
 import { UserEntity } from '../../user/user.entity';
 import {
-  DEFAULT_ONCALL_RATES,
+  DEFAULT_ONCALL_MULTIPLIERS,
   DEFAULT_ONCALL_TEMPLATES,
   OnCallDayType,
+  OnCallMultipliers,
   OnCallChangeEntity,
   OnCallPeriodEntity,
   OnCallPeriodStatus,
@@ -35,6 +36,10 @@ import {
 } from '../utils/attendance-time.util';
 import { toUserBrief } from '../utils/attendance-view.util';
 import { dayLabel, fa, slotsLabel } from '../utils/oncall-message.util';
+import { PayrollSettingEntity } from '../../finance/entities/payroll-setting.entity';
+import { SalaryChangeEntity } from '../../finance/entities/salary-change.entity';
+import { SalaryChangeStatus } from '../../finance/finance.constants';
+import { readBigint } from '../../finance/utils/money.util';
 import { HolidayService } from './holiday.service';
 
 type Entry = { userId: number; start: string; end: string };
@@ -105,7 +110,8 @@ export class OnCallService {
     return {
       templates: settings.templates,
       periodStartDay: settings.periodStartDay,
-      hourlyRates: settings.hourlyRates ?? DEFAULT_ONCALL_RATES,
+      multipliers: settings.multipliers ?? DEFAULT_ONCALL_MULTIPLIERS,
+      canSetMultipliers: await this.canSetMultipliers(user),
       eligible: eligible.map(toUserBrief),
       candidates: everyone.filter((u) => !listed.has(u.id)).map(toUserBrief),
     };
@@ -132,8 +138,13 @@ export class OnCallService {
     if (dto.periodStartDay !== undefined) {
       settings.periodStartDay = dto.periodStartDay;
     }
-    if (dto.hourlyRates) {
-      settings.hourlyRates = { ...dto.hourlyRates };
+    if (dto.multipliers) {
+      if (!(await this.canSetMultipliers(user))) {
+        throw new ForbiddenException(
+          'فقط ادمین یا مدیرعامل ضرایب را تغییر می‌دهد',
+        );
+      }
+      settings.multipliers = { ...dto.multipliers };
     }
     let replaced = 0;
     if (dto.memberOrder) {
@@ -335,20 +346,16 @@ export class OnCallService {
       }
     }
 
-    const rates = settings.hourlyRates ?? DEFAULT_ONCALL_RATES;
-    // Rial for the minutes at the hourly rate.
-    const pay = (minutes: number, rate: number) =>
-      Math.round((minutes * rate) / 60);
+    const multipliers = settings.multipliers ?? DEFAULT_ONCALL_MULTIPLIERS;
+    const canSeePay = await this.canSeePay(user);
+    const pay = canSeePay
+      ? await this.payFor(rows, holidays, multipliers)
+      : null;
     const users = await this.usersByIds([...stats.keys()]);
     const items = users
       .map((person) => {
         const stat = stats.get(person.id)!;
-        const amountByType = {
-          normal: pay(stat.byType.normal, rates.normal),
-          thursday: pay(stat.byType.thursday, rates.thursday),
-          friday: pay(stat.byType.friday, rates.friday),
-          holiday: pay(stat.byType.holiday, rates.holiday),
-        };
+        const earned = pay?.get(person.id);
         return {
           user: toUserBrief(person),
           personnelCode: person.personnelCode ?? null,
@@ -357,8 +364,11 @@ export class OnCallService {
           doneMinutes: stat.done,
           remainingMinutes: stat.total - stat.done,
           byType: stat.byType,
-          amountByType,
-          amount: Object.values(amountByType).reduce((a, b) => a + b, 0),
+          // Rial; null when the viewer may not see pay, or a day has no salary on record.
+          amountByType: earned && !earned.missing ? earned.byType : null,
+          amount: earned && !earned.missing ? earned.total : null,
+          // True when someone is on call on a day their salary history does not cover.
+          missingSalary: earned?.missing ?? false,
         };
       })
       .sort((a, b) => b.totalMinutes - a.totalMinutes);
@@ -371,9 +381,109 @@ export class OnCallService {
         year,
         month,
       },
-      rates,
+      multipliers,
+      canSeePay,
       items,
     };
+  }
+
+  /** The pay multipliers are set by the admin or the CEO alone. */
+  private async canSetMultipliers(user: UserEntity) {
+    const roles = await this.em.find(RolesEntity, { user: user.id });
+    return roles.some((r) => r.role === Role.ADMIN || r.role === Role.CEO);
+  }
+
+  /** Pay is salary information: only those who see payroll see it here. */
+  private async canSeePay(user: UserEntity) {
+    const roles = await this.em.find(RolesEntity, { user: user.id });
+    const held = expandRoles(roles.map((r) => r.role));
+    return [Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL].some(
+      (r) => held.includes(r),
+    );
+  }
+
+  /**
+   * What each person earns for their on-call rows. An hour is worth the
+   * person's agreed salary of that day's Jalali month ÷ the year's wage hours,
+   * times the multiplier of the kind of day — so a raise in the middle of a
+   * period only changes the days after it.
+   */
+  private async payFor(
+    rows: OnCallShiftEntity[],
+    holidays: Awaited<ReturnType<HolidayService['between']>>,
+    multipliers: OnCallMultipliers,
+  ) {
+    const userIds = [...new Set(rows.map((r) => r.user.id))];
+    const periodOf = (date: string) => {
+      const { year, month } = dateToJalali(date);
+      return year * 100 + month;
+    };
+    const lastPeriod = Math.max(0, ...rows.map((r) => periodOf(r.date)));
+    const changes = userIds.length
+      ? await this.em.find(
+          SalaryChangeEntity,
+          {
+            user: { $in: userIds },
+            period: { $lte: lastPeriod },
+            status: SalaryChangeStatus.CONFIRMED,
+          },
+          { orderBy: { period: 'ASC' } },
+        )
+      : [];
+    const history = new Map<
+      number,
+      Array<{ period: number; salary: number }>
+    >();
+    for (const change of changes) {
+      const list = history.get(change.user.id) ?? [];
+      list.push({ period: change.period, salary: readBigint(change.salary) });
+      history.set(change.user.id, list);
+    }
+    const years = [...new Set(rows.map((r) => dateToJalali(r.date).year))];
+    const settings = years.length
+      ? await this.em.find(PayrollSettingEntity, { year: { $in: years } })
+      : [];
+    const wageHours = new Map(settings.map((s) => [s.year, s.wageHours]));
+
+    const result = new Map<
+      number,
+      {
+        total: number;
+        byType: Record<OnCallDayType, number>;
+        missing: boolean;
+      }
+    >();
+    for (const row of rows) {
+      const earned = result.get(row.user.id) ?? {
+        total: 0,
+        byType: { normal: 0, thursday: 0, friday: 0, holiday: 0 },
+        missing: false,
+      };
+      result.set(row.user.id, earned);
+      const period = periodOf(row.date);
+      const salary = (history.get(row.user.id) ?? [])
+        .filter((c) => c.period <= period)
+        .pop()?.salary;
+      if (salary === undefined) {
+        earned.missing = true;
+        continue;
+      }
+      const type = this.dayType(row.date, holidays);
+      const hourly =
+        salary / (wageHours.get(dateToJalali(row.date).year) || 220);
+      const hours =
+        (clockToMinutes(row.endTime) - clockToMinutes(row.startTime)) / 60;
+      const amount = hours * hourly * multipliers[type];
+      earned.byType[type] += amount;
+      earned.total += amount;
+    }
+    for (const earned of result.values()) {
+      earned.total = Math.round(earned.total);
+      for (const type of Object.keys(earned.byType) as OnCallDayType[]) {
+        earned.byType[type] = Math.round(earned.byType[type]);
+      }
+    }
+    return result;
   }
 
   private async checkEntries(entries: Entry[]) {

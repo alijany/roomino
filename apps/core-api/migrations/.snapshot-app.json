@@ -5920,8 +5920,8 @@
           "enumItems": [],
           "mappedType": "json"
         },
-        "hourly_rates": {
-          "name": "hourly_rates",
+        "multipliers": {
+          "name": "multipliers",
           "type": "jsonb",
           "unsigned": false,
           "autoincrement": false,

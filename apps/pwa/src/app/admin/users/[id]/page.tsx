@@ -23,7 +23,7 @@ import { User } from '../users.types';
 /** One user for the admin: the basic facts and the roles. More sections will follow here. */
 export default function EditUserPage() {
     return (
-        <RoleProtectedRoute allowedRoles={[Role.ADMIN, Role.PERSONNEL, Role.SENIOR_FINANCE]}>
+        <RoleProtectedRoute allowedRoles={[Role.ADMIN, Role.HR]}>
             <DashbaordLayout>
                 <EditUserContent />
             </DashbaordLayout>

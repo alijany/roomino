@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -51,38 +52,38 @@ export class OnCallTemplatesDto {
   holiday: OnCallSlotDto[];
 }
 
-export class OnCallRatesDto {
+export class OnCallMultipliersDto {
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1_000_000_000_000)
+  @Max(20)
   normal: number;
 
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1_000_000_000_000)
+  @Max(20)
   thursday: number;
 
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1_000_000_000_000)
+  @Max(20)
   friday: number;
 
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1_000_000_000_000)
+  @Max(20)
   holiday: number;
 }
 
 export class SaveOnCallSettingsDto {
-  /** Pay per hour on call by kind of day, in rial. */
+  /** The multiple of the hourly wage an hour on call pays, by kind of day. */
   @IsOptional()
   @ValidateNested()
-  @Type(() => OnCallRatesDto)
-  hourlyRates?: OnCallRatesDto;
+  @Type(() => OnCallMultipliersDto)
+  multipliers?: OnCallMultipliersDto;
 
   @IsOptional()
   @ValidateNested()

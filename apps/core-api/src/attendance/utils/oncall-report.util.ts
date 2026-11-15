@@ -20,8 +20,9 @@ interface ReportItem {
   doneMinutes: number;
   remainingMinutes: number;
   byType: { normal: number; thursday: number; friday: number; holiday: number };
-  /** Rial. */
-  amount: number;
+  /** Rial; null when pay is hidden or a day has no salary on record. */
+  amount: number | null;
+  missingSalary: boolean;
 }
 
 /** Rial → toman, as people read amounts. */
@@ -30,7 +31,13 @@ const toman = (rial: number) => Math.round(rial / 10);
 /** The on-call hours report as a right-to-left workbook, one row per person, in hours. */
 export async function onCallReportWorkbook(
   period: { start: string; end: string },
-  rates: { normal: number; thursday: number; friday: number; holiday: number },
+  multipliers: {
+    normal: number;
+    thursday: number;
+    friday: number;
+    holiday: number;
+  },
+  canSeePay: boolean,
   items: ReportItem[],
 ): Promise<Buffer> {
   const book = new ExcelJS.Workbook();
@@ -49,23 +56,23 @@ export async function onCallReportWorkbook(
     { key: 'done', width: 14 },
     { key: 'remaining', width: 14 },
     { key: 'total', width: 14 },
-    { key: 'amount', width: 18 },
+    ...(canSeePay ? [{ key: 'amount', width: 18 }] : []),
   ];
+  const lastCol = canSeePay ? 'L' : 'K';
 
-  sheet.mergeCells('A1:L1');
+  sheet.mergeCells(`A1:${lastCol}1`);
   sheet.getCell('A1').value = `گزارش ساعات کشیک — ${jalali(
     period.start,
   )} تا ${jalali(period.end)}`;
   sheet.getCell('A1').font = { bold: true, size: 13 };
   sheet.getCell('A1').alignment = { horizontal: 'center' };
-  sheet.mergeCells('A2:L2');
-  sheet.getCell('A2').value = `نرخ هر ساعت (تومان): عادی ${toman(
-    rates.normal,
-  ).toLocaleString('en-US')} · پنج‌شنبه ${toman(rates.thursday).toLocaleString(
-    'en-US',
-  )} · جمعه ${toman(rates.friday).toLocaleString('en-US')} · تعطیل ${toman(
-    rates.holiday,
-  ).toLocaleString('en-US')}`;
+  sheet.mergeCells(`A2:${lastCol}2`);
+  const x = (n: number) => n.toLocaleString('en-US');
+  sheet.getCell('A2').value = `ضریب هر ساعت نسبت به ساعتی حقوق توافقی: عادی ${x(
+    multipliers.normal,
+  )} · پنج‌شنبه ${x(multipliers.thursday)} · جمعه ${x(
+    multipliers.friday,
+  )} · تعطیل ${x(multipliers.holiday)}`;
   sheet.getCell('A2').alignment = { horizontal: 'center' };
 
   const head = sheet.addRow([
@@ -80,7 +87,7 @@ export async function onCallReportWorkbook(
     'سپری‌شده (ساعت)',
     'باقی‌مانده (ساعت)',
     'جمع (ساعت)',
-    'مبلغ (تومان)',
+    ...(canSeePay ? ['مبلغ (تومان)'] : []),
   ]);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   head.fill = {
@@ -103,7 +110,9 @@ export async function onCallReportWorkbook(
       hours(item.doneMinutes),
       hours(item.remainingMinutes),
       hours(item.totalMinutes),
-      toman(item.amount),
+      ...(canSeePay
+        ? [item.missingSalary ? 'حقوق ثبت نشده' : toman(item.amount ?? 0)]
+        : []),
     ]),
   );
 
@@ -112,7 +121,17 @@ export async function onCallReportWorkbook(
     '',
     'جمع کل',
     '',
-    ...['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map((col) => ({
+    ...[
+      'D',
+      'E',
+      'F',
+      'G',
+      'H',
+      'I',
+      'J',
+      'K',
+      ...(canSeePay ? ['L'] : []),
+    ].map((col) => ({
       formula: `SUM(${col}4:${col}${last})`,
     })),
   ]);

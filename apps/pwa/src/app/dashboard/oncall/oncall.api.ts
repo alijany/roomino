@@ -5,6 +5,7 @@ import { UserBrief } from '../attendance/attendance.types';
 import {
   MyOnCallDay,
   MyOnCallSwaps,
+  OnCallMultipliers,
   OnCallEntryInput,
   OnCallSchedule,
   OnCallSettings,
@@ -67,13 +68,14 @@ export interface OnCallReportItem {
   doneMinutes: number;
   remainingMinutes: number;
   byType: { normal: number; thursday: number; friday: number; holiday: number };
-  /** Rial. */
-  amount: number;
+  /** Rial; null when pay is hidden from you or a day has no salary on record. */
+  amount: number | null;
+  missingSalary: boolean;
 }
 
 export function useOnCallReport(year: number, month: number) {
   return useSwrHelper(
-    useSWR<{ period: { start: string; end: string }; items: OnCallReportItem[] }>(
+    useSWR<{ period: { start: string; end: string }; multipliers: OnCallMultipliers; canSeePay: boolean; items: OnCallReportItem[] }>(
       `/oncall/report?year=${year}&month=${month}`,
       fetcher,
     ),

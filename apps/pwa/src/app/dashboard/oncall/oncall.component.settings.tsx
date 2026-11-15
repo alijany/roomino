@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Button, CurrencyInput, Input } from '@/ui/atoms';
+import { Avatar, Button, Input } from '@/ui/atoms';
 import { IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
@@ -9,7 +9,7 @@ import { UserBrief } from '../attendance/attendance.types';
 import { errorMessage, fa, latin } from '../attendance/attendance.util';
 import { saveOnCallSettings, useOnCallSettings } from './oncall.api';
 import { ClockSelect } from './oncall.component.clock-select';
-import { OnCallDayType, OnCallRates, OnCallSlot, OnCallTemplates } from './oncall.types';
+import { OnCallDayType, OnCallMultipliers, OnCallSlot, OnCallTemplates } from './oncall.types';
 import { DAY_TYPE_LABELS, clockMinutes } from './oncall.util';
 
 const TYPES: OnCallDayType[] = ['normal', 'thursday', 'friday', 'holiday'];
@@ -21,6 +21,9 @@ export function OnCallSettingsModal({ onClose, onSaved }: { onClose: () => void;
   return <SettingsForm initial={data} onClose={onClose} onSaved={onSaved} />;
 }
 
+/** The multiplier as typed — Latin digits, a dot for the decimal point. */
+const multiplierOf = (value: string) => (value.trim() === '' ? NaN : Number(value));
+
 function SettingsForm({
   initial,
   onClose,
@@ -31,7 +34,9 @@ function SettingsForm({
   onSaved: () => void;
 }) {
   const [templates, setTemplates] = useState<OnCallTemplates>(initial.templates);
-  const [rates, setRates] = useState<OnCallRates>(initial.hourlyRates);
+  const [multipliers, setMultipliers] = useState<Record<OnCallDayType, string>>(() =>
+    Object.fromEntries(TYPES.map((type) => [type, String(initial.multipliers[type])])) as Record<OnCallDayType, string>,
+  );
   const [startDay, setStartDay] = useState(String(initial.periodStartDay));
   const [eligible, setEligible] = useState<UserBrief[]>(initial.eligible);
   const [search, setSearch] = useState('');
@@ -45,6 +50,7 @@ function SettingsForm({
   const day = Number(latin(startDay));
   const invalid =
     !(day >= 1 && day <= 28) ||
+    (initial.canSetMultipliers && TYPES.some((type) => !(multiplierOf(multipliers[type]) >= 0 && multiplierOf(multipliers[type]) <= 20))) ||
     TYPES.some((type) => templates[type].some((slot) => clockMinutes(slot.start) >= clockMinutes(slot.end)));
 
   const setSlots = (type: OnCallDayType, slots: OnCallSlot[]) => setTemplates((prev) => ({ ...prev, [type]: slots }));
@@ -54,7 +60,10 @@ function SettingsForm({
     try {
       const result = await saveOnCallSettings({
         templates,
-        hourlyRates: rates,
+        // Only the admin and the CEO may change the multipliers; the server refuses anyone else.
+        multipliers: initial.canSetMultipliers
+          ? (Object.fromEntries(TYPES.map((type) => [type, multiplierOf(multipliers[type])])) as OnCallMultipliers)
+          : undefined,
         periodStartDay: day,
         memberOrder: eligible.map((e) => e.id),
       });
@@ -87,7 +96,11 @@ function SettingsForm({
         </>
       }
     >
-      <Field label="ساعت پیش‌فرض کشیک" hint="هر روز بر اساس نوعش (تعطیلات رسمی از تقویم حضور و غیاب می‌آید) این ساعت‌ها را می‌گیرد؛ برای هر روز جدا هم قابل تغییر است.">
+      <p className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-500">
+        مبلغ هر ساعت کشیک = حقوق توافقی همان ماه ÷ ساعت کاری ماه × ضریب نوع روز. حقوق هر روز از تاریخچهٔ حقوق خوانده می‌شود. ضرایب را فقط ادمین یا مدیرعامل تغییر می‌دهد.
+      </p>
+
+      <Field label="ساعت پیش‌فرض و ضریب کشیک" hint="هر روز بر اساس نوعش (تعطیلات رسمی از تقویم حضور و غیاب می‌آید) این ساعت‌ها را می‌گیرد؛ برای هر روز جدا هم قابل تغییر است.">
         <div className="space-y-3">
           {TYPES.map((type) => (
             <div key={type} className="rounded-xl border border-slate-200 p-3">
@@ -132,12 +145,13 @@ function SettingsForm({
                 ))}
               </div>
               <div className="mt-3 border-t border-slate-100 pt-3">
-                <CurrencyInput
-                  label="مبلغ هر ساعت (تومان)"
-                  unit="toman"
-                  value={rates[type]}
-                  onValueChange={(v) => setRates((prev) => ({ ...prev, [type]: v ?? 0 }))}
-                  placeholder="۰"
+                <Input
+                  label="ضریب هر ساعت کشیک"
+                  disabled={!initial.canSetMultipliers}
+                  inputMode="decimal"
+                  value={fa(multipliers[type])}
+                  onChange={(e) => setMultipliers((prev) => ({ ...prev, [type]: latin(e.target.value).replace(/[٫,،]/g, '.').replace(/[^\d.]/g, '') }))}
+                  placeholder="۱"
                 />
               </div>
             </div>

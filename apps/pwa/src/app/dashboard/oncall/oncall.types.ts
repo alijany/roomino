@@ -9,8 +9,8 @@ export interface OnCallSlot {
 
 export type OnCallTemplates = Record<OnCallDayType, OnCallSlot[]>;
 
-/** Pay per hour by kind of day, in rial. */
-export type OnCallRates = Record<OnCallDayType, number>;
+/** What an hour on call is worth by kind of day, as a multiple of the person's hourly wage. */
+export type OnCallMultipliers = Record<OnCallDayType, number>;
 
 export interface OnCallEntry {
   id?: number;
@@ -41,7 +41,9 @@ export interface OnCallSchedule {
 
 export interface OnCallSettings {
   templates: OnCallTemplates;
-  hourlyRates: OnCallRates;
+  multipliers: OnCallMultipliers;
+  /** Only the admin and the CEO may change the multipliers. */
+  canSetMultipliers: boolean;
   periodStartDay: number;
   eligible: UserBrief[];
   /** Everyone else still working here, who can be added. */
@@ -58,7 +60,7 @@ export interface OnCallEntryInput {
 
 export interface OnCallSettingsInput {
   templates?: OnCallTemplates;
-  hourlyRates?: OnCallRates;
+  multipliers?: OnCallMultipliers;
   periodStartDay?: number;
   memberOrder?: number[];
 }
