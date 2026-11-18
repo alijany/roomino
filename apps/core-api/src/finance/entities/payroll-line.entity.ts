@@ -83,8 +83,17 @@ export class PayrollLineEntity extends BaseEntity {
   @Property({ columnType: 'numeric(5,2)', default: 0 })
   leaveRemainDays: number = 0;
 
+  /** A one-off reward (پاداش). */
   @Property({ type: types.bigint, default: 0 })
   bonus: number = 0;
+
+  /** Sales commission (پورسانت). */
+  @Property({ type: types.bigint, default: 0 })
+  commission: number = 0;
+
+  /** On-call pay (کشیک): filled from the on-call report, editable while the line is a draft. */
+  @Property({ type: types.bigint, default: 0 })
+  onCall: number = 0;
 
   @Property({ type: types.bigint, default: 0 })
   advance: number = 0;

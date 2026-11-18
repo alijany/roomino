@@ -151,5 +151,6 @@ import { WorkplaceService } from './services/workplace.service';
     TeamController,
     MaintenanceController,
   ],
+  exports: [OnCallService],
 })
 export class AttendanceModule {}

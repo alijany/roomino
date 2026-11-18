@@ -719,3 +719,55 @@ describe('calculatePayroll — a settlement with no month worked', () => {
     expect(r.net).toBeGreaterThan(0);
   });
 });
+
+describe('bonus, commission and on-call pay', () => {
+  const plain = calculatePayroll(settings, inclusion, input());
+  const split = calculatePayroll(
+    settings,
+    inclusion,
+    input({ bonus: 10_000_000, commission: 20_000_000, onCall: 30_000_000 }),
+  );
+  const lump = calculatePayroll(
+    settings,
+    inclusion,
+    input({ bonus: 60_000_000 }),
+  );
+
+  it('adds all three to the gross', () => {
+    expect(split.gross - plain.gross).toBe(60_000_000);
+  });
+
+  it('treats them like one bonus for insurance and tax', () => {
+    expect(split.workerInsurance).toBe(lump.workerInsurance);
+    expect(split.tax).toBe(lump.tax);
+    expect(split.net).toBe(lump.net);
+  });
+});
+
+describe('inclusion of bonus, commission and on-call pay', () => {
+  const pay = { commission: 20_000_000, onCall: 30_000_000 };
+  const full = calculatePayroll(settings, inclusion, input(pay));
+  const noOnCallInsurance = calculatePayroll(
+    settings,
+    { ...inclusion, onCall: { insurable: false, taxable: true } },
+    input(pay),
+  );
+  // A commission big enough to be taxed at all.
+  const big = { commission: 500_000_000 };
+  const taxed = calculatePayroll(settings, inclusion, input(big));
+  const noCommissionTax = calculatePayroll(
+    settings,
+    { ...inclusion, commission: { insurable: true, taxable: false } },
+    input(big),
+  );
+
+  it('leaves an item out of insurance when its flag is off', () => {
+    expect(full.workerInsurance - noOnCallInsurance.workerInsurance).toBe(
+      Math.round(30_000_000 * 0.07),
+    );
+  });
+
+  it('leaves an item out of tax when its flag is off', () => {
+    expect(noCommissionTax.tax).toBeLessThan(taxed.tax);
+  });
+});

@@ -338,6 +338,21 @@ export const PAYROLL_INCLUSION_ITEMS: Array<{
     needsReview: true,
   },
   {
+    key: 'bonus',
+    label: 'پاداش',
+    default: { insurable: true, taxable: true },
+  },
+  {
+    key: 'commission',
+    label: 'پورسانت',
+    default: { insurable: true, taxable: true },
+  },
+  {
+    key: 'onCall',
+    label: 'کشیک',
+    default: { insurable: true, taxable: true },
+  },
+  {
     key: 'leavePay',
     label: 'بازخرید مرخصی',
     default: { insurable: true, taxable: true },

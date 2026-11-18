@@ -23,7 +23,9 @@ export function PayslipView({ slip }: { slip: Payslip }) {
   const earnings: Array<[string, number]> = flat
     ? [
         ['حقوق این ماه', slip.base],
-        ['پاداش / پورسانت', slip.bonus],
+        ['پاداش', slip.bonus],
+        ['پورسانت', slip.commission],
+        ['کشیک', slip.onCall],
       ]
     : [
     ['مزد پایه', slip.base],
@@ -34,7 +36,9 @@ export function PayslipView({ slip }: { slip: Payslip }) {
     ['پایه سنوات', slip.seniority],
     ['اضافه‌کار و نوبت‌کاری', slip.overtime],
     ['فوق‌العاده‌ی مأموریت', slip.mission],
-    ['پاداش / پورسانت', slip.bonus],
+    ['پاداش', slip.bonus],
+    ['پورسانت', slip.commission],
+    ['کشیک', slip.onCall],
     ['عیدی', slip.eidi],
     ['سنوات', slip.severance],
     ['بازخرید مرخصی', slip.leaveBuyout],
@@ -77,14 +81,15 @@ export function PayslipView({ slip }: { slip: Payslip }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.svg" alt="" className="h-10 brightness-0 invert print:h-8" />
+            <img src="/images/logo-red.svg" alt="" className="h-10 print:h-8" />
             <div>
               <div className="text-lg font-bold">{COMPANY}</div>
               <div className="text-xs text-slate-300">{TAGLINE}</div>
             </div>
           </div>
           <div className="text-left">
-            <div className="text-2xl font-black tracking-tight print:text-xl">فیش حقوقی</div>
+            {/* No letter-spacing on Persian: it breaks the joined letters when the slip is drawn into the PDF. */}
+            <div className="text-2xl font-black print:text-xl">فیش حقوقی</div>
             <div className="mt-1 text-sm text-slate-200">{periodLabel(slip.period)}</div>
             <div className="mt-0.5 text-xs text-slate-300">تاریخ صدور: {jalaliLabel(tehranToday())}</div>
           </div>
@@ -120,8 +125,9 @@ export function PayslipView({ slip }: { slip: Payslip }) {
 
         {/* Pay */}
         <section className="grid gap-5 md:grid-cols-2 print:grid-cols-2 print:gap-3">
-          <Statement title="حقوق و مزایا" tone="emerald" rows={earnings} total={['جمع حقوق و مزایا', totalEarnings]} />
-          <Statement title="کسورات" tone="rose" rows={deductions} total={['جمع کسورات', slip.totalDeductions]} />
+          {/* Only the lines that have an amount: an empty one says nothing on a payslip. */}
+          <Statement title="حقوق و مزایا" tone="emerald" rows={earnings.filter(([, value]) => value)} total={['جمع حقوق و مزایا', totalEarnings]} />
+          <Statement title="کسورات" tone="rose" rows={deductions.filter(([, value]) => value)} total={['جمع کسورات', slip.totalDeductions]} />
         </section>
 
         {/* Net */}

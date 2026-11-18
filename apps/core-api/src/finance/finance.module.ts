@@ -46,6 +46,7 @@ import { FinanceBootstrapService } from './services/finance-bootstrap.service';
 import { FinanceNotificationService } from './services/finance-notification.service';
 import { FinanceReportService } from './services/finance-report.service';
 import { FinanceScheduleService } from './services/finance-schedule.service';
+import { AttendanceModule } from '../attendance/attendance.module';
 import { PayrollService } from './services/payroll.service';
 import { PayrollSettingService } from './services/payroll-setting.service';
 import { SalaryChangeService } from './services/salary-change.service';
@@ -67,6 +68,7 @@ import { VendorService } from './services/vendor.service';
 @Module({
   imports: [
     SettingsModule,
+    AttendanceModule,
     MikroOrmModule.forFeature([
       AdvanceDeductionEntity,
       FinalSettlementEntity,

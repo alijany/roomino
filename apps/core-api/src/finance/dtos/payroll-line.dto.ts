@@ -82,6 +82,16 @@ export class UpdatePayrollLineDto {
   @Num()
   @IsInt(amount)
   @Min(0, amount)
+  commission?: number;
+  @IsOptional()
+  @Num()
+  @IsInt(amount)
+  @Min(0, amount)
+  onCall?: number;
+  @IsOptional()
+  @Num()
+  @IsInt(amount)
+  @Min(0, amount)
   advance?: number;
   @IsOptional()
   @Num()

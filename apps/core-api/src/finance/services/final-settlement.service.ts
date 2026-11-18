@@ -323,6 +323,8 @@ export class FinalSettlementService {
       deficitHours: 0,
       missionDays: 0,
       bonus: 0,
+      commission: 0,
+      onCall: 0,
       // The settlement is its own document: no month's premium rides on it.
       supplementaryInsurance: 0,
     };

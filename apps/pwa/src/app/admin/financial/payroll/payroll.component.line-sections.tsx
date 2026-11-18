@@ -23,6 +23,8 @@ export interface LineFormState {
   leaveRemainDays: string;
   overtimeHours: string;
   bonus: number;
+  commission: number;
+  onCall: number;
   advance: number;
   loan: number;
   otherDeductions: number;
@@ -40,6 +42,8 @@ export const formOf = (l: Payslip): LineFormState => ({
   leaveRemainDays: String(l.leaveRemainDays),
   overtimeHours: String(l.overtimeHours),
   bonus: l.bonus,
+  commission: l.commission,
+  onCall: l.onCall,
   advance: l.advance,
   loan: l.loan,
   otherDeductions: l.otherDeductions,
@@ -57,6 +61,8 @@ export const dataOf = (f: LineFormState): UpdatePayrollLineDto => ({
   leaveRemainDays: Number(f.leaveRemainDays) || 0,
   overtimeHours: Number(f.overtimeHours) || 0,
   bonus: f.bonus,
+  commission: f.commission,
+  onCall: f.onCall,
   advance: f.advance,
   loan: f.loan,
   otherDeductions: f.otherDeductions,
@@ -108,12 +114,14 @@ function NumberField({ label, value, onChange, disabled }: { label: string; valu
   );
 }
 
-/** What changes most from month to month: bonus, overtime, advance, instalment. */
+/** What changes most from month to month: bonus, commission, on-call, overtime, advance, instalment. */
 export function CommonInputs({ form, set, locked, flat }: { form: LineFormState; set: Setter; locked: boolean; flat: boolean }) {
   return (
     <>
-      <div className={`grid grid-cols-2 gap-3 ${flat ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
-        <CurrencyInput label="پاداش / پورسانت" unit="rial" value={form.bonus} disabled={locked} onValueChange={(v) => set('bonus', v ?? 0)} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <CurrencyInput label="پاداش" unit="rial" value={form.bonus} disabled={locked} onValueChange={(v) => set('bonus', v ?? 0)} />
+        <CurrencyInput label="پورسانت" unit="rial" value={form.commission} disabled={locked} onValueChange={(v) => set('commission', v ?? 0)} />
+        <CurrencyInput label="کشیک (از گزارش کشیک)" unit="rial" value={form.onCall} disabled={locked} onValueChange={(v) => set('onCall', v ?? 0)} />
         {!flat && <NumberField label="اضافه‌کار (ساعت)" value={form.overtimeHours} onChange={(v) => set('overtimeHours', v)} disabled={locked} />}
         <CurrencyInput label="مساعده" unit="rial" value={form.advance} disabled={locked} onValueChange={(v) => set('advance', v ?? 0)} />
         <CurrencyInput label="قسط وام" unit="rial" value={form.loan} disabled={locked} onValueChange={(v) => set('loan', v ?? 0)} />
@@ -298,6 +306,8 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
           <Row label="حقوق توافقی (کل)" value={slip.agreed} muted />
           <Row label="حقوق این ماه" value={slip.base} />
           <Row label="پاداش" value={slip.bonus} />
+          <Row label="پورسانت" value={slip.commission} />
+          <Row label="کشیک" value={slip.onCall} />
           <Row label="جمع" value={slip.gross} strong />
           <Row label="کسری کار" value={slip.deficit} negative />
           <Row label="مساعده" value={slip.advance} negative />
@@ -319,6 +329,8 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
         <Row label="اضافه‌کار و نوبت‌کاری" value={slip.overtime} />
         <Row label="فوق‌العاده‌ی مأموریت" value={slip.mission} />
         <Row label="پاداش" value={slip.bonus} />
+        <Row label="پورسانت" value={slip.commission} />
+        <Row label="کشیک" value={slip.onCall} />
         <Row label="عیدی" value={slip.eidi} />
         <Row label="سنوات" value={slip.severance} />
         <Row label="بازخرید مرخصی" value={slip.leaveBuyout} />

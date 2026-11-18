@@ -22,6 +22,8 @@
     "duration-fns": "^3.0.2",
     "embla-carousel": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
+    "html2canvas-pro": "^2.6.4",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "next": "15.5.20",

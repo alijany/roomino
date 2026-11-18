@@ -36,6 +36,9 @@ export interface PayrollLine {
   missionDays: number;
   leaveRemainDays: number;
   bonus: number;
+  commission: number;
+  /** On-call pay, filled from the on-call report when the lines are made or recalculated. */
+  onCall: number;
   advance: number;
   loan: number;
   otherDeductions: number;
@@ -99,6 +102,8 @@ export type UpdatePayrollLineDto = Partial<
     | 'missionDays'
     | 'leaveRemainDays'
     | 'bonus'
+    | 'commission'
+    | 'onCall'
     | 'advance'
     | 'loan'
     | 'otherDeductions'

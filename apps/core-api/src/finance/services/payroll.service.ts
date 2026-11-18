@@ -29,6 +29,7 @@ import {
 import { readBigint } from '../utils/money.util';
 import { BankRow, periodName } from '../utils/payroll-bank.util';
 import { SiteSettingsService } from '../../settings/site-settings.service';
+import { OnCallService } from '../../attendance/services/oncall.service';
 import { PayrollSettingService } from './payroll-setting.service';
 
 const MONEY_FIELDS = [
@@ -55,6 +56,8 @@ const MONEY_FIELDS = [
   'accrual',
   'totalCost',
   'bonus',
+  'commission',
+  'onCall',
   'advance',
   'loan',
   'otherDeductions',
@@ -114,6 +117,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     protected repository: EntityRepository<PayrollLineEntity>,
     private readonly settings: PayrollSettingService,
     private readonly siteSettings: SiteSettingsService,
+    private readonly onCall: OnCallService,
   ) {
     super(repository);
   }
@@ -198,13 +202,27 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
         !have.has(u.id) && ctx.salaries.has(u.id) && this.employedIn(u, period),
     );
 
+    const onCallPay = await this.onCallPay(period);
     for (const user of eligible) {
       const line = this.repository.create({ user, period } as never);
+      line.onCall = onCallPay.get(user.id) ?? 0;
       this.compute(line, user, ctx);
       this.em.persist(line);
     }
     await this.em.flush();
     return { created: eligible.length, existing: have.size };
+  }
+
+  /**
+   * On-call pay for a payroll month: the on-call period that ends in it, i.e.
+   * the one starting on the previous month's start day.
+   */
+  private onCallPay(period: number) {
+    const year = Math.floor(period / 100);
+    const month = period % 100;
+    return month === 1
+      ? this.onCall.periodPay(year - 1, 12)
+      : this.onCall.periodPay(year, month - 1);
   }
 
   /** Compute every draft line again — after settings, salaries or people changed. */
@@ -215,7 +233,13 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       { period, status: PayrollLineStatus.DRAFT },
       { populate: ['user'] },
     );
-    drafts.forEach((line) => this.compute(line, line.user, ctx));
+    // On-call pay is taken from the on-call report again, so a changed
+    // schedule or salary shows up; a hand-typed figure is replaced too.
+    const onCallPay = await this.onCallPay(period);
+    drafts.forEach((line) => {
+      line.onCall = onCallPay.get(line.user.id) ?? 0;
+      this.compute(line, line.user, ctx);
+    });
     await this.em.flush();
     return { recalculated: drafts.length };
   }
@@ -751,6 +775,8 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       deficitHours: num(line.deficitHours),
       missionDays: num(line.missionDays),
       bonus: readBigint(line.bonus),
+      commission: readBigint(line.commission),
+      onCall: readBigint(line.onCall),
       advance: readBigint(line.advance),
       loan: readBigint(line.loan),
       otherDeductions: readBigint(line.otherDeductions),
@@ -807,7 +833,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     line.warnings = warnings;
   }
 
-  /** A flat salary's line: the agreed figure and the bonus, less the plain deductions. */
+  /** A flat salary's line: the agreed figure and the bonus, commission and on-call pay, less the plain deductions. */
   private computeFlat(
     line: PayrollLineEntity,
     user: UserEntity,
@@ -816,7 +842,10 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
   ) {
     const num = (v: number | string) => Number(v) || 0;
     const base = Math.round((agreed * num(line.days)) / 30);
-    const bonus = readBigint(line.bonus);
+    const bonus =
+      readBigint(line.bonus) +
+      readBigint(line.commission) +
+      readBigint(line.onCall);
     const hourly = agreed / (ctx.values.wageHours || 220);
     const deficit = Math.round(hourly * num(line.deficitHours));
     const premium = this.supplementaryPremium(user, ctx, line.period);

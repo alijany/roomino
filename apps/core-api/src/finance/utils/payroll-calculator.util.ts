@@ -35,7 +35,12 @@ export interface PayrollInput {
   holidayHours: number;
   deficitHours: number;
   missionDays: number;
+  /** A one-off reward (پاداش). */
   bonus: number;
+  /** Sales commission (پورسانت); taxed and insured like the bonus. */
+  commission?: number;
+  /** On-call pay (کشیک) for the month; taxed and insured like the bonus. */
+  onCall?: number;
   advance: number;
   loan: number;
   otherDeductions: number;
@@ -172,7 +177,16 @@ function compute(
     mission: withExtras ? daily * rate(s.missionRate) * x.missionDays : 0,
   };
 
-  const bonus = withExtras ? x.bonus : 0;
+  // Bonus, commission and on-call pay are paid on top; each has its own
+  // insurance and tax treatment in the year's settings.
+  const topUps: Array<[string, number]> = withExtras
+    ? [
+        ['bonus', x.bonus],
+        ['commission', x.commission ?? 0],
+        ['onCall', x.onCall ?? 0],
+      ]
+    : [];
+  const bonus = topUps.reduce((sum, [, amount]) => sum + amount, 0);
   const deficit = withExtras ? hourly * x.deficitHours : 0;
 
   // Eidi, severance and unused leave.
@@ -221,7 +235,10 @@ function compute(
 
   // Insurance.
   let insurable =
-    bonus -
+    topUps.reduce(
+      (sum, [key, amount]) => (flag(key, 'insurable') ? sum + amount : sum),
+      0,
+    ) -
     (flag('baseWage', 'insurable') ? deficit : 0) +
     (flag('leavePay', 'insurable') ? leaveBuyout : 0);
   partKeys.forEach((k) => {
@@ -240,7 +257,10 @@ function compute(
   const overtimeApart = s.taxOvertimeRate > 0;
   const overtimeKeys: Array<keyof Parts> = ['overtime', 'night', 'holiday'];
   let taxable =
-    bonus -
+    topUps.reduce(
+      (sum, [key, amount]) => (flag(key, 'taxable') ? sum + amount : sum),
+      0,
+    ) -
     workerInsurance * rate(s.taxInsuranceFraction) -
     (flag('baseWage', 'taxable') ? deficit : 0) +
     (flag('leavePay', 'taxable') ? leaveBuyout : 0);

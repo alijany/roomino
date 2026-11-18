@@ -387,6 +387,36 @@ export class OnCallService {
     };
   }
 
+  /**
+   * What each person earns for the on-call period that starts in Jalali
+   * (year, month), in rial — for payroll, which takes it without a viewer
+   * check. People with a day outside their salary history are left out.
+   */
+  async periodPay(year: number, month: number) {
+    const settings = await this.settingsRow();
+    const { start, end } = this.periodRange(
+      year,
+      month,
+      settings.periodStartDay,
+    );
+    const rows = await this.em.find(
+      OnCallShiftEntity,
+      { date: { $gte: start, $lte: end } },
+      { populate: ['user'] },
+    );
+    const holidays = await this.holidays.between(start, end);
+    const earned = await this.payFor(
+      rows,
+      holidays,
+      settings.multipliers ?? DEFAULT_ONCALL_MULTIPLIERS,
+    );
+    const result = new Map<number, number>();
+    for (const [userId, pay] of earned) {
+      if (!pay.missing && pay.total > 0) result.set(userId, pay.total);
+    }
+    return result;
+  }
+
   /** The pay multipliers are set by the admin or the CEO alone. */
   private async canSetMultipliers(user: UserEntity) {
     const roles = await this.em.find(RolesEntity, { user: user.id });
