@@ -12,6 +12,8 @@ export interface BankRow {
   amount: number;
   description: string;
   status: 'draft' | 'final';
+  /** The day this transfer was marked paid; null until then. */
+  paidOn: string | null;
 }
 
 const MONTHS = [

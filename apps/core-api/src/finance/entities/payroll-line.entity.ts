@@ -119,6 +119,14 @@ export class PayrollLineEntity extends BaseEntity {
   @Property({ nullable: true })
   note?: string;
 
+  /** The day the salary transfer (what the legal part nets) was paid; empty until then. */
+  @Property({ type: 'date', nullable: true })
+  salaryPaidOn?: string;
+
+  /** The day the extras transfer was paid; empty until then, and when there are no extras. */
+  @Property({ type: 'date', nullable: true })
+  extrasPaidOn?: string;
+
   // --- results (rial) --------------------------------------------------------
 
   /** The agreed salary this month was computed from. */

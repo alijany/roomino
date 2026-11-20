@@ -10,8 +10,13 @@ export interface PayrollUser {
 }
 
 /** One person's pay for a month. Money is in rial; hours and days are plain numbers. */
+export type SettleKind = 'salary' | 'extras' | 'both';
+
 export interface PayrollLine {
   id: number;
+  /** The day the salary / extras transfer was paid; null until then. */
+  salaryPaidOn: string | null;
+  extrasPaidOn: string | null;
   period: number;
   status: PayrollStatus;
   user: PayrollUser;
@@ -146,6 +151,8 @@ export interface BankRow {
   amount: number;
   description: string;
   status: PayrollStatus;
+  /** The day this transfer was marked paid; null until then. */
+  paidOn: string | null;
 }
 
 export interface BankMonth {

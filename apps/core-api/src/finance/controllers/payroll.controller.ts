@@ -25,6 +25,8 @@ import { UserEntity } from '../../user/user.entity';
 import {
   ApplyAdvanceDto,
   ReopenPayrollDto,
+  SettlePayrollDto,
+  UnsettlePayrollDto,
   UpdatePayrollLineDto,
 } from '../dtos/payroll-line.dto';
 import { PayrollService } from '../services/payroll.service';
@@ -93,6 +95,33 @@ export class PayrollController {
       `attachment; filename="payroll-${period}-bank.xlsx"`,
     );
     res.send(file);
+  }
+
+  @Post(':period/settle')
+  @Roles(...PAYROLL_ROLES)
+  settleMonth(
+    @Param('period', ParseIntPipe) period: number,
+    @Body() dto: SettlePayrollDto,
+  ) {
+    return this.payroll.settleMonth(period, dto);
+  }
+
+  @Post('lines/:id/settle')
+  @Roles(...PAYROLL_ROLES)
+  settleLine(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SettlePayrollDto,
+  ) {
+    return this.payroll.settleLine(id, dto);
+  }
+
+  @Post('lines/:id/unsettle')
+  @Roles(...PAYROLL_ROLES)
+  unsettleLine(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UnsettlePayrollDto,
+  ) {
+    return this.payroll.unsettleLine(id, dto);
   }
 
   @Post(':period/generate')

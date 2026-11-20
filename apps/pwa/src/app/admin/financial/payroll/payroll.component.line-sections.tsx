@@ -9,9 +9,10 @@ import { ReactNode, useState } from 'react';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { toast } from 'react-toastify';
 import { CopyAmount, CopyText } from '../financial.component.copy-amount';
-import { useApplyAdvance, useLineAdvances, useUnapplyAdvance } from './payroll.api';
+import { useApplyAdvance, useLineAdvances, useSettlePayrollLine, useUnapplyAdvance, useUnsettlePayrollLine } from './payroll.api';
+import { SettleModal } from './payroll.component.settle-modal';
 import { periodLabel, rial, toLatinNumber } from '../financial.util';
-import { AdvanceItem, Payslip, UpdatePayrollLineDto } from './payroll.types';
+import { AdvanceItem, Payslip, SettleKind, UpdatePayrollLineDto } from './payroll.types';
 
 /** The inputs of a line as the form holds them: hours and days as typed text. */
 export interface LineFormState {
@@ -200,13 +201,17 @@ export function RareInputs({
 }
 
 /** How the month is paid: the transfers with the bank details, and the file for this person. */
-export function PaymentCard({ slip }: { slip: Payslip }) {
+export function PaymentCard({ slip, canSettle = false, onChanged }: { slip: Payslip; canSettle?: boolean; onChanged?: () => void }) {
+  const settle = useSettlePayrollLine();
+  const unsettle = useUnsettlePayrollLine();
+  const [settling, setSettling] = useState<'salary' | 'extras' | null>(null);
+  const [unsettling, setUnsettling] = useState<'salary' | 'extras' | null>(null);
   const label = periodLabel(slip.period);
   const draft = slip.status === 'draft' ? ' (پیش‌نویس)' : '';
   const salary = slip.net - slip.extras;
   const transfers = [
-    { kind: 'حقوق', amount: salary, text: `حقوق ${label}${draft}`, tone: 'neutral' as const },
-    ...(slip.extras > 0 ? [{ kind: 'اضافات', amount: slip.extras, text: `اضافات ${label}${draft}`, tone: 'info' as const }] : []),
+    { id: 'salary' as const, paidOn: slip.salaryPaidOn, kind: 'حقوق', amount: salary, text: `حقوق ${label}${draft}`, tone: 'neutral' as const },
+    ...(slip.extras > 0 ? [{ id: 'extras' as const, paidOn: slip.extrasPaidOn, kind: 'اضافات', amount: slip.extras, text: `اضافات ${label}${draft}`, tone: 'info' as const }] : []),
   ].filter((t) => t.amount > 0);
   const sheba = slip.identity.sheba;
 
@@ -239,9 +244,29 @@ export function PaymentCard({ slip }: { slip: Payslip }) {
                 <Badge tone={t.tone}>{t.kind}</Badge>
                 <span className="text-slate-600">{t.text}</span>
               </div>
-              <strong className="tabular-nums text-slate-900">
-                <CopyAmount value={t.amount} /> <span className="text-[10px] font-normal text-slate-400">ریال</span>
-              </strong>
+              <div className="flex items-center gap-3">
+                <strong className="tabular-nums text-slate-900">
+                  <CopyAmount value={t.amount} /> <span className="text-[10px] font-normal text-slate-400">ریال</span>
+                </strong>
+                {slip.status === 'final' &&
+                  (t.paidOn ? (
+                    <button
+                      type="button"
+                      disabled={!canSettle}
+                      title="لغو تسویه"
+                      onClick={() => setUnsettling(t.id)}
+                      className="rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-700"
+                    >
+                      ✓ تسویه شد · {jalaliLabel(t.paidOn)}
+                    </button>
+                  ) : (
+                    canSettle && (
+                      <Button size="sm" variant="outline" className="!px-2 text-xs" onClick={() => setSettling(t.id)}>
+                        تسویه شد
+                      </Button>
+                    )
+                  ))}
+              </div>
             </div>
           ))}
           {transfers.length > 1 && (
@@ -254,6 +279,44 @@ export function PaymentCard({ slip }: { slip: Payslip }) {
       ) : (
         <p className="text-sm text-slate-400">مبلغی برای پرداخت نیست.</p>
       )}
+      {settling && (
+        <SettleModal
+          title={`تسویه‌ی ${settling === 'extras' ? 'اضافات' : 'حقوق'} ${slip.user.name ?? ''}`}
+          message={`${settling === 'extras' ? 'پرداخت اضافات' : 'پرداخت حقوق'} ${label} تسویه ثبت می‌شود.`}
+          initialKind={settling as SettleKind}
+          busy={settle.isLoading}
+          onClose={() => setSettling(null)}
+          onConfirm={(kind, date) =>
+            settle
+              .submit({ id: slip.id, kind, date })
+              .then(() => {
+                toast.success('تسویه ثبت شد');
+                setSettling(null);
+                onChanged?.();
+              })
+              .catch((e: Error) => toast.error(e?.message ?? 'تسویه انجام نشد'))
+          }
+        />
+      )}
+      <ConfirmModal
+        isOpen={!!unsettling}
+        onClose={() => setUnsettling(null)}
+        onConfirm={() =>
+          unsettling &&
+          unsettle
+            .submit({ id: slip.id, kind: unsettling })
+            .then(() => {
+              toast.success('تسویه لغو شد');
+              onChanged?.();
+            })
+            .catch((e: Error) => toast.error(e?.message ?? 'لغو تسویه انجام نشد'))
+            .finally(() => setUnsettling(null))
+        }
+        title="لغو تسویه"
+        message="علامت تسویه‌ی این پرداخت برداشته می‌شود. ادامه می‌دهید؟"
+        confirmButtonText="لغو تسویه"
+        isLoading={unsettle.isLoading}
+      />
     </Card>
   );
 }

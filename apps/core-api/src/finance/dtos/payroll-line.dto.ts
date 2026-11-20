@@ -13,8 +13,11 @@ const Num = () =>
     Array.isArray(value) ? value.map(toNumber) : toNumber(value),
   );
 import {
+  IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
+  Matches,
   IsNumber,
   IsOptional,
   IsNotEmpty,
@@ -125,4 +128,29 @@ export class ApplyAdvanceDto {
   @IsInt(amount)
   @Min(1, { message: 'مبلغ باید بیشتر از صفر باشد' })
   amount?: number;
+}
+
+const SETTLE_KINDS = ['salary', 'extras', 'both'] as const;
+export type SettleKind = (typeof SETTLE_KINDS)[number];
+
+/** Mark a line's transfers (or a whole month's) as paid, on a chosen day — today when it is left out. */
+export class SettlePayrollDto {
+  @IsIn(SETTLE_KINDS, { message: 'نوع تسویه نامعتبر است' })
+  kind: SettleKind;
+
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'تاریخ تسویه نامعتبر است' })
+  date?: string;
+
+  /** For a whole month: only these lines; every final line of the month when left out. */
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  lineIds?: number[];
+}
+
+/** Take the paid mark off a line's transfer. */
+export class UnsettlePayrollDto {
+  @IsIn(SETTLE_KINDS, { message: 'نوع تسویه نامعتبر است' })
+  kind: SettleKind;
 }

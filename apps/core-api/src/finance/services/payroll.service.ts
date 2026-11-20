@@ -9,7 +9,12 @@ import {
 import { getMonth, getYear } from 'date-fns-jalali';
 import { BaseRepositoryService } from '../../libs/orm/orm.repository.service.base';
 import { UserEntity } from '../../user/user.entity';
-import { UpdatePayrollLineDto } from '../dtos/payroll-line.dto';
+import {
+  SettleKind,
+  SettlePayrollDto,
+  UnsettlePayrollDto,
+  UpdatePayrollLineDto,
+} from '../dtos/payroll-line.dto';
 import { AdvanceDeductionEntity } from '../entities/advance-deduction.entity';
 import { AdvanceRequestEntity } from '../../advance-request/entities/advance-request.entity';
 import { AdvanceRequestStatus } from '../../advance-request/advance-request.constants';
@@ -29,6 +34,7 @@ import {
 import { readBigint } from '../utils/money.util';
 import { BankRow, periodName } from '../utils/payroll-bank.util';
 import { SiteSettingsService } from '../../settings/site-settings.service';
+import { tehranToday } from '../../attendance/utils/attendance-time.util';
 import { OnCallService } from '../../attendance/services/oncall.service';
 import { PayrollSettingService } from './payroll-setting.service';
 
@@ -466,6 +472,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
           ...base,
           no: 0,
           kind: 'salary',
+          paidOn: line.salaryPaidOn ?? null,
           amount: salary,
           description: `حقوق ${label}${note}`,
         });
@@ -475,6 +482,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
           ...base,
           no: 0,
           kind: 'extras',
+          paidOn: line.extrasPaidOn ?? null,
           amount: extras,
           description: `اضافات ${label}${note}`,
         });
@@ -556,6 +564,105 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     };
   }
 
+  // --- settlement (the bank transfers marked as paid) ----------------------
+
+  /** What a line's salary transfer is (the legal part's net) and its extras. */
+  private dues(line: PayrollLineEntity) {
+    const extras = readBigint(line.extras);
+    return { salary: readBigint(line.net) - extras, extras };
+  }
+
+  private settleDate(date?: string) {
+    const today = tehranToday();
+    const day = date ?? today;
+    if (day > today) {
+      throw new BadRequestException('تاریخ تسویه نمی‌تواند در آینده باشد');
+    }
+    return day;
+  }
+
+  /**
+   * Mark a line's salary and/or extras transfer as paid on `date` (today when
+   * left out). Only a final line is paid; a part with nothing to pay or already
+   * paid is skipped, and asking for a part that cannot be paid is refused.
+   */
+  private markPaid(line: PayrollLineEntity, kind: SettleKind, day: string) {
+    const due = this.dues(line);
+    let marked = 0;
+    if ((kind === 'salary' || kind === 'both') && due.salary > 0) {
+      if (!line.salaryPaidOn) marked += 1;
+      line.salaryPaidOn ??= day;
+    }
+    if ((kind === 'extras' || kind === 'both') && due.extras > 0) {
+      if (!line.extrasPaidOn) marked += 1;
+      line.extrasPaidOn ??= day;
+    }
+    return marked;
+  }
+
+  async settleLine(id: number, dto: SettlePayrollDto) {
+    const line = await this.repository.findOne({ id }, { populate: ['user'] });
+    if (!line) throw new NotFoundException('ردیف حقوق پیدا نشد');
+    if (line.status !== PayrollLineStatus.FINAL) {
+      throw new ConflictException('فقط ردیف قطعی‌شده تسویه می‌شود');
+    }
+    const day = this.settleDate(dto.date);
+    const due = this.dues(line);
+    if (dto.kind === 'salary' && due.salary <= 0) {
+      throw new BadRequestException('این ردیف حقوقی برای تسویه ندارد');
+    }
+    if (dto.kind === 'extras' && due.extras <= 0) {
+      throw new BadRequestException('این ردیف اضافاتی برای تسویه ندارد');
+    }
+    this.markPaid(line, dto.kind, day);
+    await this.em.flush();
+    return this.toItem(line);
+  }
+
+  async unsettleLine(id: number, dto: UnsettlePayrollDto) {
+    const line = await this.repository.findOne({ id }, { populate: ['user'] });
+    if (!line) throw new NotFoundException('ردیف حقوق پیدا نشد');
+    if (dto.kind !== 'extras') line.salaryPaidOn = undefined;
+    if (dto.kind !== 'salary') line.extrasPaidOn = undefined;
+    await this.em.flush();
+    return this.toItem(line);
+  }
+
+  /** Settle a whole month at once: every final line, or just the chosen ones. */
+  async settleMonth(period: number, dto: SettlePayrollDto) {
+    assertPeriod(period);
+    const day = this.settleDate(dto.date);
+    const lines = await this.repository.find(
+      {
+        period,
+        status: PayrollLineStatus.FINAL,
+        ...(dto.lineIds?.length ? { id: { $in: dto.lineIds } } : {}),
+      },
+      { populate: ['user'] },
+    );
+    if (!lines.length) {
+      throw new BadRequestException('ردیف قطعی‌ای برای تسویه نیست');
+    }
+    const marked = lines.reduce(
+      (sum, line) => sum + this.markPaid(line, dto.kind, day),
+      0,
+    );
+    await this.em.flush();
+    return { settled: marked, date: day };
+  }
+
+  /** A paid line is not opened again until its payments are taken back. */
+  private assertUnpaid(lines: PayrollLineEntity[]) {
+    const paid = lines.filter((l) => l.salaryPaidOn || l.extrasPaidOn);
+    if (paid.length) {
+      throw new ConflictException(
+        `${paid.length.toLocaleString(
+          'fa-IR',
+        )} ردیف تسویه‌شده دارد؛ ابتدا تسویه‌ی آن را لغو کنید`,
+      );
+    }
+  }
+
   /** Freeze one person's month; the rest of the month stays open. */
   async finalizeLine(id: number) {
     const line = await this.repository.findOne({ id }, { populate: ['user'] });
@@ -575,6 +682,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     if (line.status !== PayrollLineStatus.FINAL) {
       throw new ConflictException('این ردیف قطعی نیست');
     }
+    this.assertUnpaid([line]);
     this.reopen(line, reason, adminName);
     await this.em.flush();
     return this.toItem(line);
@@ -590,6 +698,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     if (!lines.length) {
       throw new BadRequestException('ردیف قطعی‌ای برای بازکردن نیست');
     }
+    this.assertUnpaid(lines);
     lines.forEach((line) => this.reopen(line, reason, adminName));
     await this.em.flush();
     return { reopened: lines.length };
@@ -925,6 +1034,8 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       payEidi: line.payEidi,
       settle: line.settle,
       note: line.note ?? null,
+      salaryPaidOn: line.salaryPaidOn ?? null,
+      extrasPaidOn: line.extrasPaidOn ?? null,
       warnings: line.warnings,
       revisions: (line.revisions ?? []).map(({ at, by, reason, changed }) => ({
         at,

@@ -10,7 +10,7 @@ import { Button, Dropdown, Input } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView, PersonLabel, Table } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
-import { IconAlertTriangle, IconBuildingBank, IconCheck, IconFileText, IconFilterOff, IconLockOpen, IconPencil, IconPlus, IconReceipt2, IconRefresh, IconSearch, IconTrash } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBuildingBank, IconCash, IconCheck, IconFileText, IconFilterOff, IconLockOpen, IconPencil, IconPlus, IconReceipt2, IconRefresh, IconSearch, IconTrash } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -24,13 +24,18 @@ import {
   useFinalizePayrollLine,
   useReopenPayrollLine,
   useReopenPayrollMonth,
+  useSettlePayrollLine,
+  useSettlePayrollMonth,
+  useUnsettlePayrollLine,
   useGeneratePayroll,
   usePayrollMonth,
   useRecalculatePayroll,
 } from './payroll.api';
 import { BankModal } from './payroll.component.bank-modal';
 import { ReopenModal } from './payroll.component.reopen-modal';
-import { PayrollLine } from './payroll.types';
+import { SettleModal } from './payroll.component.settle-modal';
+import { PayrollLine, SettleKind } from './payroll.types';
+import { jalaliLabel } from '@/app/dashboard/attendance/attendance.util';
 
 /** The month's filters; they live in the address like the month itself. */
 interface PayrollFilters {
@@ -102,6 +107,9 @@ function PayrollContent() {
   const finalizeLine = useFinalizePayrollLine();
   const reopenLine = useReopenPayrollLine();
   const reopenMonth = useReopenPayrollMonth();
+  const settleLine = useSettlePayrollLine();
+  const settleMonth = useSettlePayrollMonth();
+  const unsettleLine = useUnsettlePayrollLine();
 
   const router = useRouter();
   const lineHref = (l: PayrollLine) => `/admin/financial/payroll/line/${l.id}`;
@@ -110,6 +118,9 @@ function PayrollContent() {
   const [bankOpen, setBankOpen] = useState(false);
   const [finalizingLine, setFinalizingLine] = useState<PayrollLine | null>(null);
   /** What is being reopened: one line, or the whole month. */
+  /** What is being settled: one transfer of one line, or the shown final lines in bulk. */
+  const [settling, setSettling] = useState<{ line: PayrollLine; kind: SettleKind } | 'bulk' | null>(null);
+  const [unsettling, setUnsettling] = useState<{ line: PayrollLine; kind: 'salary' | 'extras' } | null>(null);
   const [reopening, setReopening] = useState<PayrollLine | 'month' | null>(null);
 
   const fail = (fallback: string) => (e: unknown) => toast.error((e as Error)?.message ?? fallback);
@@ -168,6 +179,43 @@ function PayrollContent() {
     request.catch(fail('بازکردن انجام نشد'));
   };
 
+  const handleSettle = (kind: SettleKind, date: string) => {
+    if (!settling) return;
+    const done = () => {
+      setSettling(null);
+      refresh();
+    };
+    if (settling === 'bulk') {
+      settleMonth
+        .submit({ period, kind, date, lineIds: finalRows.map((l) => l.id) })
+        .then((r) => {
+          toast.success(r.settled ? `${r.settled.toLocaleString('fa-IR')} پرداخت تسویه شد` : 'مورد تازه‌ای برای تسویه نبود');
+          done();
+        })
+        .catch(fail('تسویه انجام نشد'));
+      return;
+    }
+    settleLine
+      .submit({ id: settling.line.id, kind, date })
+      .then(() => {
+        toast.success('تسویه ثبت شد');
+        done();
+      })
+      .catch(fail('تسویه انجام نشد'));
+  };
+
+  const handleUnsettle = () =>
+    unsettling
+      ? unsettleLine
+          .submit({ id: unsettling.line.id, kind: unsettling.kind })
+          .then(() => {
+            toast.success('تسویه لغو شد');
+            refresh();
+          })
+          .catch(fail('لغو تسویه انجام نشد'))
+          .finally(() => setUnsettling(null))
+      : undefined;
+
   const handleRemove = () =>
     removing
       ? remove
@@ -191,6 +239,7 @@ function PayrollContent() {
       (filters.flag !== 'probation' || l.probation) &&
       (filters.flag !== 'warnings' || l.warnings.length > 0),
   );
+  const finalRows = rows.filter((l) => l.status === 'final');
   const hasFilters = Boolean(filters.text || filters.status || filters.mode || filters.flag);
   const setFilter = (change: Partial<PayrollFilters>) => setFilters((prev) => ({ ...prev, ...change }));
   const isFinal = month?.status === 'final';
@@ -250,6 +299,12 @@ function PayrollContent() {
           <IconBuildingBank className="size-4" />
           خروجی بانک
         </Button>
+        {canEdit && finalRows.length > 0 && (
+          <Button variant="outline" className="gap-1 border-emerald-200 text-emerald-700" onClick={() => setSettling('bulk')}>
+            <IconCash className="size-4" />
+            تسویه‌ی جمعی
+          </Button>
+        )}
         {canEdit && month?.items.some((l) => l.status === 'final') && (
           <Button
             variant="outline"
@@ -361,11 +416,51 @@ function PayrollContent() {
                       />
                     ),
                   },
-                  { key: 'days', header: 'روز کار', numeric: true, hideOnMobile: true, render: (l) => l.days.toLocaleString('fa-IR') },
-                  { key: 'gross', header: <WithUnit>حقوق و مزایا</WithUnit>, numeric: true, render: (l) => <CopyAmount value={l.gross} /> },
-                  { key: 'deductions', header: <WithUnit>کسورات</WithUnit>, numeric: true, hideOnMobile: true, render: (l) => <CopyAmount value={l.totalDeductions} /> },
                   { key: 'net', header: <WithUnit>خالص</WithUnit>, numeric: true, render: (l) => <strong><CopyAmount value={l.net} /></strong> },
                   { key: 'cost', header: <WithUnit>هزینه‌ی کل</WithUnit>, numeric: true, hideOnMobile: true, render: (l) => <CopyAmount value={l.totalCost} /> },
+                  {
+                    key: 'paid',
+                    header: 'تسویه',
+                    render: (l) => {
+                      if (l.status !== 'final') return <span className="text-slate-300">—</span>;
+                      const parts: { kind: 'salary' | 'extras'; label: string; due: number; paidOn: string | null }[] = [
+                        { kind: 'salary', label: 'حقوق', due: l.net - l.extras, paidOn: l.salaryPaidOn },
+                        { kind: 'extras', label: 'اضافات', due: l.extras, paidOn: l.extrasPaidOn },
+                      ];
+                      return (
+                        <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+                          {parts
+                            .filter((x) => x.due > 0)
+                            .map((x) =>
+                              x.paidOn ? (
+                                <button
+                                  key={x.kind}
+                                  type="button"
+                                  disabled={!canEdit}
+                                  title="لغو تسویه"
+                                  onClick={() => setUnsettling({ line: l, kind: x.kind })}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-700"
+                                >
+                                  <IconCheck className="size-3" />
+                                  {x.label} · {jalaliLabel(x.paidOn)}
+                                </button>
+                              ) : (
+                                <Button
+                                  key={x.kind}
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={!canEdit}
+                                  className="!px-2 text-xs"
+                                  onClick={() => setSettling({ line: l, kind: x.kind })}
+                                >
+                                  تسویه‌ی {x.label}
+                                </Button>
+                              ),
+                            )}
+                        </div>
+                      );
+                    },
+                  },
                   {
                     key: 'actions',
                     header: '',
@@ -419,7 +514,31 @@ function PayrollContent() {
         confirmButtonText="قطعی کردن"
         isLoading={finalize.isLoading}
       />
-      {bankOpen && <BankModal period={period} onClose={() => setBankOpen(false)} />}
+      {settling && (
+        <SettleModal
+          title={settling === 'bulk' ? `تسویه‌ی جمعی ${periodLabel(period)}` : `تسویه‌ی ${settling.line.user.name ?? ''}`}
+          message={
+            settling === 'bulk'
+              ? `${finalRows.length.toLocaleString('fa-IR')} ردیف قطعی نمایش‌داده‌شده تسویه می‌شود. پرداخت‌های قبلاً تسویه‌شده تغییر نمی‌کنند.`
+              : `پرداخت ${settling.kind === 'extras' ? 'اضافات' : settling.kind === 'salary' ? 'حقوق' : 'حقوق و اضافات'} این ردیف تسویه ثبت می‌شود.`
+          }
+          kinds={settling === 'bulk' ? ['both', 'salary', 'extras'] : undefined}
+          initialKind={settling === 'bulk' ? 'both' : settling.kind}
+          busy={settleLine.isLoading || settleMonth.isLoading}
+          onConfirm={handleSettle}
+          onClose={() => setSettling(null)}
+        />
+      )}
+      <ConfirmModal
+        isOpen={!!unsettling}
+        onClose={() => setUnsettling(null)}
+        onConfirm={handleUnsettle}
+        title="لغو تسویه"
+        message="علامت تسویه‌ی این پرداخت برداشته می‌شود. ادامه می‌دهید؟"
+        confirmButtonText="لغو تسویه"
+        isLoading={unsettleLine.isLoading}
+      />
+      {bankOpen && <BankModal period={period} onClose={() => setBankOpen(false)} onChanged={refresh} />}
 
       {reopening && (
         <ReopenModal

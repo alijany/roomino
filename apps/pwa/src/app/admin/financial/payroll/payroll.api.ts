@@ -2,7 +2,7 @@ import { useSwrHelper, useSwrMutationHelper } from '@/libs/api/api.hook.use-swr-
 import { deleteFetcher, fetcher, patchFetcher, postFetcher } from '@/libs/api/api.util.fetcher';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
-import { BankMonth, LineAdvances, Payslip, PayrollLine, PayrollMonth, UpdatePayrollLineDto } from './payroll.types';
+import { BankMonth, LineAdvances, Payslip, PayrollLine, PayrollMonth, SettleKind, UpdatePayrollLineDto } from './payroll.types';
 
 export function usePayrollMonth(period: number | null) {
   return useSwrHelper(useSWR<PayrollMonth>(period ? `/admin/finance/payroll/${period}` : null, fetcher));
@@ -111,6 +111,44 @@ export function useUnapplyAdvance() {
         postFetcher<Record<string, never>, PayrollLine>(
           `/admin/finance/payroll/lines/${arg.lineId}/advances/${arg.requestId}/unapply`,
           { arg: {} },
+        ),
+    ),
+  );
+}
+
+/** Marks a line's salary and/or extras transfer as paid on a day (today when left out). */
+export function useSettlePayrollLine() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/finance/payroll/lines/settle',
+      (_key: string, { arg }: { arg: { id: number; kind: SettleKind; date?: string } }) =>
+        postFetcher<{ kind: SettleKind; date?: string }, PayrollLine>(`/admin/finance/payroll/lines/${arg.id}/settle`, {
+          arg: { kind: arg.kind, date: arg.date },
+        }),
+    ),
+  );
+}
+
+/** Takes a payment mark back. */
+export function useUnsettlePayrollLine() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/finance/payroll/lines/unsettle',
+      (_key: string, { arg }: { arg: { id: number; kind: SettleKind } }) =>
+        postFetcher<{ kind: SettleKind }, PayrollLine>(`/admin/finance/payroll/lines/${arg.id}/unsettle`, { arg: { kind: arg.kind } }),
+    ),
+  );
+}
+
+/** Settles many lines of a month at once. */
+export function useSettlePayrollMonth() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/finance/payroll/settle',
+      (_key: string, { arg }: { arg: { period: number; kind: SettleKind; date?: string; lineIds?: number[] } }) =>
+        postFetcher<{ kind: SettleKind; date?: string; lineIds?: number[] }, { settled: number; date: string }>(
+          `/admin/finance/payroll/${arg.period}/settle`,
+          { arg: { kind: arg.kind, date: arg.date, lineIds: arg.lineIds } },
         ),
     ),
   );

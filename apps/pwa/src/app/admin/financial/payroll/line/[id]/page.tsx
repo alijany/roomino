@@ -10,13 +10,13 @@ import { Button } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { BackButton, DataView } from '@/ui/molecules';
 import { ConfirmModal } from '@/ui/molecules/confirm-modal';
-import { IconFileText, IconLockOpen } from '@tabler/icons-react';
+import { IconCash, IconFileText, IconLockOpen } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { periodLabel } from '../../../financial.util';
-import { useFinalizePayrollLine, usePayslip, useReopenPayrollLine, useUpdatePayrollLine } from '../../payroll.api';
+import { useFinalizePayrollLine, usePayslip, useSettlePayrollLine, useReopenPayrollLine, useUpdatePayrollLine } from '../../payroll.api';
 import {
   AdvancesCard,
   BreakdownCard,
@@ -30,6 +30,7 @@ import {
   hasUncommonInputs,
 } from '../../payroll.component.line-sections';
 import { ReopenModal } from '../../payroll.component.reopen-modal';
+import { SettleModal } from '../../payroll.component.settle-modal';
 import { Payslip } from '../../payroll.types';
 
 /** One person's month as a page: the inputs, the payment split and the figures. Admin-only. */
@@ -60,6 +61,9 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
   // The CEO and the finance manager look; the admin changes.
   const canEdit = useAuth().hasAnyRole([Role.ADMIN, Role.CEO, Role.FINANCE_MANAGER, Role.PERSONNEL]);
   const locked = slip.status === 'final';
+  const settle = useSettlePayrollLine();
+  const [settlingAll, setSettlingAll] = useState(false);
+  const unpaid = (slip.net - slip.extras > 0 && !slip.salaryPaidOn) || (slip.extras > 0 && !slip.extrasPaidOn);
   const frozen = locked || !canEdit;
   const [form, setForm] = useState<LineFormState>(() => formOf(slip));
   const [rareOpen, setRareOpen] = useState(() => hasUncommonInputs(formOf(slip)));
@@ -137,6 +141,12 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
               فیش حقوقی
             </Button>
           </Link>
+          {canEdit && locked && unpaid && (
+            <Button variant="outline" className="gap-1 border-emerald-200 text-emerald-700" onClick={() => setSettlingAll(true)}>
+              <IconCash className="size-4" />
+              تسویه‌ی کلی
+            </Button>
+          )}
           {!canEdit ? null : locked ? (
             <Button variant="outline" className="gap-1 border-amber-200 text-amber-700" onClick={() => setReopening(true)}>
               <IconLockOpen className="size-4" />
@@ -168,7 +178,7 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
               set('advance', advance);
               refresh();
             }} />
-          <PaymentCard slip={slip} />
+          <PaymentCard slip={slip} canSettle={canEdit} onChanged={refresh} />
           <FactsCard slip={slip} />
           {hybrid && <HybridCard slip={slip} />}
           {slip.revisions.length > 0 && (
@@ -203,6 +213,26 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
         cancelButtonText="بازگشت"
         isLoading={busy}
       />
+
+      {settlingAll && (
+        <SettleModal
+          title={`تسویه‌ی کلی ${slip.user.name ?? ''}`}
+          message={`همه‌ی پرداخت‌های ${periodLabel(slip.period)} این نفر (حقوق و اضافات) تسویه ثبت می‌شود. بخش‌های قبلاً تسویه‌شده تغییر نمی‌کنند.`}
+          initialKind="both"
+          busy={settle.isLoading}
+          onClose={() => setSettlingAll(false)}
+          onConfirm={(kind, date) =>
+            settle
+              .submit({ id: slip.id, kind, date })
+              .then(() => {
+                toast.success('تسویه ثبت شد');
+                setSettlingAll(false);
+                refresh();
+              })
+              .catch((e: Error) => toast.error(e?.message ?? 'تسویه انجام نشد'))
+          }
+        />
+      )}
 
       {reopening && (
         <ReopenModal

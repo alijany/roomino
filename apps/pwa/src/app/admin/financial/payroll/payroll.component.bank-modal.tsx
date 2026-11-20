@@ -4,12 +4,15 @@ import { FormModal } from '@/app/dashboard/attendance/attendance.component.layou
 import { Button } from '@/ui/atoms';
 import { Badge } from '@/ui/atoms/ui.badge';
 import { DataView, Table } from '@/ui/molecules';
-import { IconDownload } from '@tabler/icons-react';
+import { IconCheck, IconDownload } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { CopyAmount, CopyText } from '../financial.component.copy-amount';
 import { downloadFile, periodLabel, rial } from '../financial.util';
-import { useBankMonth } from './payroll.api';
+import { useBankMonth, useSettlePayrollLine, useUnsettlePayrollLine } from './payroll.api';
+import { SettleModal } from './payroll.component.settle-modal';
+import { jalaliLabel } from '@/app/dashboard/attendance/attendance.util';
+import { ConfirmModal } from '@/ui/molecules/confirm-modal';
 import { BankRow } from './payroll.types';
 
 /**
@@ -17,8 +20,16 @@ import { BankRow } from './payroll.types';
  * there are extras, one for those, with the sheba, the amount and the
  * description to type into the bank — and the same as an Excel file.
  */
-export function BankModal({ period, onClose }: { period: number; onClose: () => void }) {
+export function BankModal({ period, onClose, onChanged }: { period: number; onClose: () => void; onChanged?: () => void }) {
   const { data, error, isLoading, refresh } = useBankMonth(period);
+  const settle = useSettlePayrollLine();
+  const unsettle = useUnsettlePayrollLine();
+  const [settling, setSettling] = useState<BankRow | null>(null);
+  const [unsettling, setUnsettling] = useState<BankRow | null>(null);
+  const changed = () => {
+    refresh();
+    onChanged?.();
+  };
   const [downloading, setDownloading] = useState(false);
   /** Which transfers to show: all, only salaries, or only extras. */
   const [kind, setKind] = useState<'all' | BankRow['kind']>('all');
@@ -180,6 +191,28 @@ export function BankModal({ period, onClose }: { period: number; onClose: () => 
                 },
                 { key: 'description', header: 'شرح', render: (r) => r.description },
                 {
+                  key: 'paid',
+                  header: 'تسویه',
+                  render: (r) =>
+                    r.status !== 'final' ? (
+                      <span className="text-xs text-slate-400">بعد از قطعی شدن</span>
+                    ) : r.paidOn ? (
+                      <button
+                        type="button"
+                        title="لغو تسویه"
+                        onClick={() => setUnsettling(r)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-700"
+                      >
+                        <IconCheck className="size-3" />
+                        {jalaliLabel(r.paidOn)}
+                      </button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="!px-2 text-xs" onClick={() => setSettling(r)}>
+                        تسویه شد
+                      </Button>
+                    ),
+                },
+                {
                   key: 'kind',
                   header: 'نوع',
                   hideOnMobile: true,
@@ -190,6 +223,44 @@ export function BankModal({ period, onClose }: { period: number; onClose: () => 
           </div>
         )}
       </DataView>
+      {settling && (
+        <SettleModal
+          title={`تسویه‌ی ${settling.name ?? ''}`}
+          message={`${settling.description} — ${rial(settling.amount)} ریال`}
+          initialKind={settling.kind}
+          busy={settle.isLoading}
+          onClose={() => setSettling(null)}
+          onConfirm={(kind, date) =>
+            settle
+              .submit({ id: settling.lineId, kind, date })
+              .then(() => {
+                toast.success('تسویه ثبت شد');
+                setSettling(null);
+                changed();
+              })
+              .catch((e: Error) => toast.error(e?.message ?? 'تسویه انجام نشد'))
+          }
+        />
+      )}
+      <ConfirmModal
+        isOpen={!!unsettling}
+        onClose={() => setUnsettling(null)}
+        onConfirm={() =>
+          unsettling &&
+          unsettle
+            .submit({ id: unsettling.lineId, kind: unsettling.kind })
+            .then(() => {
+              toast.success('تسویه لغو شد');
+              changed();
+            })
+            .catch((e: Error) => toast.error(e?.message ?? 'لغو تسویه انجام نشد'))
+            .finally(() => setUnsettling(null))
+        }
+        title="لغو تسویه"
+        message="علامت تسویه‌ی این پرداخت برداشته می‌شود. ادامه می‌دهید؟"
+        confirmButtonText="لغو تسویه"
+        isLoading={unsettle.isLoading}
+      />
     </FormModal>
   );
 }
