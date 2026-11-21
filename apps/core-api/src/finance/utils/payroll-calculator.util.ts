@@ -321,9 +321,14 @@ export function calculatePayroll(
     fullBase = settings.minMonthly;
     const fixed = compute(settings, inclusion, input, fullBase, false);
     const target = input.agreed * input.fraction;
-    // The package's net is after its insurance and tax; the extras make up
-    // the rest of the agreed salary, so the employer carries both.
-    extras = Math.max(target - fixed.net, 0);
+    // A net agreement fixes the take-home: the extras make up what the
+    // package's net (after its insurance and tax) leaves, so the employer
+    // carries both. A gross agreement is gross: the extras make up what the
+    // package's gross leaves, and the worker bears the package's deductions.
+    extras = Math.max(
+      target - (input.agreement === 'net' ? fixed.net : fixed.gross),
+      0,
+    );
   } else if (input.agreement === 'net') {
     // A net agreement fixes the take-home; find the base wage that gives it.
     const target = input.agreed * input.fraction;

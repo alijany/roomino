@@ -5,5 +5,7 @@
  */
 export function splitTransfers(l: { agreement: string; net: number; extras: number }) {
   if (l.agreement === 'flat') return { salary: 0, extras: l.net };
-  return { salary: l.net - l.extras, extras: l.extras };
+  // Deductions come off the legal salary first; the shortfall comes off the extras.
+  const salary = Math.max(l.net - l.extras, 0);
+  return { salary, extras: l.net - salary };
 }

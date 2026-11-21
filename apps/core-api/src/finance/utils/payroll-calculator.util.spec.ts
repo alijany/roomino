@@ -574,11 +574,11 @@ describe('calculatePayroll — what the sheet had no data for', () => {
         input({ agreed, hybrid: true }),
       );
       expect(r.base).toBe(minimum);
-      // The package's insurance and tax come off first; the extras are what is
-      // left of the agreed salary after that, so the take-home is the agreed salary.
+      // A gross agreement: the extras are what the package's gross leaves of the
+      // agreed salary, so the worker bears the package's insurance and tax.
       expect(r.tax).toBe(0);
-      expect(r.extras).toBe(agreed - (r.gross - r.workerInsurance - r.tax));
-      expect(r.net).toBe(agreed);
+      expect(r.extras).toBe(agreed - r.gross);
+      expect(r.net).toBe(agreed - r.workerInsurance - r.tax);
       expect(r.totalCost).toBe(
         r.gross + r.extras + r.employerInsurance + r.accrual,
       );
@@ -681,10 +681,9 @@ describe('calculatePayroll — what the sheet had no data for', () => {
         input({ agreed, hybrid: true, fraction: 0.5 }),
       );
       expect(r.base).toBe(Math.round(minimum / 2));
-      const packageNet = r.gross - r.workerInsurance - r.tax;
-      expect(
-        Math.abs(r.extras - (agreed / 2 - packageNet)),
-      ).toBeLessThanOrEqual(1);
+      expect(Math.abs(r.extras - (agreed / 2 - r.gross))).toBeLessThanOrEqual(
+        1,
+      );
     });
   });
 

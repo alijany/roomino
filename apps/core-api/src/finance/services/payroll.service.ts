@@ -607,8 +607,10 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
   private dues(line: PayrollLineEntity) {
     const net = readBigint(line.net);
     if (line.agreement === 'flat') return { salary: 0, extras: net };
-    const extras = readBigint(line.extras);
-    return { salary: net - extras, extras };
+    // Deductions (advance, loan) come off the legal salary first; what it
+    // cannot cover comes off the extras.
+    const salary = Math.max(net - readBigint(line.extras), 0);
+    return { salary, extras: net - salary };
   }
 
   private settleDate(date?: string) {

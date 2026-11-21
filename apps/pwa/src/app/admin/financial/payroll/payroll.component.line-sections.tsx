@@ -326,7 +326,7 @@ export function PaymentCard({ slip, canSettle = false, onChanged }: { slip: Pays
 
 /** For a hybrid salary: how the agreed salary splits into the legal package and the extras. */
 export function HybridCard({ slip }: { slip: Payslip }) {
-  const legalNet = slip.net - slip.extras;
+  const legalNet = Math.max(slip.net - slip.extras, 0);
   return (
     <Card title="حقوق هیبرید" >
       <p className="text-sm leading-7 text-slate-600">
@@ -403,10 +403,11 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
         <Row label="عیدی" value={slip.eidi} />
         <Row label="سنوات" value={slip.severance} />
         <Row label="بازخرید مرخصی" value={slip.leaveBuyout} />
-        <Row label="جمع حقوق و مزایا (مشمول قوانین)" value={slip.gross} strong />
+        <Row label={hybrid ? 'ناخالص حقوق مشمول' : 'جمع حقوق و مزایا (مشمول قوانین)'} value={slip.gross} strong />
         <Row label="کسر کسری کار" value={slip.deficit} negative />
         <Row label="بیمه‌ی سهم کارگر" value={slip.workerInsurance} negative />
         <Row label="مالیات" value={slip.tax} negative />
+        {hybrid && <Row label="خالص حقوق مشمول" value={slip.gross - slip.deficit - slip.workerInsurance - slip.tax} strong />}
         <Row label="مساعده" value={slip.advance} negative />
         <Row label="قسط وام" value={slip.loan} negative />
         <Row label="سایر کسورات" value={slip.otherDeductions} negative />
