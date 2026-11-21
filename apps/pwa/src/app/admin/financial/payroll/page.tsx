@@ -33,6 +33,7 @@ import {
 } from './payroll.api';
 import { BankModal } from './payroll.component.bank-modal';
 import { ReopenModal } from './payroll.component.reopen-modal';
+import { splitTransfers } from './payroll.util.transfers';
 import { SettleModal } from './payroll.component.settle-modal';
 import { PayrollLine, SettleKind } from './payroll.types';
 import { jalaliLabel } from '@/app/dashboard/attendance/attendance.util';
@@ -424,8 +425,8 @@ function PayrollContent() {
                     render: (l) => {
                       if (l.status !== 'final') return <span className="text-slate-300">—</span>;
                       const parts: { kind: 'salary' | 'extras'; label: string; due: number; paidOn: string | null }[] = [
-                        { kind: 'salary', label: 'حقوق', due: l.net - l.extras, paidOn: l.salaryPaidOn },
-                        { kind: 'extras', label: 'اضافات', due: l.extras, paidOn: l.extrasPaidOn },
+                        { kind: 'salary', label: 'حقوق', due: splitTransfers(l).salary, paidOn: l.salaryPaidOn },
+                        { kind: 'extras', label: l.agreement === 'flat' ? 'اضافات توافقی' : 'اضافات', due: splitTransfers(l).extras, paidOn: l.extrasPaidOn },
                       ];
                       return (
                         <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>

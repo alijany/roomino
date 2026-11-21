@@ -159,6 +159,8 @@ export interface MyPayslipItem {
   id: number;
   period: number;
   net: number;
+  /** The salary transfer and the extras transfer; a flat salary is all extras. */
+  salary: number;
   extras: number;
   salaryPaidOn: string | null;
   extrasPaidOn: string | null;

@@ -12,6 +12,7 @@ import { CopyAmount, CopyText } from '../financial.component.copy-amount';
 import { useApplyAdvance, useLineAdvances, useSettlePayrollLine, useUnapplyAdvance, useUnsettlePayrollLine } from './payroll.api';
 import { SettleModal } from './payroll.component.settle-modal';
 import { periodLabel, rial, toLatinNumber } from '../financial.util';
+import { splitTransfers } from './payroll.util.transfers';
 import { AdvanceItem, Payslip, SettleKind, UpdatePayrollLineDto } from './payroll.types';
 
 /** The inputs of a line as the form holds them: hours and days as typed text. */
@@ -208,10 +209,12 @@ export function PaymentCard({ slip, canSettle = false, onChanged }: { slip: Pays
   const [unsettling, setUnsettling] = useState<'salary' | 'extras' | null>(null);
   const label = periodLabel(slip.period);
   const draft = slip.status === 'draft' ? ' (پیش‌نویس)' : '';
-  const salary = slip.net - slip.extras;
+  const split = splitTransfers(slip);
+  const salary = split.salary;
+  const flat = slip.agreement === 'flat';
   const transfers = [
     { id: 'salary' as const, paidOn: slip.salaryPaidOn, kind: 'حقوق', amount: salary, text: `حقوق ${label}${draft}`, tone: 'neutral' as const },
-    ...(slip.extras > 0 ? [{ id: 'extras' as const, paidOn: slip.extrasPaidOn, kind: 'اضافات', amount: slip.extras, text: `اضافات ${label}${draft}`, tone: 'info' as const }] : []),
+    ...(split.extras > 0 ? [{ id: 'extras' as const, paidOn: slip.extrasPaidOn, kind: flat ? 'اضافات توافقی' : 'اضافات', amount: split.extras, text: `${flat ? 'اضافات توافقی' : 'اضافات'} ${label}${draft}`, tone: 'info' as const }] : []),
   ].filter((t) => t.amount > 0);
   const sheba = slip.identity.sheba;
 

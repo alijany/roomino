@@ -456,8 +456,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     const label = periodName(period);
     const rows: BankRow[] = [];
     for (const line of lines) {
-      const net = readBigint(line.net);
-      const extras = readBigint(line.extras);
+      const { salary, extras } = this.dues(line);
       const base = {
         lineId: line.id,
         name: line.user.legalName ?? null,
@@ -466,7 +465,6 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
         status: line.status,
       };
       const note = line.status === PayrollLineStatus.DRAFT ? ' (پیش‌نویس)' : '';
-      const salary = net - extras;
       if (salary > 0) {
         rows.push({
           ...base,
@@ -576,7 +574,7 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
       id: line.id,
       period: line.period,
       net: readBigint(line.net),
-      extras: readBigint(line.extras),
+      ...this.dues(line),
       salaryPaidOn: line.salaryPaidOn ?? null,
       extrasPaidOn: line.extrasPaidOn ?? null,
     }));
@@ -601,10 +599,16 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
 
   // --- settlement (the bank transfers marked as paid) ----------------------
 
-  /** What a line's salary transfer is (the legal part's net) and its extras. */
+  /**
+   * What a line pays in each transfer: the legal part's net as the salary and
+   * the rest as extras. A flat salary has no legal part — all of it is the
+   * agreed extras.
+   */
   private dues(line: PayrollLineEntity) {
+    const net = readBigint(line.net);
+    if (line.agreement === 'flat') return { salary: 0, extras: net };
     const extras = readBigint(line.extras);
-    return { salary: readBigint(line.net) - extras, extras };
+    return { salary: net - extras, extras };
   }
 
   private settleDate(date?: string) {

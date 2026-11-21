@@ -30,6 +30,7 @@ import {
   hasUncommonInputs,
 } from '../../payroll.component.line-sections';
 import { ReopenModal } from '../../payroll.component.reopen-modal';
+import { splitTransfers } from '../../payroll.util.transfers';
 import { SettleModal } from '../../payroll.component.settle-modal';
 import { Payslip } from '../../payroll.types';
 
@@ -63,7 +64,8 @@ function LineEditor({ slip, refresh }: { slip: Payslip; refresh: () => void }) {
   const locked = slip.status === 'final';
   const settle = useSettlePayrollLine();
   const [settlingAll, setSettlingAll] = useState(false);
-  const unpaid = (slip.net - slip.extras > 0 && !slip.salaryPaidOn) || (slip.extras > 0 && !slip.extrasPaidOn);
+  const split = splitTransfers(slip);
+  const unpaid = (split.salary > 0 && !slip.salaryPaidOn) || (split.extras > 0 && !slip.extrasPaidOn);
   const frozen = locked || !canEdit;
   const [form, setForm] = useState<LineFormState>(() => formOf(slip));
   const [rareOpen, setRareOpen] = useState(() => hasUncommonInputs(formOf(slip)));

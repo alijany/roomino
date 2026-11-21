@@ -60,7 +60,7 @@ export default function MyPayslipsPage() {
             )}
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {shown.map((m) => {
-                const paid = (m.net - m.extras <= 0 || m.salaryPaidOn) && (m.extras <= 0 || m.extrasPaidOn);
+                const paid = (m.salary <= 0 || m.salaryPaidOn) && (m.extras <= 0 || m.extrasPaidOn);
                 const paidOn = m.salaryPaidOn ?? m.extrasPaidOn;
                 return (
                   <Link key={m.id} href={`/dashboard/payslips/${m.id}`} className="ui-surface flex items-center gap-3 p-3 hover:border-slate-300">
