@@ -153,3 +153,23 @@ export function useSettlePayrollMonth() {
     ),
   );
 }
+
+/** One of the person's own final months. */
+export interface MyPayslipItem {
+  id: number;
+  period: number;
+  net: number;
+  extras: number;
+  salaryPaidOn: string | null;
+  extrasPaidOn: string | null;
+}
+
+/** The signed-in person's own final payslips, newest first. */
+export function useMyPayslips() {
+  return useSwrHelper(useSWR<MyPayslipItem[]>('/finance/payroll/my', fetcher));
+}
+
+/** One of the person's own payslips. */
+export function useMyPayslip(id: number | null) {
+  return useSwrHelper(useSWR<Payslip>(id ? `/finance/payroll/my/${id}` : null, fetcher));
+}

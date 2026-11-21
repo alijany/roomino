@@ -41,12 +41,6 @@ const yearItems = () => [
   })),
 ];
 
-const TYPE_META: Record<SalaryChangeType, { label: string; tone: 'info' | 'success' | 'warning' }> = {
-  start: { label: 'شروع همکاری', tone: 'info' },
-  raise: { label: 'افزایش دوره‌ای', tone: 'success' },
-  decrease: { label: 'کاهش حقوق', tone: 'warning' },
-};
-
 /** A column title with the unit small beside it. */
 function WithUnit({ children }: { children: string }) {
   return (
@@ -233,18 +227,15 @@ function SalaryHistoryContent() {
                     />
                   ),
                 },
-                { key: 'period', header: 'از ماه', render: (c) => periodLabel(c.period) },
                 {
-                  key: 'type',
-                  header: 'نوع',
-                  render: (c) =>
-                    c.status === 'proposed' ? (
-                      <Badge tone="warning">پیشنهادی</Badge>
-                    ) : c.type ? (
-                      <Badge tone={TYPE_META[c.type].tone}>{TYPE_META[c.type].label}</Badge>
-                    ) : (
-                      '—'
-                    ),
+                  key: 'period',
+                  header: 'از ماه',
+                  render: (c) => (
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      {periodLabel(c.period)}
+                      {c.status === 'proposed' && <Badge tone="warning">پیشنهادی</Badge>}
+                    </span>
+                  ),
                 },
                 { key: 'previous', header: <WithUnit>حقوق قبلی</WithUnit>, numeric: true, hideOnMobile: true, render: (c) => rial(c.previous) },
                 { key: 'salary', header: <WithUnit>حقوق جدید</WithUnit>, numeric: true, render: (c) => <strong>{rial(c.salary)}</strong> },
@@ -259,7 +250,6 @@ function SalaryHistoryContent() {
                   ),
                 },
                 { key: 'note', header: 'توضیحات', hideOnMobile: true, render: (c) => c.note ?? '—' },
-                { key: 'by', header: 'ثبت‌کننده', hideOnMobile: true, render: (c) => c.createdBy ?? '—' },
                 {
                   key: 'actions',
                   header: '',

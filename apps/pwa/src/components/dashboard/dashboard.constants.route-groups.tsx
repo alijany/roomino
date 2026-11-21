@@ -116,6 +116,12 @@ export const RouteItems = {
     roles: [Role.FINANCE, Role.ADMIN, Role.PERSONNEL],
     icon: <IconChartPie className="size-5" />
   },
+  myPayslips: {
+    href: "/dashboard/payslips",
+    label: "فیش حقوقی من",
+    roles: false as const,
+    icon: <IconReceipt className="size-5" />
+  },
   financeMyRequests: {
     href: "/dashboard/finance/my-requests",
     label: "درخواست‌های پرداخت من",
@@ -336,6 +342,7 @@ export const routeGroups: RouteGroup[] = [
     icon: <IconWallet className="size-5" />,
     routes: [
       RouteItems.advanceRequest,
+      RouteItems.myPayslips,
     ]
   },
   {

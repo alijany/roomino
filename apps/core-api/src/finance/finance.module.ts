@@ -11,6 +11,7 @@ import {
 } from './controllers/expense-category.controller';
 import { FinanceReportController } from './controllers/finance-report.controller';
 import { PayrollController } from './controllers/payroll.controller';
+import { PayrollMeController } from './controllers/payroll-me.controller';
 import { PayrollSettingController } from './controllers/payroll-setting.controller';
 import { SalaryChangeController } from './controllers/salary-change.controller';
 import { PaymentRequestController } from './controllers/payment-request.controller';
@@ -122,6 +123,7 @@ import { VendorService } from './services/vendor.service';
     PayrollSettingController,
     SalaryChangeController,
     PayrollController,
+    PayrollMeController,
     FinalSettlementController,
   ],
   exports: [PaymentRequestService],

@@ -108,18 +108,28 @@ export function PayslipView({ slip }: { slip: Payslip }) {
         </p>
 
         {/* The person */}
-        <section aria-label="مشخصات همکار" className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl bg-slate-50 p-5 text-sm sm:grid-cols-4 print:grid-cols-4 print:gap-y-1.5 print:p-3">
-          <Info
-            label="نام همکار"
-            value={slip.user.name}
-            sub={slip.user.personnelCode ? <bdi dir="ltr">{slip.user.personnelCode}</bdi> : undefined}
-          />
-          <Info label="سمت" value={slip.user.jobTitle} />
-          <Info label="روزهای کارکرد" value={days} />
-          <Info label="کد ملی" value={slip.identity.nationalId} ltr />
-          <Info label="شماره بیمه" value={slip.identity.insuranceNumber} ltr />
-          <div className="col-span-2 sm:col-span-3">
+        <section aria-label="مشخصات همکار" className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl bg-slate-50 p-5 text-sm sm:grid-cols-12 print:grid-cols-12 print:gap-y-1.5 print:p-3">
+          <div className="col-span-2 sm:col-span-5 print:col-span-5">
+            <Info
+              label="نام همکار"
+              value={slip.user.name}
+              sub={slip.user.personnelCode ? <bdi dir="ltr">{slip.user.personnelCode}</bdi> : undefined}
+            />
+          </div>
+          <div className="sm:col-span-3 print:col-span-3">
+            <Info label="کد ملی" value={slip.identity.nationalId} ltr />
+          </div>
+          <div className="sm:col-span-2 print:col-span-2">
+            <Info label="شماره بیمه" value={slip.identity.insuranceNumber} ltr />
+          </div>
+          <div className="sm:col-span-2 print:col-span-2">
+            <Info label="روزهای کارکرد" value={days} />
+          </div>
+          <div className="col-span-2 sm:col-span-5 print:col-span-5">
             <Info label="شماره شبا (حساب واریزی)" value={slip.identity.sheba} ltr />
+          </div>
+          <div className="col-span-2 sm:col-span-7 print:col-span-7">
+            <Info label="سمت" value={slip.user.jobTitle} />
           </div>
         </section>
 

@@ -564,6 +564,41 @@ export class PayrollService extends BaseRepositoryService<PayrollLineEntity> {
     };
   }
 
+  // --- the person's own payslips -------------------------------------------
+
+  /** A person's own final months, newest first; drafts are never shown to them. */
+  async myList(userId: number) {
+    const lines = await this.repository.find(
+      { user: userId, status: PayrollLineStatus.FINAL },
+      { orderBy: { period: 'DESC' } },
+    );
+    return lines.map((line) => ({
+      id: line.id,
+      period: line.period,
+      net: readBigint(line.net),
+      extras: readBigint(line.extras),
+      salaryPaidOn: line.salaryPaidOn ?? null,
+      extrasPaidOn: line.extrasPaidOn ?? null,
+    }));
+  }
+
+  /**
+   * One of the person's own final payslips. Someone else's line, or a draft,
+   * is «not found»; what is only for the finance team (warnings, the log of
+   * reopenings) is left out.
+   */
+  async myPayslip(userId: number, id: number) {
+    const line = await this.repository.findOne({ id }, { populate: ['user'] });
+    if (
+      !line ||
+      line.user.id !== userId ||
+      line.status !== PayrollLineStatus.FINAL
+    ) {
+      throw new NotFoundException('فیش حقوقی پیدا نشد');
+    }
+    return { ...(await this.payslip(id)), warnings: [], revisions: [] };
+  }
+
   // --- settlement (the bank transfers marked as paid) ----------------------
 
   /** What a line's salary transfer is (the legal part's net) and its extras. */
