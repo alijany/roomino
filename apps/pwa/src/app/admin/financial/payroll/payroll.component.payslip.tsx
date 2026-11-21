@@ -20,6 +20,9 @@ const amount = (value: number) => (value ? rial(value) : '—');
 export function PayslipView({ slip }: { slip: Payslip }) {
   const draft = slip.status !== 'final';
   const flat = slip.agreement === 'flat';
+  const hybrid = slip.agreement === 'hybrid';
+  // A hybrid salary pays the variable items with the extras: net, outside insurance and tax.
+  const variable = slip.bonus + slip.commission + slip.onCall + slip.overtime;
   const earnings: Array<[string, number]> = flat
     ? [
         ['حقوق این ماه', slip.base],
@@ -34,15 +37,27 @@ export function PayslipView({ slip }: { slip: Payslip }) {
     ['حق تأهل', slip.marriage],
     ['حق اولاد', slip.child],
     ['پایه سنوات', slip.seniority],
-    ['اضافه‌کار و نوبت‌کاری', slip.overtime],
+    ...(hybrid ? [] : ([['اضافه‌کار و نوبت‌کاری', slip.overtime]] as Array<[string, number]>)),
     ['فوق‌العاده‌ی مأموریت', slip.mission],
-    ['پاداش', slip.bonus],
-    ['پورسانت', slip.commission],
-    ['کشیک', slip.onCall],
+    ...(hybrid
+      ? []
+      : ([
+          ['پاداش', slip.bonus],
+          ['پورسانت', slip.commission],
+          ['کشیک', slip.onCall],
+        ] as Array<[string, number]>)),
     ['عیدی', slip.eidi],
     ['سنوات', slip.severance],
     ['بازخرید مرخصی', slip.leaveBuyout],
-    ['اضافات (مازاد توافقی)', slip.extras],
+    ...(hybrid
+      ? ([
+          ['مازاد حقوق توافقی', slip.extras - variable],
+          ['پاداش', slip.bonus],
+          ['پورسانت', slip.commission],
+          ['کشیک', slip.onCall],
+          ['اضافه‌کار', slip.overtime],
+        ] as Array<[string, number]>)
+      : ([['اضافات (مازاد توافقی)', slip.extras]] as Array<[string, number]>)),
   ];
   const deductions: Array<[string, number]> = [
     ...(flat

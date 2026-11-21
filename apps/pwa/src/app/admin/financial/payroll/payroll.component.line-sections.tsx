@@ -353,6 +353,9 @@ function Line({ label, value, muted, negative, accent, strong }: { label: string
 /** The month's figures line by line, for one person. */
 export function BreakdownCard({ slip }: { slip: Payslip }) {
   const flat = slip.agreement === 'flat';
+  const hybrid = slip.agreement === 'hybrid';
+  // A hybrid salary pays these with the extras: net, outside insurance and tax.
+  const variable = slip.bonus + slip.commission + slip.onCall + slip.overtime;
   return (
     <Card title="محاسبه (ریال)">
       {slip.warnings.length > 0 && (
@@ -389,11 +392,11 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
         <Row label="حق تأهل" value={slip.marriage} />
         <Row label="حق اولاد" value={slip.child} />
         <Row label="پایه سنوات" value={slip.seniority} />
-        <Row label="اضافه‌کار و نوبت‌کاری" value={slip.overtime} />
+        {!hybrid && <Row label="اضافه‌کار و نوبت‌کاری" value={slip.overtime} />}
         <Row label="فوق‌العاده‌ی مأموریت" value={slip.mission} />
-        <Row label="پاداش" value={slip.bonus} />
-        <Row label="پورسانت" value={slip.commission} />
-        <Row label="کشیک" value={slip.onCall} />
+        {!hybrid && <Row label="پاداش" value={slip.bonus} />}
+        {!hybrid && <Row label="پورسانت" value={slip.commission} />}
+        {!hybrid && <Row label="کشیک" value={slip.onCall} />}
         <Row label="عیدی" value={slip.eidi} />
         <Row label="سنوات" value={slip.severance} />
         <Row label="بازخرید مرخصی" value={slip.leaveBuyout} />
@@ -406,7 +409,18 @@ export function BreakdownCard({ slip }: { slip: Payslip }) {
         <Row label="سایر کسورات" value={slip.otherDeductions} negative />
         <Row label="بیمه تکمیلی" value={slip.supplementaryInsurance} negative />
         <Row label="جمع کسورات" value={slip.totalDeductions} strong negative />
-        <Row label="اضافات هیبرید" value={slip.extras} />
+        {hybrid ? (
+          <>
+            <Row label="مازاد حقوق توافقی" value={slip.extras - variable} />
+            <Row label="پاداش" value={slip.bonus} />
+            <Row label="پورسانت" value={slip.commission} />
+            <Row label="کشیک" value={slip.onCall} />
+            <Row label="اضافه‌کار" value={slip.overtime} />
+            <Row label="جمع اضافات هیبرید" value={slip.extras} strong />
+          </>
+        ) : (
+          <Row label="اضافات هیبرید" value={slip.extras} />
+        )}
         <Row label="خالص پرداختی" value={slip.net} strong accent />
         <Row label="بیمه‌ی سهم کارفرما" value={slip.employerInsurance} muted />
         <Row label="ذخیره‌ی عیدی و سنوات" value={slip.accrual} muted />

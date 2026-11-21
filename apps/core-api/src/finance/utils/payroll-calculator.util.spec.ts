@@ -584,6 +584,39 @@ describe('calculatePayroll — what the sheet had no data for', () => {
       );
     });
 
+    it('pays bonus, commission, on-call and overtime with the extras: net, outside insurance and tax', () => {
+      const agreed = 300_000_000;
+      const plain = calculatePayroll(
+        settings,
+        inclusion,
+        input({ agreed, hybrid: true }),
+      );
+      const withVariable = calculatePayroll(
+        settings,
+        inclusion,
+        input({
+          agreed,
+          hybrid: true,
+          bonus: 10_000_000,
+          commission: 20_000_000,
+          onCall: 5_000_000,
+          overtimeHours: 10,
+        }),
+      );
+      // The legal side does not move: same gross, insurance and tax.
+      expect(withVariable.gross).toBe(plain.gross);
+      expect(withVariable.workerInsurance).toBe(plain.workerInsurance);
+      expect(withVariable.tax).toBe(plain.tax);
+      // Everything variable lands in the extras, overtime included.
+      expect(withVariable.overtime).toBeGreaterThan(0);
+      expect(withVariable.extras).toBe(
+        plain.extras + 35_000_000 + withVariable.overtime,
+      );
+      expect(withVariable.net).toBe(
+        plain.net + 35_000_000 + withVariable.overtime,
+      );
+    });
+
     it('pays only the package when the agreed salary does not reach it', () => {
       // 20,000,000 toman agreed; the package (married, one child) is 23,988,105 toman.
       const r = calculatePayroll(

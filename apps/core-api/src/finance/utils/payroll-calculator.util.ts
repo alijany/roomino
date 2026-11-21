@@ -338,9 +338,31 @@ export function calculatePayroll(
     fullBase = high;
   }
 
-  const r = compute(settings, inclusion, input, fullBase, true);
+  // A hybrid salary pays the month's variable items — bonus, commission,
+  // on-call and overtime — with the extras: net, outside insurance and tax.
+  // The legal package is worked out without them.
+  let overtimeExtra = 0;
+  let source = input;
+  if (hybrid) {
+    const all = compute(settings, inclusion, input, fullBase, true);
+    overtimeExtra = all.parts.overtime + all.parts.night + all.parts.holiday;
+    extras += all.bonus + overtimeExtra;
+    source = {
+      ...input,
+      bonus: 0,
+      commission: 0,
+      onCall: 0,
+      overtimeHours: 0,
+      nightHours: 0,
+      holidayHours: 0,
+    };
+  }
+  const r = compute(settings, inclusion, source, fullBase, true);
   const R = Math.round;
-  const overtime = r.parts.overtime + r.parts.night + r.parts.holiday;
+  // For a hybrid salary this is the overtime paid with the extras, not part of the gross.
+  const overtime = hybrid
+    ? overtimeExtra
+    : r.parts.overtime + r.parts.night + r.parts.holiday;
 
   return {
     base: R(r.parts.base),
