@@ -405,6 +405,27 @@ describe('calculatePayroll — what the sheet had no data for', () => {
     expect(r.tax).toBe(plain.tax);
   });
 
+  it('gives a board member no housing, bon, marriage or seniority; only the base wage and the child allowance', () => {
+    const board = calculatePayroll(
+      settings,
+      inclusion,
+      input({
+        agreed: base,
+        married: true,
+        children: 2,
+        seniorityYears: 3,
+        insuranceType: 'board',
+      }),
+    );
+    expect(board.housing).toBe(0);
+    expect(board.bon).toBe(0);
+    expect(board.marriage).toBe(0);
+    expect(board.seniority).toBe(0);
+    expect(board.child).toBe(2 * settings.child);
+    expect(board.gross).toBe(base + board.child);
+    expect(board.workerInsurance).toBeCloseTo(board.gross * 0.07, 0);
+  });
+
   it('prorates by days worked', () => {
     const r = calculatePayroll(
       settings,
@@ -433,21 +454,18 @@ describe('calculatePayroll — what the sheet had no data for', () => {
     );
     expect(none.workerInsurance).toBe(0);
     expect(none.employerInsurance).toBe(0);
-    const worker = calculatePayroll(
-      settings,
-      inclusion,
-      input({ agreed: base }),
-    );
     const board = calculatePayroll(
       settings,
       inclusion,
       input({ agreed: base, insuranceType: 'board' }),
     );
-    expect(worker.employerInsurance - board.employerInsurance).toBe(
-      Math.round(
-        Math.min(worker.workerInsurance / 0.07, settings.insCeiling) * 0.03,
+    // No unemployment share for the board member: only the employer's own rate.
+    expect(
+      Math.abs(
+        board.employerInsurance -
+          (board.workerInsurance / 0.07) * (settings.insEmployer / 100),
       ),
-    );
+    ).toBeLessThanOrEqual(1);
   });
 
   it('pays no tax to someone exempt', () => {

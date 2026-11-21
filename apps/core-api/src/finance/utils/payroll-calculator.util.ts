@@ -160,13 +160,16 @@ function compute(
     s.seniorityDaily,
   );
 
+  // A board member has no housing, bon, marriage or seniority pay: only the
+  // base wage and the child allowance.
+  const board = x.insuranceType === 'board';
   const parts: Parts = {
     base: fullBase * f,
-    housing: s.housing * f,
-    bon: s.bon * f,
-    marriage: x.married ? s.marriage * f : 0,
+    housing: board ? 0 : s.housing * f,
+    bon: board ? 0 : s.bon * f,
+    marriage: x.married && !board ? s.marriage * f : 0,
     child: s.child * x.children * f,
-    seniority: seniorityDaily * 30 * f,
+    seniority: board ? 0 : seniorityDaily * 30 * f,
     overtime: withExtras
       ? hourly * (1 + rate(s.overtimeRate)) * x.overtimeHours
       : 0,
@@ -242,6 +245,12 @@ function compute(
     (flag('baseWage', 'insurable') ? deficit : 0) +
     (flag('leavePay', 'insurable') ? leaveBuyout : 0);
   partKeys.forEach((k) => {
+    // The child allowance counts for a board member's insurance whatever the
+    // year's inclusion setting says.
+    if (x.insuranceType === 'board' && k === 'child') {
+      insurable += parts[k];
+      return;
+    }
     if (flag(itemFlags[k], 'insurable', k !== 'mission')) insurable += parts[k];
   });
   const ceiling = s.insCeiling > 0 ? s.insCeiling : Infinity;
