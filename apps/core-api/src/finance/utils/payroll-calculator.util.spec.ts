@@ -405,7 +405,7 @@ describe('calculatePayroll — what the sheet had no data for', () => {
     expect(r.tax).toBe(plain.tax);
   });
 
-  it('gives a board member no housing, bon, marriage or seniority; only the base wage and the child allowance', () => {
+  it("gives a board member no housing, bon, marriage or seniority; only the base wage and the child allowance (insured per the year's setting)", () => {
     const board = calculatePayroll(
       settings,
       inclusion,
@@ -423,7 +423,18 @@ describe('calculatePayroll — what the sheet had no data for', () => {
     expect(board.seniority).toBe(0);
     expect(board.child).toBe(2 * settings.child);
     expect(board.gross).toBe(base + board.child);
-    expect(board.workerInsurance).toBeCloseTo(board.gross * 0.07, 0);
+    // The child allowance follows the year's inclusion setting, as for a worker:
+    // not insurable by default, insurable once the setting says so.
+    expect(board.workerInsurance).toBeCloseTo(base * 0.07, 0);
+    const counted = calculatePayroll(
+      settings,
+      { ...inclusion, child: { insurable: true, taxable: true } },
+      input({ agreed: base, children: 2, insuranceType: 'board' }),
+    );
+    expect(counted.workerInsurance).toBeCloseTo(
+      (base + counted.child) * 0.07,
+      0,
+    );
   });
 
   it('prorates by days worked', () => {

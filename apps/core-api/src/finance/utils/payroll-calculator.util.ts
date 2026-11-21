@@ -245,12 +245,6 @@ function compute(
     (flag('baseWage', 'insurable') ? deficit : 0) +
     (flag('leavePay', 'insurable') ? leaveBuyout : 0);
   partKeys.forEach((k) => {
-    // The child allowance counts for a board member's insurance whatever the
-    // year's inclusion setting says.
-    if (x.insuranceType === 'board' && k === 'child') {
-      insurable += parts[k];
-      return;
-    }
     if (flag(itemFlags[k], 'insurable', k !== 'mission')) insurable += parts[k];
   });
   const ceiling = s.insCeiling > 0 ? s.insCeiling : Infinity;
