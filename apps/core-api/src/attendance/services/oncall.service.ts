@@ -340,16 +340,13 @@ export class OnCallService {
       stat.days.add(row.date);
       stat.total += length;
       stat.byType[this.dayType(row.date, holidays)] += length;
-      if (row.date < today) stat.done += length;
-      else if (row.date === today) {
-        stat.done += Math.max(0, Math.min(now, to) - from);
-      }
+      stat.done += this.elapsedMinutes(row, today, now);
     }
 
     const multipliers = settings.multipliers ?? DEFAULT_ONCALL_MULTIPLIERS;
     const canSeePay = await this.canSeePay(user);
     const pay = canSeePay
-      ? await this.payFor(rows, holidays, multipliers)
+      ? await this.payFor(rows, holidays, multipliers, today, now)
       : null;
     const users = await this.usersByIds([...stats.keys()]);
     const items = users
@@ -409,12 +406,23 @@ export class OnCallService {
       rows,
       holidays,
       settings.multipliers ?? DEFAULT_ONCALL_MULTIPLIERS,
+      tehranToday(),
+      clockToMinutes(tehranClock(new Date()) ?? '00:00'),
     );
     const result = new Map<number, number>();
     for (const [userId, pay] of earned) {
       if (!pay.missing && pay.total > 0) result.set(userId, pay.total);
     }
     return result;
+  }
+
+  /** Minutes of a shift already spent: all of a past day, up to now today, none after. */
+  private elapsedMinutes(row: OnCallShiftEntity, today: string, now: number) {
+    const from = clockToMinutes(row.startTime);
+    const to = clockToMinutes(row.endTime);
+    if (row.date < today) return to - from;
+    if (row.date === today) return Math.max(0, Math.min(now, to) - from);
+    return 0;
   }
 
   /** The pay multipliers are set by the admin or the CEO alone. */
@@ -436,12 +444,15 @@ export class OnCallService {
    * What each person earns for their on-call rows. An hour is worth the
    * person's agreed salary of that day's Jalali month ÷ the year's wage hours,
    * times the multiplier of the kind of day — so a raise in the middle of a
-   * period only changes the days after it.
+   * period only changes the days after it. Only the time already spent on
+   * call is paid: a day to come earns nothing yet, and today counts up to now.
    */
   private async payFor(
     rows: OnCallShiftEntity[],
     holidays: Awaited<ReturnType<HolidayService['between']>>,
     multipliers: OnCallMultipliers,
+    today: string,
+    now: number,
   ) {
     const userIds = [...new Set(rows.map((r) => r.user.id))];
     const periodOf = (date: string) => {
@@ -501,8 +512,7 @@ export class OnCallService {
       const type = this.dayType(row.date, holidays);
       const hourly =
         salary / (wageHours.get(dateToJalali(row.date).year) || 220);
-      const hours =
-        (clockToMinutes(row.endTime) - clockToMinutes(row.startTime)) / 60;
+      const hours = this.elapsedMinutes(row, today, now) / 60;
       const amount = hours * hourly * multipliers[type];
       earned.byType[type] += amount;
       earned.total += amount;
