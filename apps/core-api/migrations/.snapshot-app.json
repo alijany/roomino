@@ -2582,6 +2582,70 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "integer"
+        },
+        "checkin_reminder_enabled": {
+          "name": "checkin_reminder_enabled",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "checkin_reminder_time": {
+          "name": "checkin_reminder_time",
+          "type": "varchar(5)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 5,
+          "precision": null,
+          "scale": null,
+          "default": "'09:30'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "checkin_reminder_changed_at": {
+          "name": "checkin_reminder_changed_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "checkin_reminder_changed_by_id": {
+          "name": "checkin_reminder_changed_by_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
         }
       },
       "name": "attendance_settings_entity",
@@ -2600,6 +2664,19 @@
       ],
       "checks": [],
       "foreignKeys": {
+        "attendance_settings_entity_checkin_reminder_chan_300ce_foreign": {
+          "columnNames": [
+            "checkin_reminder_changed_by_id"
+          ],
+          "constraintName": "attendance_settings_entity_checkin_reminder_chan_300ce_foreign",
+          "localTableName": "public.attendance_settings_entity",
+          "referencedTableName": "public.user_entity",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "cascade",
+          "deleteRule": "set null"
+        },
         "attendance_settings_entity_self_declared_changed_by_id_foreign": {
           "columnNames": [
             "self_declared_changed_by_id"
@@ -3161,6 +3238,22 @@
             "untracked"
           ],
           "mappedType": "enum"
+        },
+        "checkin_reminder_sent_on": {
+          "name": "checkin_reminder_sent_on",
+          "type": "date",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 0,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "date"
         }
       },
       "name": "employee_profile_entity",

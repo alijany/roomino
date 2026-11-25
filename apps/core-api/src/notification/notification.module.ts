@@ -64,6 +64,7 @@ import { UserModule } from 'src/user/user.module';
   ],
   exports: [
     NotificationService,
+    TelegramBotService,
     NotificationRepository,
     UserResolverService,
     NotificationPreferenceService,

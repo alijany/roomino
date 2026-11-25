@@ -712,12 +712,22 @@ export interface SelfDeclared {
   changedBy: UserBrief | null;
 }
 
+export interface CheckinReminder {
+  enabled: boolean;
+  /** «HH:mm», Tehran time — reminders start at this time. */
+  time: string;
+  /** Last changed — null if it never was. */
+  changedAt: string | null;
+  changedBy: UserBrief | null;
+}
+
 export interface MaintenanceSummary {
   counts: Record<AttendanceTable, number>;
   /** The phrase the admin types to confirm. */
   confirmation: string;
   scheduleMode: ScheduleMode;
   selfDeclared: SelfDeclared;
+  checkinReminder: CheckinReminder;
 }
 
 export interface ResetResult {

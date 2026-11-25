@@ -26,4 +26,21 @@ export class AttendanceSettingsEntity extends BaseEntity {
 
   @ManyToOne(() => UserEntity, { nullable: true, deleteRule: 'set null' })
   selfDeclaredChangedBy?: UserEntity;
+
+  /**
+   * Check-in reminder: when on, each person who should check in (or say
+   * «امروز هستم») and hasn't is reminded once a day, from `checkinReminderTime`.
+   */
+  @Property({ default: false })
+  checkinReminderEnabled: boolean = false;
+
+  /** «HH:mm» Tehran time the reminders start at. */
+  @Property({ length: 5, default: '09:30' })
+  checkinReminderTime: string = '09:30';
+
+  @Property({ columnType: 'timestamptz', nullable: true })
+  checkinReminderChangedAt?: Date;
+
+  @ManyToOne(() => UserEntity, { nullable: true, deleteRule: 'set null' })
+  checkinReminderChangedBy?: UserEntity;
 }

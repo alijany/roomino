@@ -70,6 +70,10 @@ export class EmployeeProfileEntity extends BaseEntity {
   @Property({ default: true })
   active: boolean = true;
 
+  /** The day the check-in reminder was last sent to this person. */
+  @Property({ type: 'date', nullable: true })
+  checkinReminderSentOn?: string;
+
   @OneToMany(() => EmployeeShiftEntity, (shift) => shift.employee)
   shifts = new Collection<EmployeeShiftEntity>(this);
 }

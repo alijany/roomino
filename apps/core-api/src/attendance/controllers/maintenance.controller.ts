@@ -20,6 +20,7 @@ import { RESET_CONFIRMATION } from '../attendance.constants';
 import {
   ResetAttendanceDto,
   UpdateScheduleModeDto,
+  UpdateCheckinReminderDto,
   UpdateSelfDeclaredDto,
 } from '../dtos/setup.dto';
 import { AttendanceMaintenanceService } from '../services/attendance-maintenance.service';
@@ -53,6 +54,7 @@ export class MaintenanceController {
       confirmation: RESET_CONFIRMATION,
       scheduleMode: await this.scheduleModeView(),
       selfDeclared: await this.selfDeclaredView(),
+      checkinReminder: await this.checkinReminderView(),
     };
   }
 
@@ -72,6 +74,26 @@ export class MaintenanceController {
       enabled: row?.selfDeclared ?? false,
       changedAt: row?.selfDeclaredChangedAt ?? null,
       changedBy: toUserBrief(row?.selfDeclaredChangedBy) ?? null,
+    };
+  }
+
+  @Patch('checkin-reminder')
+  @Roles(Role.ADMIN)
+  async updateCheckinReminder(
+    @CurrentUser() user: UserEntity,
+    @Body() dto: UpdateCheckinReminderDto,
+  ) {
+    await this.settings.updateCheckinReminder(dto, user);
+    return this.checkinReminderView();
+  }
+
+  private async checkinReminderView() {
+    const row = await this.settings.find();
+    return {
+      enabled: row?.checkinReminderEnabled ?? false,
+      time: row?.checkinReminderTime ?? '09:30',
+      changedAt: row?.checkinReminderChangedAt ?? null,
+      changedBy: toUserBrief(row?.checkinReminderChangedBy) ?? null,
     };
   }
 

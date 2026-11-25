@@ -6,13 +6,13 @@ import { DashbaordLayout } from '@/components/dashboard/dashboard.layout';
 import { cn } from '@/libs/style/style.util.helpers';
 import { Button, Input, ToggleSwitch } from '@/ui/atoms';
 import { DataView } from '@/ui/molecules';
-import { IconAlertTriangle, IconEraser, IconMapPinOff, IconTool } from '@tabler/icons-react';
-import { useState } from 'react';
+import { IconAlertTriangle, IconBellRinging, IconCalendarCheck, IconChevronDown, IconEraser, IconMapPinOff, IconTool } from '@tabler/icons-react';
+import { ReactNode, useState } from 'react';
 import { toast } from 'react-toastify';
 import { mutate } from 'swr';
-import { useMaintenanceSummary, useResetAttendance, useUpdateScheduleMode, useUpdateSelfDeclared } from '@/app/dashboard/attendance/attendance.api';
-import { FormModal, PageHeader, Panel } from '@/app/dashboard/attendance/attendance.component.layout';
-import { AttendanceTable, MaintenanceSummary, ResetScope, ScheduleMode, SelfDeclared } from '@/app/dashboard/attendance/attendance.types';
+import { useMaintenanceSummary, useResetAttendance, useUpdateCheckinReminder, useUpdateScheduleMode, useUpdateSelfDeclared } from '@/app/dashboard/attendance/attendance.api';
+import { FormModal, PageHeader, Panel, TimeInput } from '@/app/dashboard/attendance/attendance.component.layout';
+import { AttendanceTable, CheckinReminder, MaintenanceSummary, ResetScope, ScheduleMode, SelfDeclared } from '@/app/dashboard/attendance/attendance.types';
 import { errorMessage, fa, jalaliDateTime, tehranToday } from '@/app/dashboard/attendance/attendance.util';
 
 /** Shown per table; rows that only exist inside these (shift days, policy rules, shift history) go with them. */
@@ -61,7 +61,7 @@ export default function AttendanceMaintenancePage() {
           <PageHeader
             icon={<IconTool className="size-6" />}
             title="نگهداری حضور و غیاب"
-            subtitle="حضور طبق شیفت یا ورود بدون موقعیت مکانی برای همه پرسنل، و پاک‌سازی داده‌ها برای شروع دوباره"
+            subtitle="تنظیمات ثبت حضور برای همه‌ی پرسنل و پاک‌سازی داده‌ها"
           />
           <DataView data={data} error={error} isLoading={isLoading} onRetry={refresh}>
             {data && <Maintenance summary={data} onDone={refresh} />}
@@ -75,82 +75,108 @@ export default function AttendanceMaintenancePage() {
 function Maintenance({ summary, onDone }: { summary: MaintenanceSummary; onDone: () => void }) {
   const [scope, setScope] = useState<ResetScope>('records');
   const [confirming, setConfirming] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const { counts } = summary;
   const isEmpty = (labels: Partial<Record<AttendanceTable, string>>) =>
     (Object.keys(labels) as AttendanceTable[]).every((key) => !counts[key]);
   const nothingToDelete = isEmpty(RECORD_LABELS) && (scope === 'records' || isEmpty(SETUP_LABELS));
 
   return (
-    <div className="grid items-start gap-3 lg:grid-cols-2">
-      <ScheduleModePanel
-        // Re-seeded from the server after every save.
-        key={`${summary.scheduleMode.enabled}-${summary.scheduleMode.current?.id}-${summary.scheduleMode.current?.note}-${summary.scheduleMode.coversToday}`}
-        mode={summary.scheduleMode}
-        onSaved={onDone}
-      />
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <section aria-labelledby="maintenance-features" className="flex flex-col gap-2">
+        <h2 id="maintenance-features" className="px-1 text-sm font-semibold text-slate-500">
+          تنظیمات ثبت حضور
+        </h2>
+        <Panel className="divide-y divide-slate-100 !p-0">
+          <ScheduleModePanel
+            // Re-seeded from the server after every save.
+            key={`${summary.scheduleMode.enabled}-${summary.scheduleMode.current?.id}-${summary.scheduleMode.current?.note}-${summary.scheduleMode.coversToday}`}
+            mode={summary.scheduleMode}
+            onSaved={onDone}
+          />
+          <SelfDeclaredPanel
+            key={`${summary.selfDeclared.enabled}-${summary.selfDeclared.changedAt}`}
+            setting={summary.selfDeclared}
+            onSaved={onDone}
+          />
+          <CheckinReminderPanel
+            key={`${summary.checkinReminder.enabled}-${summary.checkinReminder.time}-${summary.checkinReminder.changedAt}`}
+            setting={summary.checkinReminder}
+            onSaved={onDone}
+          />
+        </Panel>
+      </section>
 
-      <SelfDeclaredPanel
-        // Re-seeded from the server after every save.
-        key={`${summary.selfDeclared.enabled}-${summary.selfDeclared.changedAt}`}
-        setting={summary.selfDeclared}
-        onSaved={onDone}
-      />
+      <section aria-labelledby="maintenance-reset" className="flex flex-col gap-2">
+        <h2 id="maintenance-reset" className="px-1 text-sm font-semibold text-rose-700">
+          <button
+            type="button"
+            aria-expanded={resetOpen}
+            aria-controls="maintenance-reset-body"
+            onClick={() => setResetOpen((open) => !open)}
+            className="flex w-full items-center gap-2 rounded-lg py-1 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          >
+            <IconEraser className="size-4" aria-hidden="true" />
+            پاک‌سازی داده‌ها
+            <IconChevronDown
+              className={cn('ms-auto size-4 text-slate-400 transition-transform', resetOpen && 'rotate-180')}
+              aria-hidden="true"
+            />
+          </button>
+        </h2>
+        {resetOpen && (
+        <div id="maintenance-reset-body">
+        <Panel className="gap-5 border-rose-200 lg:flex-row">
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="flex gap-2 rounded-xl bg-rose-50 p-3 text-sm leading-6 text-rose-800">
+              <IconAlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+              پاک‌سازی برگشت‌پذیر نیست. پیش از ادامه، از داده‌ها خروجی بگیرید.
+            </p>
+            <CountList title="سوابق" labels={RECORD_LABELS} counts={counts} />
+            <CountList title="پرسنل و تنظیمات" labels={SETUP_LABELS} counts={counts} />
+          </div>
 
-      <h2 className="mt-3 flex items-center gap-2 font-semibold text-slate-800 lg:col-span-2">
-        <IconEraser className="size-5 text-rose-600" aria-hidden="true" />
-        پاک‌سازی داده‌ها
-        <span className="text-xs font-normal text-slate-500">— برگشت‌پذیر نیست</span>
-      </h2>
+          <div className="flex flex-1 flex-col gap-4">
+            <fieldset className="space-y-2">
+              <legend className="mb-2 text-sm font-semibold text-slate-800">محدوده‌ی پاک‌سازی</legend>
+              {SCOPES.map((option) => (
+                <label
+                  key={option.value}
+                  className={cn(
+                    'flex cursor-pointer gap-3 rounded-2xl border p-3.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500',
+                    scope === option.value ? 'border-rose-300 bg-rose-50/60' : 'border-slate-200 hover:bg-slate-50',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="scope"
+                    value={option.value}
+                    checked={scope === option.value}
+                    onChange={() => setScope(option.value)}
+                    className="mt-1 size-4 shrink-0 accent-rose-600"
+                  />
+                  <span>
+                    <span className="block font-medium text-slate-800">{option.title}</span>
+                    <span className="mt-1 block text-sm leading-6 text-slate-500">{option.description}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
 
-      <Panel className="gap-4">
-        <h3 className="font-semibold text-slate-800">داده‌های فعلی</h3>
-        <CountList title="سوابق" labels={RECORD_LABELS} counts={counts} />
-        <CountList title="پرسنل و تنظیمات" labels={SETUP_LABELS} counts={counts} />
-      </Panel>
-
-      <Panel className="gap-4">
-        <fieldset className="space-y-2">
-          <legend className="mb-2 font-semibold text-slate-800">چه چیزی پاک شود؟</legend>
-          <p className="mb-2 text-xs text-slate-500">«حضور طبق شیفت» و سابقه‌اش، و «ورود بدون موقعیت مکانی»، با پاک‌سازی تغییر نمی‌کنند.</p>
-          {SCOPES.map((option) => (
-            <label
-              key={option.value}
-              className={cn(
-                'flex cursor-pointer gap-3 rounded-2xl border p-4 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500',
-                scope === option.value ? 'border-rose-300 bg-rose-50/60' : 'border-slate-200 hover:bg-slate-50',
-              )}
+            <Button
+              size="lg"
+              className="w-full gap-2 bg-rose-600 shadow-none hover:bg-rose-700"
+              disabled={nothingToDelete}
+              onClick={() => setConfirming(true)}
             >
-              <input
-                type="radio"
-                name="scope"
-                value={option.value}
-                checked={scope === option.value}
-                onChange={() => setScope(option.value)}
-                className="mt-1 size-4 shrink-0 accent-rose-600"
-              />
-              <span>
-                <span className="block font-medium text-slate-800">{option.title}</span>
-                <span className="mt-1 block text-sm leading-6 text-slate-500">{option.description}</span>
-              </span>
-            </label>
-          ))}
-        </fieldset>
-
-        <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-          <IconAlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          اعلان‌هایی که قبلاً برای درخواست‌ها فرستاده شده در صندوق کاربران می‌مانند، اما به درخواستی اشاره می‌کنند که دیگر وجود ندارد.
-        </p>
-
-        <Button
-          size="lg"
-          className="w-full gap-2 bg-rose-600 shadow-none hover:bg-rose-700"
-          disabled={nothingToDelete}
-          onClick={() => setConfirming(true)}
-        >
-          <IconEraser className="size-5" aria-hidden="true" />
-          {nothingToDelete ? 'داده‌ای برای پاک کردن نیست' : 'پاک‌سازی…'}
-        </Button>
-      </Panel>
+              <IconEraser className="size-5" aria-hidden="true" />
+              {nothingToDelete ? 'داده‌ای برای پاک کردن نیست' : 'پاک‌سازی…'}
+            </Button>
+          </div>
+        </Panel>
+        </div>
+        )}
+      </section>
 
       <ConfirmReset
         isOpen={confirming}
@@ -163,6 +189,84 @@ function Maintenance({ summary, onDone }: { summary: MaintenanceSummary; onDone:
         }}
       />
     </div>
+  );
+}
+
+/**
+ * One switchable feature as a row of the settings list: icon, title and a
+ * short description, the switch, and — below, once it's on — its own options
+ * with a footer that holds «آخرین تغییر» and the save button.
+ */
+function SettingRow({
+  icon,
+  title,
+  description,
+  badge,
+  enabled,
+  onToggle,
+  busy,
+  dirty,
+  onSave,
+  changedAt,
+  changedBy,
+  notice,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  badge: { text: string; className: string };
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+  busy: boolean;
+  dirty: boolean;
+  onSave: () => void;
+  changedAt?: string | null;
+  changedBy?: { name?: string | null; phone?: string | null } | null;
+  notice?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-4 p-4 lg:p-5">
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+            enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500',
+          )}
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold text-slate-800">{title}</h3>
+            <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', badge.className)}>{badge.text}</span>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+        </div>
+        <ToggleSwitch checked={enabled} onChange={onToggle} aria-label={title} disabled={busy} />
+      </div>
+
+      {notice}
+      {children}
+
+      {(dirty || changedAt) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-slate-400">
+            {changedAt &&
+              `آخرین تغییر: ${jalaliDateTime(changedAt)}${
+                changedBy ? ` — ${changedBy.name || fa(changedBy.phone)}` : ''
+              }`}
+          </p>
+          {dirty && (
+            <Button className="w-full sm:w-auto" disabled={busy} aria-busy={busy} onClick={onSave}>
+              {busy ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -203,34 +307,27 @@ function ScheduleModePanel({ mode, onSaved }: { mode: ScheduleMode; onSaved: () 
       : { text: 'خاموش', className: 'bg-slate-100 text-slate-600' };
 
   return (
-    <Panel className="gap-4 lg:col-span-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-slate-800">حضور طبق شیفت</h2>
-        <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', badge.className)}>{badge.text}</span>
-      </div>
-
-      <div
-        className={cn(
-          'flex items-start justify-between gap-4 rounded-2xl border p-4 transition-colors',
-          enabled ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200',
-        )}
-      >
-        <div>
-          <p className="font-medium text-slate-800">ثبت ورود و خروج لازم نیست؛ حضور طبق شیفت</p>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            هر روز کاری طبق شیفت کامل حساب می‌شود. پرسنل فقط استثناها را ثبت می‌کنند: مرخصی، مأموریت، اضافه‌کار،
-            و تأخیر یا خروج زودتر با درخواست تردد دستی. غیبت را مدیر از «اصلاح تردد» با گزینه «غایب بود» ثبت می‌کند.
+    <SettingRow
+      icon={<IconCalendarCheck className="size-5" />}
+      title="حضور طبق شیفت"
+      description="ورود و خروج ثبت نمی‌شود و هر روز کاری طبق شیفت حساب می‌شود. مرخصی، ماموریت و اضافه‌کار مثل همیشه ثبت می‌شوند."
+      badge={badge}
+      enabled={enabled}
+      onToggle={setEnabled}
+      busy={update.isLoading}
+      dirty={dirty}
+      onSave={save}
+      notice={
+        !enabled && mode.enabled ? (
+          <p className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+            {startedToday
+              ? 'امروز روشن شده است؛ با خاموش کردن کلاً لغو می‌شود و ثبت ورود و خروج از همین حالا برمی‌گردد.'
+              : 'خاموش کردن از فردا اثر می‌کند؛ امروز هنوز طبق شیفت حساب می‌شود. روزهایی که در این حالت گذشت، طبق شیفت می‌مانند.'}
           </p>
-        </div>
-        <ToggleSwitch
-          checked={enabled}
-          onChange={setEnabled}
-          aria-label="حضور طبق شیفت"
-          disabled={update.isLoading}
-        />
-      </div>
-
-      {enabled ? (
+        ) : null
+      }
+    >
+      {enabled && (
         <Input
           textarea
           rows={2}
@@ -240,24 +337,15 @@ function ScheduleModePanel({ mode, onSaved }: { mode: ScheduleMode; onSaved: () 
           value={note}
           onChange={(event) => setNote(event.target.value)}
         />
-      ) : mode.enabled && (
-        <p className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-          {startedToday
-            ? 'امروز روشن شده است؛ با خاموش کردن کلاً لغو می‌شود و ثبت ورود و خروج از همین حالا برمی‌گردد.'
-            : 'خاموش کردن از فردا اثر می‌کند؛ امروز هنوز طبق شیفت حساب می‌شود. روزهایی که در این حالت گذشت، طبق شیفت می‌مانند.'}
-        </p>
       )}
 
-      <div className="flex justify-end">
-        <Button className="w-full sm:w-auto" disabled={!dirty || update.isLoading} aria-busy={update.isLoading} onClick={save}>
-          {update.isLoading ? 'در حال ذخیره…' : 'ذخیره'}
-        </Button>
-      </div>
-
       {mode.history.length > 0 && (
-        <div>
-          <h3 className="mb-1 text-xs font-medium text-slate-500">سابقه</h3>
-          <ul className="divide-y divide-slate-100 rounded-xl text-sm ring-1 ring-inset ring-slate-200/70">
+        <details className="group rounded-xl ring-1 ring-inset ring-slate-200/70">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-sm font-medium text-slate-600 [&::-webkit-details-marker]:hidden">
+            سابقه‌ی فعال‌سازی
+            <IconChevronDown className="size-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <ul className="divide-y divide-slate-100 border-t border-slate-100 text-sm">
             {mode.history.map((period) => (
               <li key={period.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-3 py-2.5">
                 <span className="font-medium tabular-nums text-slate-700">
@@ -272,9 +360,9 @@ function ScheduleModePanel({ mode, onSaved }: { mode: ScheduleMode; onSaved: () 
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
-    </Panel>
+    </SettingRow>
   );
 }
 
@@ -302,56 +390,67 @@ function SelfDeclaredPanel({ setting, onSaved }: { setting: SelfDeclared; onSave
   };
 
   return (
-    <Panel className="gap-4 lg:col-span-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-semibold text-slate-800">
-          <IconMapPinOff className="size-5 text-slate-500" aria-hidden="true" />
-          ورود بدون موقعیت مکانی
-        </h2>
-        <span
-          className={cn(
-            'rounded-full px-2.5 py-1 text-xs font-medium',
-            setting.enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
-          )}
-        >
-          {setting.enabled ? 'فعال' : 'خاموش'}
-        </span>
-      </div>
+    <SettingRow
+      icon={<IconMapPinOff className="size-5" />}
+      title="ورود بدون موقعیت مکانی"
+      description="ورود، خروج و «امروز هستم» بدون دریافت موقعیت ثبت می‌شوند و فاصله تا محل کار بررسی نمی‌شود. در گزارش‌ها با برچسب «خوداظهاری» مشخص‌اند."
+      badge={
+        setting.enabled
+          ? { text: 'فعال', className: 'bg-emerald-50 text-emerald-700' }
+          : { text: 'خاموش', className: 'bg-slate-100 text-slate-600' }
+      }
+      enabled={enabled}
+      onToggle={setEnabled}
+      busy={update.isLoading}
+      dirty={dirty}
+      onSave={save}
+      changedAt={setting.changedAt}
+      changedBy={setting.changedBy}
+    />
+  );
+}
 
-      <div
-        className={cn(
-          'flex items-start justify-between gap-4 rounded-2xl border p-4 transition-colors',
-          enabled ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200',
-        )}
-      >
-        <div>
-          <p className="font-medium text-slate-800">ثبت خوداظهاری؛ موقعیت مکانی از کسی خواسته نمی‌شود</p>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            ورود، خروج و «امروز هستم» بدون دریافت موقعیت ثبت می‌شوند و فاصله تا محل کار بررسی نمی‌شود. ساعت‌ها مثل همیشه
-            ثبت می‌شوند و در گزارش با برچسب «خوداظهاری» مشخص‌اند. کسی که دورکاری می‌کند خودش «دورکاری» را می‌زند؛ اگر
-            دورکاری مجاز نداشته باشد، درخواستش برای تایید مدیر می‌رود.
-          </p>
+function CheckinReminderPanel({ setting, onSaved }: { setting: CheckinReminder; onSaved: () => void }) {
+  const update = useUpdateCheckinReminder();
+  const [enabled, setEnabled] = useState(setting.enabled);
+  const [time, setTime] = useState(setting.time);
+  const dirty = enabled !== setting.enabled || (enabled && time !== setting.time);
+
+  const save = async () => {
+    try {
+      await update.submit({ enabled, time });
+      toast.success(enabled ? 'یادآوری ثبت ورود فعال شد' : 'یادآوری ثبت ورود خاموش شد');
+      onSaved();
+    } catch (error) {
+      toast.error(errorMessage(error, 'ذخیره انجام نشد'));
+    }
+  };
+
+  return (
+    <SettingRow
+      icon={<IconBellRinging className="size-5" />}
+      title="یادآوری ثبت ورود"
+      description="اگر کارمندی تا ساعت تعیین‌شده ورودش را ثبت نکرده باشد، یک پیام یادآوری در تلگرام برایش ارسال می‌شود. در روزهای تعطیل و برای کسانی که مرخصی، ماموریت یا دورکاری دارند، یادآوری ارسال نمی‌شود."
+      badge={
+        setting.enabled
+          ? { text: `فعال، ساعت ${fa(setting.time)}`, className: 'bg-emerald-50 text-emerald-700' }
+          : { text: 'خاموش', className: 'bg-slate-100 text-slate-600' }
+      }
+      enabled={enabled}
+      onToggle={setEnabled}
+      busy={update.isLoading}
+      dirty={dirty}
+      onSave={save}
+      changedAt={setting.changedAt}
+      changedBy={setting.changedBy}
+    >
+      {enabled && (
+        <div className="flex max-w-xs flex-col gap-1.5">
+          <span className="text-sm font-medium text-slate-700">ساعت ارسال</span>
+          <TimeInput value={time} onChange={setTime} />
         </div>
-        <ToggleSwitch
-          checked={enabled}
-          onChange={setEnabled}
-          aria-label="ورود بدون موقعیت مکانی"
-          disabled={update.isLoading}
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-slate-400">
-          {setting.changedAt &&
-            `آخرین تغییر: ${jalaliDateTime(setting.changedAt)}${
-              setting.changedBy ? ` — ${setting.changedBy.name || fa(setting.changedBy.phone)}` : ''
-            }`}
-        </p>
-        <Button className="w-full sm:w-auto" disabled={!dirty || update.isLoading} aria-busy={update.isLoading} onClick={save}>
-          {update.isLoading ? 'در حال ذخیره…' : 'ذخیره'}
-        </Button>
-      </div>
-    </Panel>
+      )}
+    </SettingRow>
   );
 }
 

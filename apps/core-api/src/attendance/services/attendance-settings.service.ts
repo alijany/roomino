@@ -1,7 +1,10 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 import { UserEntity } from '../../user/user.entity';
-import { UpdateSelfDeclaredDto } from '../dtos/setup.dto';
+import {
+  UpdateCheckinReminderDto,
+  UpdateSelfDeclaredDto,
+} from '../dtos/setup.dto';
 import { AttendanceSettingsEntity } from '../entities/attendance-settings.entity';
 
 /** The one settings row. */
@@ -20,7 +23,7 @@ export class AttendanceSettingsService {
     return this.em.findOne(
       AttendanceSettingsEntity,
       { id: ROW_ID },
-      { populate: ['selfDeclaredChangedBy'] },
+      { populate: ['selfDeclaredChangedBy', 'checkinReminderChangedBy'] },
     );
   }
 
@@ -40,6 +43,30 @@ export class AttendanceSettingsService {
         selfDeclared: dto.enabled,
         selfDeclaredChangedAt: new Date(),
         selfDeclaredChangedBy: by,
+      };
+      if (row) em.assign(row, change);
+      else em.create(AttendanceSettingsEntity, { id: ROW_ID, ...change });
+    });
+    this.em.clear();
+  }
+
+  async updateCheckinReminder(dto: UpdateCheckinReminderDto, by: UserEntity) {
+    await this.em.transactional(async (em) => {
+      await em.execute('select pg_advisory_xact_lock(?)', [SAVE_LOCK]);
+      const row = await em.findOne(AttendanceSettingsEntity, { id: ROW_ID });
+      const time = dto.time ?? row?.checkinReminderTime ?? '09:30';
+      if (
+        (row?.checkinReminderEnabled ?? false) === dto.enabled &&
+        (row?.checkinReminderTime ?? '09:30') === time
+      ) {
+        return;
+      }
+
+      const change = {
+        checkinReminderEnabled: dto.enabled,
+        checkinReminderTime: time,
+        checkinReminderChangedAt: new Date(),
+        checkinReminderChangedBy: by,
       };
       if (row) em.assign(row, change);
       else em.create(AttendanceSettingsEntity, { id: ROW_ID, ...change });

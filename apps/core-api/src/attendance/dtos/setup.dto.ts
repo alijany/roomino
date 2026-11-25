@@ -251,3 +251,14 @@ export class UpdateSelfDeclaredDto {
   @IsBoolean({ message: 'روشن یا خاموش بودن ورود خوداظهاری را مشخص کنید' })
   enabled: boolean;
 }
+
+export class UpdateCheckinReminderDto {
+  @IsBoolean({ message: 'روشن یا خاموش بودن یادآوری ورود را مشخص کنید' })
+  enabled: boolean;
+
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'ساعت یادآوری را به‌صورت ساعت:دقیقه وارد کنید',
+  })
+  time?: string;
+}

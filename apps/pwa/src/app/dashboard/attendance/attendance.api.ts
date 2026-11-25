@@ -26,6 +26,7 @@ import {
   JobGroup,
   JobGroupInput,
   LeaveBalance,
+  CheckinReminder,
   MaintenanceSummary,
   MyToday,
   PaginationMeta,
@@ -474,6 +475,15 @@ export function useUpdateSelfDeclared() {
     useSWRMutation(
       '/admin/attendance/maintenance/self-declared',
       patchFetcher<{ enabled: boolean }, SelfDeclared>,
+    ),
+  );
+}
+
+export function useUpdateCheckinReminder() {
+  return useSwrMutationHelper(
+    useSWRMutation(
+      '/admin/attendance/maintenance/checkin-reminder',
+      patchFetcher<{ enabled: boolean; time?: string }, CheckinReminder>,
     ),
   );
 }

@@ -21,7 +21,26 @@ const LINK_TTL_MINUTES = 15;
 interface TelegramUpdate {
   update_id: number;
   message?: { text?: string; chat: { id: number; type: string } };
+  callback_query?: {
+    id: string;
+    data?: string;
+    message?: {
+      message_id: number;
+      text?: string;
+      chat: { id: number; type: string };
+    };
+  };
 }
+
+/**
+ * What a module does when someone presses one of its inline buttons: gets the
+ * user and the button's data, answers with a line of text. `done` removes the
+ * buttons from the message; otherwise they stay so the person can try again.
+ */
+export type TelegramCallbackHandler = (
+  userId: number,
+  data: string,
+) => Promise<{ text: string; done: boolean }>;
 
 /**
  * The Telegram bot: users press «اتصال تلگرام» in the panel, open the link it
@@ -36,6 +55,11 @@ export class TelegramBotService
   private readonly logger = new Logger(TelegramBotService.name);
   /** Bumped on every (re)start so a polling loop from an older setup ends. */
   private generation = 0;
+  /** Button handlers by the prefix of their data (`ci:p:…` → `ci`). */
+  private readonly callbackHandlers = new Map<
+    string,
+    TelegramCallbackHandler
+  >();
   /** Token, username and URLs as saved on the site-settings page (env as fallback). */
   private cfg: TelegramConfig = { apiBase: 'https://api.telegram.org' };
 
@@ -132,7 +156,7 @@ export class TelegramBotService
         await this.call('setWebhook', {
           url: webhookUrl,
           secret_token: this.webhookSecret,
-          allowed_updates: ['message'],
+          allowed_updates: ['message', 'callback_query'],
         });
         this.logger.log('Telegram webhook registered');
       } else {
@@ -155,7 +179,11 @@ export class TelegramBotService
       try {
         const { data } = await axios.post(
           `${this.apiBase}/bot${this.token}/getUpdates`,
-          { offset, timeout: 25, allowed_updates: ['message'] },
+          {
+            offset,
+            timeout: 25,
+            allowed_updates: ['message', 'callback_query'],
+          },
           { timeout: 35000 },
         );
         for (const update of (data.result ?? []) as TelegramUpdate[]) {
@@ -169,7 +197,59 @@ export class TelegramBotService
     }
   }
 
+  /** A module claims the buttons whose data starts with `prefix:`. */
+  registerCallbackHandler(prefix: string, handler: TelegramCallbackHandler) {
+    this.callbackHandlers.set(prefix, handler);
+  }
+
+  private async handleCallback(
+    query: NonNullable<TelegramUpdate['callback_query']>,
+  ) {
+    const chat = query.message?.chat;
+    const answer = (text: string) =>
+      this.call('answerCallbackQuery', {
+        callback_query_id: query.id,
+        text: text.slice(0, 200),
+      });
+    if (!chat || chat.type !== 'private' || !query.data) return;
+
+    const handler = this.callbackHandlers.get(query.data.split(':')[0]);
+    const user = await this.em.fork().findOne(UserEntity, { chatId: chat.id });
+    if (!handler || !user) {
+      await answer('این دکمه دیگر معتبر نیست.');
+      return;
+    }
+
+    let result: { text: string; done: boolean };
+    try {
+      result = await handler(user.id, query.data);
+    } catch (error) {
+      this.logger.error(`Telegram button failed: ${(error as Error).message}`);
+      result = { text: 'انجام نشد. لطفاً از پنل اقدام کنید.', done: false };
+    }
+    await answer(result.text);
+    if (result.done && query.message) {
+      // The buttons have done their job: show the outcome instead of them.
+      await this.call('editMessageText', {
+        chat_id: chat.id,
+        message_id: query.message.message_id,
+        text: `${query.message.text ?? ''}\n\n✅ ${result.text}`,
+        reply_markup: { inline_keyboard: [] },
+      });
+    }
+  }
+
   async handleUpdate(update: TelegramUpdate) {
+    if (update.callback_query) {
+      try {
+        await this.handleCallback(update.callback_query);
+      } catch (error) {
+        this.logger.error(
+          `Telegram update failed: ${(error as Error).message}`,
+        );
+      }
+      return;
+    }
     const message = update.message;
     if (!message?.text || message.chat.type !== 'private') return;
     const chatId = message.chat.id;

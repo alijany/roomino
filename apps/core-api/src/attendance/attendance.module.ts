@@ -53,6 +53,8 @@ import { AttendanceNotificationService } from './services/attendance-notificatio
 import { AttendanceModeService } from './services/attendance-mode.service';
 import { AttendanceScheduleService } from './services/attendance-schedule.service';
 import { OnCallReminderService } from './services/oncall-reminder.service';
+import { CheckinActionService } from './services/checkin-action.service';
+import { CheckinReminderService } from './services/checkin-reminder.service';
 import { AttendanceSettingsService } from './services/attendance-settings.service';
 import { AttendanceService } from './services/attendance.service';
 import { EmployeeService } from './services/employee.service';
@@ -129,6 +131,8 @@ import { WorkplaceService } from './services/workplace.service';
     AttendanceExportService,
     AttendanceScheduleService,
     OnCallReminderService,
+    CheckinReminderService,
+    CheckinActionService,
     AttendanceMaintenanceService,
     ScheduleModeService,
   ],

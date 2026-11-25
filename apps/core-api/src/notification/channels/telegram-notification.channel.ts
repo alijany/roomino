@@ -39,9 +39,27 @@ export class TelegramNotificationChannel extends BaseNotificationChannel {
       throw new Error(`No bot token configured for ${notification.type}`);
     }
 
+    // A module may attach inline buttons: `metadata.telegramButtons` is rows of
+    // `{ text, url }` (opens a link) or `{ text, data }` (reaches its handler).
+    const rows = notification.metadata?.telegramButtons as
+      | Array<Array<{ text: string; url?: string; data?: string }>>
+      | undefined;
+    const keyboard = rows
+      ?.map((row) =>
+        row.map((b) =>
+          b.url
+            ? { text: b.text, url: b.url }
+            : { text: b.text, callback_data: b.data },
+        ),
+      )
+      .filter((row) => row.length);
+
     await axios.post(`${apiBase}/bot${token}/sendMessage`, {
       chat_id: notification.recipientChatId,
       text: notification.message,
+      ...(keyboard?.length
+        ? { reply_markup: { inline_keyboard: keyboard } }
+        : {}),
     });
   }
 
