@@ -83,7 +83,7 @@ describe('check-in reminder', () => {
     const { service, sent, updates } = build({ rows });
     expect(await service.sendDue(AT_10)).toBe(2);
     expect(sent.map(([id]) => id)).toEqual([10, 20]);
-    expect(sent[1][1]).toContain('امروز هستم');
+    expect(sent[1][1]).toContain('ورود امروز شما هنوز ثبت نشده است.');
     expect(updates).toHaveLength(2);
     // Already reminded today.
     expect(

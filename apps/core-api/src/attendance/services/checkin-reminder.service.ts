@@ -111,7 +111,7 @@ export class CheckinReminderService {
       );
 
       const untracked = row.mode === AttendanceMode.UNTRACKED;
-      const { text, sms } = this.compose(row.profile, untracked);
+      const { text, sms } = this.compose(row.profile);
       const noPosition =
         selfDeclared || (Boolean(row.profile.workplace) && !row.profile.useGps);
       try {
@@ -202,12 +202,11 @@ export class CheckinReminderService {
   }
 
   /** A full message for the bot and the panel, a one-liner for SMS. */
-  compose(profile: EmployeeProfileEntity, untracked: boolean) {
+  compose(profile: EmployeeProfileEntity) {
     const name = profile.user.firstName?.trim() || profile.user.name;
     const greeting = name ? `${name} عزیز` : 'همکار گرامی';
-    const line = untracked
-      ? 'هنوز اعلام نکرده‌اید که امروز سر کار هستید. لطفاً «امروز هستم» را بزنید.'
-      : 'ورود امروز شما هنوز ثبت نشده است. لطفاً ورود خود را ثبت کنید.';
+    const line =
+      'ورود امروز شما هنوز ثبت نشده است. لطفاً ورود خود را ثبت کنید.';
     return {
       text: [
         '⏰ یادآوری ثبت ورود',

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
+import { RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import axios from 'axios';
 import { createHmac, timingSafeEqual } from 'crypto';
@@ -222,7 +223,12 @@ export class TelegramBotService
 
     let result: { text: string; done: boolean };
     try {
-      result = await handler(user.id, query.data);
+      // A fresh context, as in a request: the modules' services use the shared
+      // entity manager, which refuses to work outside one.
+      const data = query.data;
+      result = await RequestContext.create(this.em, () =>
+        handler(user.id, data),
+      );
     } catch (error) {
       this.logger.error(`Telegram button failed: ${(error as Error).message}`);
       result = { text: 'انجام نشد. لطفاً از پنل اقدام کنید.', done: false };

@@ -165,7 +165,7 @@ export default function LoginModal(props: { onClose?: () => void, onLoginSuccess
                         >
                             <div className='font-semibold text-lg text-slate-700'>شماره موبایل خود را وارد کنید</div>
                             <div className='text-sm text-slate-500'>
-                                برای استفاده از امکانات هم‌اوا، لطفاً شمارهٔ موبایل خود را وارد کنید. کد تأیید به این شماره پیامک خواهد شد.
+                                برای ورود به لایفی‌نو، شماره موبایل خود را وارد کنید. کد تأیید برای همین شماره پیامک می‌شود.
                             </div>
                             <br />
                             {error && (

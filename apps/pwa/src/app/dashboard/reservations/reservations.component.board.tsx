@@ -20,6 +20,8 @@ import {
 
 interface BoardProps {
   date: string;
+  /** Show just this room — the dashboard widget picks one by its tabs. */
+  onlyRoomId?: number;
   data?: AvailabilityResponse;
   error: unknown;
   isLoading: boolean;
@@ -107,7 +109,7 @@ function RoomNowBadge({ room, nowMinutes, outsideHours }: { room: AvailabilityRo
   );
 }
 
-export function ReservationBoard({ date, data, error, isLoading, refresh }: BoardProps) {
+export function ReservationBoard({ date, onlyRoomId, data, error, isLoading, refresh }: BoardProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [ownSelection, setOwnSelection] = useState<OwnSelection | null>(null);
@@ -183,7 +185,9 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
         onRetry={refresh}
       >
         <div className="space-y-3 pb-4">
-          {data?.rooms.map((room) => (
+          {data?.rooms
+            .filter((room) => onlyRoomId == null || room.roomId === onlyRoomId)
+            .map((room) => (
             <div key={room.roomId} className="p-4 rounded-2xl border border-slate-100 bg-white">
               <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -199,7 +203,7 @@ export function ReservationBoard({ date, data, error, isLoading, refresh }: Boar
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+              <div dir="ltr" className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                 {room.slots.map((slot) => (
                   <SlotCell
                     key={slot.startMinutes}

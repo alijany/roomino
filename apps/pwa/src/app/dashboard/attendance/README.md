@@ -19,7 +19,7 @@
 
 The dashboard home (`/dashboard`) is a 12-column row of widgets: today's
 attendance (`AttendanceTodayCard`, `attendance.component.today-card.tsx`, half
-the row) and room booking (`ReservationsWidget`). The card has the status and
+the row) and room booking (`ReservationsWidget`: a tab per room, today or tomorrow, booking in place). The card has the status and
 shift on top, the day's times in the middle, the check-in/out button above a
 footer of shortcuts (new request opens the form in place, my report, my team
 for approvers, details). It shares `useCheckInFlow`
