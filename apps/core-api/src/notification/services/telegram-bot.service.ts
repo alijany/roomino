@@ -38,10 +38,16 @@ interface TelegramUpdate {
  * user and the button's data, answers with a line of text. `done` removes the
  * buttons from the message; otherwise they stay so the person can try again.
  */
+export interface TelegramCallbackResult {
+  text: string;
+  done: boolean;
+  /** A message of its own, sent after the buttons are replaced. */
+  followUp?: string;
+}
 export type TelegramCallbackHandler = (
   userId: number,
   data: string,
-) => Promise<{ text: string; done: boolean }>;
+) => Promise<TelegramCallbackResult>;
 
 /**
  * The Telegram bot: users press «اتصال تلگرام» in the panel, open the link it
@@ -221,7 +227,7 @@ export class TelegramBotService
       return;
     }
 
-    let result: { text: string; done: boolean };
+    let result: TelegramCallbackResult;
     try {
       // A fresh context, as in a request: the modules' services use the shared
       // entity manager, which refuses to work outside one.
@@ -242,6 +248,9 @@ export class TelegramBotService
         text: `${query.message.text ?? ''}\n\n✅ ${result.text}`,
         reply_markup: { inline_keyboard: [] },
       });
+    }
+    if (result.done && result.followUp) {
+      await this.send(chat.id, result.followUp);
     }
   }
 

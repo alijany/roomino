@@ -116,27 +116,21 @@ describe('check-in reminder', () => {
     expect(sent[0][0]).toBe(30);
   });
 
-  it('puts one-tap buttons only where no position is needed, and a link to the panel', () => {
+  it('puts entitled leave on the left and the check-in on the right, only where no position is needed, with a link to the panel', () => {
     const { service } = build({});
     const flat = (rows: any[][]) => rows.flat().map((b) => b.text);
 
     const withPosition = service.buttons('2026-11-25', false, false);
-    expect(flat(withPosition)).toEqual([
-      'دورکاری هستم',
-      'مرخصی استعلاجی',
-      'باز کردن پنل',
-    ]);
+    expect(flat(withPosition)).toEqual(['🌴 مرخصی استحقاقی', 'باز کردن پنل']);
 
     const free = service.buttons('2026-11-25', true, true) as any[][];
     expect(flat(free)).toEqual([
-      'امروز هستم',
-      'دورکاری هستم',
-      'مرخصی استعلاجی',
+      '🌴 مرخصی استحقاقی',
+      '✅ امروز هستم',
       'باز کردن پنل',
     ]);
-    expect(free[0][0].data).toBe('ci:p:2026-11-25');
-    expect(free[0][1].data).toBe('ci:r:2026-11-25');
-    expect(free[1][0].data).toBe('ci:s:2026-11-25');
-    expect(free[2][0].url).toBe('https://app.example.ir/dashboard/attendance');
+    expect(free[0][0].data).toBe('ci:e:2026-11-25');
+    expect(free[0][1].data).toBe('ci:p:2026-11-25');
+    expect(free[1][0].url).toBe('https://app.example.ir/dashboard/attendance');
   });
 });

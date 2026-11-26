@@ -10,15 +10,15 @@ import { RequestService } from './request.service';
 
 /** Button data of the check-in reminder: `ci:<p|r>:<date>`. */
 export const CHECKIN_BUTTON_PREFIX = 'ci';
-/** p: here today · r: remote today · s: sick leave today. */
-export type CheckinButtonAction = 'p' | 'r' | 's';
+/** p: here today · r: remote today · e: entitled leave today · s: sick leave today (old messages). */
+export type CheckinButtonAction = 'p' | 'r' | 'e' | 's';
 
 export const checkinButtonData = (action: CheckinButtonAction, date: string) =>
   `${CHECKIN_BUTTON_PREFIX}:${action}:${date}`;
 
 /**
  * The buttons under the check-in reminder in Telegram. «ثبت ورود / امروز
- * هستم», «دورکاری هستم» and «مرخصی استعلاجی» do in one tap what the panel
+ * هستم», «دورکاری هستم» and «مرخصی استحقاقی» do in one tap what the panel
  * does — with no position, as Telegram sends none — through the same
  * services, so every rule (radius, self-declared mode, approvals, leave caps)
  * is the panel's own.
@@ -53,17 +53,33 @@ export class CheckinActionService implements OnModuleInit {
 
     const remote = action === 'r';
     try {
-      if (action === 's') {
-        // A day of sick leave, sent to the approver like one filed in the panel.
+      if (action === 'e' || action === 's') {
+        // A day of leave, sent to the approver like one filed in the panel.
+        // `s` (sick) stays for reminders sent before the button became «e».
+        const sick = action === 's';
         await this.requests.submit(profile, {
-          type: RequestType.LEAVE_SICK_DAILY,
+          type: sick
+            ? RequestType.LEAVE_SICK_DAILY
+            : RequestType.LEAVE_ENTITLED_DAILY,
           dateFrom: date,
           dateTo: date,
           description: 'ثبت از تلگرام',
         });
+        const name = profile.user.firstName?.trim() || profile.user.name;
+        const greeting = name ? `${name} عزیز` : 'همکار گرامی';
         return {
-          text: 'مرخصی استعلاجی امروز ثبت و برای تأیید ارسال شد.',
+          text: sick
+            ? 'مرخصی استعلاجی امروز ثبت و برای تأیید ارسال شد.'
+            : 'مرخصی استحقاقی امروز ثبت و برای تأیید ارسال شد.',
           done: true,
+          followUp: sick
+            ? [
+                `${greeting}، امیدواریم هرچه زودتر حالتان بهتر شود.`,
+                'امروز استراحت کنید و به خودتان برسید؛ کارها می‌توانند منتظر بمانند.',
+                '',
+                'برایتان آرزوی سلامتی داریم 🤍',
+              ].join('\n')
+            : undefined,
         };
       }
 

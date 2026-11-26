@@ -136,22 +136,24 @@ export class CheckinReminderService {
   }
 
   /**
-   * Under the Telegram message: a one-tap check-in («امروز هستم» for
-   * «بدون ثبت») where no position is needed, «دورکاری هستم», «مرخصی
-   * استعلاجی» for today, and a link to the panel for everything else, at `APP_PUBLIC_URL` (HTTPS — Telegram
-   * refuses other buttons).
+   * Under the Telegram message: «مرخصی استحقاقی» for today, a one-tap
+   * check-in («امروز هستم» for «بدون ثبت») where no position is needed, and a
+   * link to the panel for everything else, at `APP_PUBLIC_URL` (HTTPS —
+   * Telegram refuses other buttons).
    */
   buttons(today: string, untracked: boolean, noPosition: boolean) {
+    // Telegram lays a row out left to right: sick leave on the left, the
+    // check-in on the right.
     const tap = [
+      { text: '🌴 مرخصی استحقاقی', data: checkinButtonData('e', today) },
       ...(noPosition
         ? [
             {
-              text: untracked ? 'امروز هستم' : 'ثبت ورود',
+              text: untracked ? '✅ امروز هستم' : '✅ ثبت ورود',
               data: checkinButtonData('p', today),
             },
           ]
         : []),
-      { text: 'دورکاری هستم', data: checkinButtonData('r', today) },
     ];
     const base = (
       this.config.get<string>('APP_PUBLIC_URL') || DEFAULT_APP_URL
@@ -160,10 +162,7 @@ export class CheckinReminderService {
       base && base.startsWith('https://')
         ? [{ text: 'باز کردن پنل', url: `${base}/dashboard/attendance` }]
         : [];
-    const sick = [
-      { text: 'مرخصی استعلاجی', data: checkinButtonData('s', today) },
-    ];
-    return [tap, sick, ...(link.length ? [link] : [])];
+    return [tap, ...(link.length ? [link] : [])];
   }
 
   /** People with a request that settles today for the moment: no reminder yet. */

@@ -16,7 +16,9 @@ function build(over: {
     { registerCallbackHandler: () => undefined } as any,
     {
       findByUser: async () =>
-        over.active === false ? { active: false } : { id: 1, active: true },
+        over.active === false
+          ? { active: false }
+          : { id: 1, active: true, user: { firstName: 'علی' } },
     } as any,
     { on: async () => over.mode ?? AttendanceMode.TRACKED } as any,
     {
@@ -54,14 +56,14 @@ describe('check-in reminder buttons', () => {
     expect(untracked.calls).toEqual([['declare', { remote: true }]]);
   });
 
-  it('files today as a day of sick leave for approval', async () => {
+  it('files today as a day of entitled leave for approval', async () => {
     const { service, calls } = build({});
-    const r = await service.handle(7, `ci:s:${today}`);
+    const r = await service.handle(7, `ci:e:${today}`);
     expect(calls).toEqual([
       [
         'submit',
         {
-          type: 'leave_sick_daily',
+          type: 'leave_entitled_daily',
           dateFrom: today,
           dateTo: today,
           description: 'ثبت از تلگرام',
@@ -69,7 +71,8 @@ describe('check-in reminder buttons', () => {
       ],
     ]);
     expect(r.done).toBe(true);
-    expect(r.text).toContain('مرخصی استعلاجی');
+    expect(r.text).toContain('مرخصی استحقاقی');
+    expect((r as { followUp?: string }).followUp).toBeUndefined();
   });
 
   it('keeps the buttons when it could not be done, and refuses another day or an inactive profile', async () => {
